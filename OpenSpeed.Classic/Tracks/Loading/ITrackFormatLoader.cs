@@ -1,0 +1,11 @@
+using OpenSpeed.Classic.Assets;
+
+namespace OpenSpeed.Classic.Tracks.Loading
+{
+    public interface ITrackFormatLoader
+    {
+        public GameVersion Game { get; }
+
+        public LoadedTrack Load(string rootDirectory, string trackIdentifier);
+    }
+}

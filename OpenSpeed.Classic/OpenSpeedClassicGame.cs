@@ -1,15 +1,23 @@
+using System;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+
+using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic
 {
     public sealed class OpenSpeedClassicGame : Game
     {
-        private static string WindowTitle => "OpenSpeed Classic";
-        private static int InitialBackBufferWidth => 1280;
-        private static int InitialBackBufferHeight => 720;
-
         private readonly GraphicsDeviceManager graphicsDeviceManager;
+
+        public LoadedTrack? CurrentTrack { get; }
+
+        private static string WindowTitle => "OpenSpeed Classic";
+
+        private static int InitialBackBufferWidth => 1280;
+
+        private static int InitialBackBufferHeight => 720;
 
         public OpenSpeedClassicGame()
         {
@@ -22,6 +30,15 @@ namespace OpenSpeed.Classic
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             Window.Title = WindowTitle;
+        }
+
+        public OpenSpeedClassicGame(LoadedTrack loadedTrack)
+            : this()
+        {
+            ArgumentNullException.ThrowIfNull(loadedTrack);
+
+            CurrentTrack = loadedTrack;
+            Window.Title = $"{WindowTitle} - {loadedTrack.DisplayName}";
         }
 
         protected override void Initialize()
