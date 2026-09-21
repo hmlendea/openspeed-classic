@@ -12,6 +12,10 @@ namespace OpenSpeed.Classic.Tracks
 
         public int ConnectedVertexCount { get; set; }
 
+        public IEnumerable<TrackSurface> ScenerySurfaces { get; set; } = [];
+
         public IEnumerable<TrackSurface> Surfaces { get; set; } = [];
+
+        public IEnumerable<int>? VisibleBlockIdentifiers { get; set; }
     }
 }

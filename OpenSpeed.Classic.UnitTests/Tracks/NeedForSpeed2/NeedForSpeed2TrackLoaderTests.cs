@@ -42,6 +42,8 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             LoadedTrack track = trackLoader.Load(testDirectory, "outback");
             TrackBlock block = track.Blocks.Single();
             TrackSurface surface = block.Surfaces.Single();
+            TrackSurface[] blockScenery = block.ScenerySurfaces.ToArray();
+            TrackSurface globalScenery = track.ScenerySurfaces.Single();
             TrackPoint[] points = surface.Points.ToArray();
             TrackMaterial material = track.Materials.Single();
             TrackTexture texture = track.Textures.Single();
@@ -52,7 +54,10 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 Assert.That(track.Identifier, Is.EqualTo("Outback"));
                 Assert.That(track.DisplayName, Is.EqualTo("Outback"));
                 Assert.That(track.Game, Is.EqualTo(GameVersion.NeedForSpeed2SpecialEdition));
-                Assert.That(track.SourceFiles.Count(), Is.EqualTo(3));
+                Assert.That(track.SourceFiles.Count(), Is.EqualTo(5));
+                Assert.That(track.Horizon, Is.Not.Null);
+                Assert.That(track.Horizon!.RingRadius, Is.EqualTo(1500));
+                Assert.That(track.Horizon.SkyTexture!.Name, Is.EqualTo("CLD2"));
                 Assert.That(block.Identifier, Is.Zero);
                 Assert.That(block.Centre.X, Is.EqualTo(4.0));
                 Assert.That(block.Centre.Y, Is.EqualTo(8.0));
@@ -64,6 +69,16 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 Assert.That(points, Has.Length.EqualTo(4));
                 Assert.That(points[2].X, Is.EqualTo(5.0));
                 Assert.That(points[2].Z, Is.EqualTo(-17.0));
+                Assert.That(blockScenery, Has.Length.EqualTo(2));
+                Assert.That(
+                    blockScenery[0].Points.First().X,
+                    Is.EqualTo(6.0));
+                Assert.That(
+                    blockScenery[1].Points.First().X,
+                    Is.EqualTo(8.0));
+                Assert.That(blockScenery[0].Group, Is.EqualTo(TrackSurfaceGroup.Unrestricted));
+                Assert.That(block.VisibleBlockIdentifiers, Is.EqualTo(new[] { 0, 42 }));
+                Assert.That(globalScenery.Points.First().X, Is.EqualTo(10.0));
                 Assert.That(material.Identifier, Is.Zero);
                 Assert.That(material.TextureIdentifier, Is.Zero);
                 Assert.That(material.Alignment, Is.EqualTo(0x0401));

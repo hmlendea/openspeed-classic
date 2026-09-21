@@ -236,6 +236,22 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 connectedVertexCount,
                 blockIdentifier,
                 centrePoints);
+            int extraBlockCount = ReadUInt16(data, blockOffset + 0x08);
+            int extraBlockTableRelativeOffset = ReadInt32(data, blockOffset + 0x40);
+            long extraBlockTableFileOffset =
+                (long)blockOffset +
+                0x40 +
+                extraBlockTableRelativeOffset;
+            NeedForSpeed2TrackExtraBlock[] extraBlocks =
+            [
+                .. NeedForSpeed2TrackExtraBlockReader.ReadTrackBlock(
+                    data,
+                    blockOffset,
+                    extraBlockCount,
+                    extraBlockTableFileOffset,
+                    geometryEnd,
+                    blockEnd)
+            ];
 
             return new TrackBlock
             {
@@ -243,12 +259,15 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 Centre = centrePoints[blockIdentifier],
                 ClippingPoints = DecodeClippingPoints(data, blockOffset),
                 ConnectedVertexCount = connectedVertexCount,
+                ScenerySurfaces = NeedForSpeed2TrackSceneryDecoder.Decode(extraBlocks),
                 Surfaces = DecodeSurfaces(
                     data,
                     (int)polygonTableOffset,
                     polygonGroupCounts,
                     vertices,
-                    blockIdentifier)
+                    blockIdentifier),
+                VisibleBlockIdentifiers = NeedForSpeed2TrackVisibilityDecoder.Decode(
+                    extraBlocks)
             };
         }
 

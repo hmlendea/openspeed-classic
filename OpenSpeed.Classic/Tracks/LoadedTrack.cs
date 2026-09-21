@@ -14,7 +14,11 @@ namespace OpenSpeed.Classic.Tracks
 
         public GameVersion Game { get; set; }
 
+        public TrackHorizon? Horizon { get; set; }
+
         public IEnumerable<TrackMaterial> Materials { get; set; } = [];
+
+        public IEnumerable<TrackSurface> ScenerySurfaces { get; set; } = [];
 
         public IEnumerable<TrackAssetFile> SourceFiles { get; set; } = [];
 

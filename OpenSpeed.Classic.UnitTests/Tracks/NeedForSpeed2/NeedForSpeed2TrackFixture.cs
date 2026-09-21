@@ -11,6 +11,10 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
 
         private static int TrackBlockHeaderSize => 0x58;
 
+        private static int TrackPolygonSize => 8;
+
+        private static int TrackVertexSize => 6;
+
         internal static string MaterialRelativePath
             => Path.Combine("gAmEdAtA", "tRaCkS", "sE", "TR02.COL");
 
@@ -24,17 +28,31 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             File.WriteAllBytes(Path.Combine(trackDirectory, "TR02.COL"), BuildMaterials());
             File.WriteAllBytes(
                 Path.Combine(trackDirectory, "TR020.QFS"),
-                CompressWithLiteralCommands(BuildTextureArchive()));
+                CompressWithLiteralCommands(BuildTextureArchive("TEST")));
+            File.WriteAllText(
+                Path.Combine(trackDirectory, "3TR02.HRZ"),
+                BuildHorizon());
+            File.WriteAllBytes(
+                Path.Combine(trackDirectory, "SKY.FSH"),
+                BuildTextureArchive("CLD2"));
         }
 
         private static byte[] BuildTrackGeometry()
         {
             int vertexCount = 4;
             int polygonCount = 1;
-            int blockSize =
+            int trackGeometrySize =
                 TrackBlockHeaderSize +
-                vertexCount * 6 +
-                polygonCount * 8;
+                vertexCount * TrackVertexSize +
+                polygonCount * TrackPolygonSize;
+            int extraBlockTableOffset = trackGeometrySize;
+            int objectGeometryBlockOffset = extraBlockTableOffset + sizeof(int) * 3;
+            int objectGeometryBlockSize = 48;
+            int placementBlockOffset = objectGeometryBlockOffset + objectGeometryBlockSize;
+            int placementBlockSize = 52;
+            int visibilityBlockOffset = placementBlockOffset + placementBlockSize;
+            int visibilityBlockSize = 12;
+            int blockSize = visibilityBlockOffset + visibilityBlockSize;
             byte[] data = new byte[TrackBlockOffset + blockSize];
             Encoding.ASCII.GetBytes("TRAC").CopyTo(data, 0);
             WriteInt32LittleEndian(data, 4, 0x16);
@@ -50,21 +68,47 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             WriteInt32LittleEndian(data, 0x4C, TrackBlockOffset - 0x40);
             WriteInt32LittleEndian(data, TrackBlockOffset, blockSize);
             WriteInt32LittleEndian(data, TrackBlockOffset + 4, blockSize);
+            WriteInt16LittleEndian(data, TrackBlockOffset + 0x08, 3);
             WriteInt32LittleEndian(data, TrackBlockOffset + 0x0C, 0);
+            WriteInt32LittleEndian(
+                data,
+                TrackBlockOffset + 0x40,
+                extraBlockTableOffset - 0x40);
             WriteInt16LittleEndian(data, TrackBlockOffset + 0x4A, vertexCount);
             WriteInt16LittleEndian(data, TrackBlockOffset + 0x54, polygonCount);
             int vertexOffset = TrackBlockOffset + TrackBlockHeaderSize;
             WriteVertex(data, vertexOffset, 0, 0, 0);
-            WriteVertex(data, vertexOffset + 6, 256, 0, 0);
-            WriteVertex(data, vertexOffset + 12, 256, 0, 256);
-            WriteVertex(data, vertexOffset + 18, 0, 0, 256);
-            int polygonOffset = vertexOffset + vertexCount * 6;
+            WriteVertex(data, vertexOffset + TrackVertexSize, 256, 0, 0);
+            WriteVertex(data, vertexOffset + TrackVertexSize * 2, 256, 0, 256);
+            WriteVertex(data, vertexOffset + TrackVertexSize * 3, 0, 0, 256);
+            int polygonOffset = vertexOffset + vertexCount * TrackVertexSize;
             WriteInt16LittleEndian(data, polygonOffset, 0);
             WriteInt16LittleEndian(data, polygonOffset + 2, -1);
             data[polygonOffset + 4] = 0;
             data[polygonOffset + 5] = 1;
             data[polygonOffset + 6] = 2;
             data[polygonOffset + 7] = 3;
+            WriteInt32LittleEndian(
+                data,
+                TrackBlockOffset + extraBlockTableOffset,
+                objectGeometryBlockOffset);
+            WriteInt32LittleEndian(
+                data,
+                TrackBlockOffset + extraBlockTableOffset + sizeof(int),
+                placementBlockOffset);
+            WriteInt32LittleEndian(
+                data,
+                TrackBlockOffset + extraBlockTableOffset + sizeof(int) * 2,
+                visibilityBlockOffset);
+            WriteObjectGeometryBlock(
+                data,
+                TrackBlockOffset + objectGeometryBlockOffset);
+            WritePlacementBlock(
+                data,
+                TrackBlockOffset + placementBlockOffset);
+            WriteVisibilityBlock(
+                data,
+                TrackBlockOffset + visibilityBlockOffset);
 
             return data;
         }
@@ -89,36 +133,146 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
 
         private static byte[] BuildMaterials()
         {
-            int recordSize = 18;
-            byte[] data = new byte[16 + sizeof(int) + recordSize];
+            int recordCount = 3;
+            int recordOffsetTableSize = recordCount * sizeof(int);
+            int materialRecordOffset = recordOffsetTableSize;
+            int materialRecordSize = 18;
+            int objectGeometryRecordOffset = materialRecordOffset + materialRecordSize;
+            int objectGeometryRecordSize = 48;
+            int placementRecordOffset = objectGeometryRecordOffset + objectGeometryRecordSize;
+            int placementRecordSize = 24;
+            byte[] data = new byte[16 + placementRecordOffset + placementRecordSize];
             Encoding.ASCII.GetBytes("COLL").CopyTo(data, 0);
             WriteInt32LittleEndian(data, 4, 0x0B);
             WriteInt32LittleEndian(data, 8, data.Length);
-            WriteInt32LittleEndian(data, 12, 1);
-            WriteInt32LittleEndian(data, 16, sizeof(int));
-            int recordOffset = 20;
-            WriteInt32LittleEndian(data, recordOffset, recordSize);
-            WriteInt16LittleEndian(data, recordOffset + 4, 2);
-            WriteInt16LittleEndian(data, recordOffset + 6, 1);
-            WriteInt16LittleEndian(data, recordOffset + 8, 0);
-            WriteInt16LittleEndian(data, recordOffset + 10, 0x0401);
-            data[recordOffset + 12] = 4;
-            data[recordOffset + 13] = 8;
-            data[recordOffset + 14] = 16;
-            data[recordOffset + 15] = 32;
-            data[recordOffset + 16] = 48;
-            data[recordOffset + 17] = 64;
+            WriteInt32LittleEndian(data, 12, recordCount);
+            WriteInt32LittleEndian(data, 16, materialRecordOffset);
+            WriteInt32LittleEndian(data, 20, objectGeometryRecordOffset);
+            WriteInt32LittleEndian(data, 24, placementRecordOffset);
+            int materialFileOffset = 16 + materialRecordOffset;
+            WriteInt32LittleEndian(data, materialFileOffset, materialRecordSize);
+            WriteInt16LittleEndian(data, materialFileOffset + 4, 2);
+            WriteInt16LittleEndian(data, materialFileOffset + 6, 1);
+            WriteInt16LittleEndian(data, materialFileOffset + 8, 0);
+            WriteInt16LittleEndian(data, materialFileOffset + 10, 0x0401);
+            data[materialFileOffset + 12] = 4;
+            data[materialFileOffset + 13] = 8;
+            data[materialFileOffset + 14] = 16;
+            data[materialFileOffset + 15] = 32;
+            data[materialFileOffset + 16] = 48;
+            data[materialFileOffset + 17] = 64;
+            WriteObjectGeometryBlock(data, 16 + objectGeometryRecordOffset);
+            int placementFileOffset = 16 + placementRecordOffset;
+            WriteInt32LittleEndian(data, placementFileOffset, placementRecordSize);
+            WriteInt16LittleEndian(data, placementFileOffset + 4, 7);
+            WriteInt16LittleEndian(data, placementFileOffset + 6, 1);
+            WriteBasicPlacement(
+                data,
+                placementFileOffset + 8,
+                10 * 65536,
+                8 * 65536,
+                18 * 65536);
 
             return data;
         }
 
-        private static byte[] BuildTextureArchive()
+        private static void WriteObjectGeometryBlock(byte[] data, int blockOffset)
+        {
+            int objectGeometrySize = 40;
+            int extraBlockSize = 8 + objectGeometrySize;
+            WriteInt32LittleEndian(data, blockOffset, extraBlockSize);
+            WriteInt16LittleEndian(data, blockOffset + 4, 8);
+            WriteInt16LittleEndian(data, blockOffset + 6, 1);
+            int geometryOffset = blockOffset + 8;
+            WriteInt32LittleEndian(data, geometryOffset, objectGeometrySize);
+            WriteInt16LittleEndian(data, geometryOffset + 4, 4);
+            WriteInt16LittleEndian(data, geometryOffset + 6, 1);
+            int vertexOffset = geometryOffset + 8;
+            WriteVertex(data, vertexOffset, 0, 0, 0);
+            WriteVertex(data, vertexOffset + TrackVertexSize, 256, 0, 0);
+            WriteVertex(data, vertexOffset + TrackVertexSize * 2, 256, 512, 0);
+            WriteVertex(data, vertexOffset + TrackVertexSize * 3, 0, 512, 0);
+            int polygonOffset = vertexOffset + TrackVertexSize * 4;
+            WriteInt16LittleEndian(data, polygonOffset, 0);
+            WriteInt16LittleEndian(data, polygonOffset + 2, -1);
+            data[polygonOffset + 4] = 0;
+            data[polygonOffset + 5] = 1;
+            data[polygonOffset + 6] = 2;
+            data[polygonOffset + 7] = 3;
+        }
+
+        private static void WritePlacementBlock(byte[] data, int blockOffset)
+        {
+            int basicPlacementSize = 16;
+            int animatedPlacementSize = 28;
+            int payloadSize = basicPlacementSize + animatedPlacementSize;
+            WriteInt32LittleEndian(data, blockOffset, 8 + payloadSize);
+            WriteInt16LittleEndian(data, blockOffset + 4, 7);
+            WriteInt16LittleEndian(data, blockOffset + 6, 2);
+            int payloadOffset = blockOffset + 8;
+            WriteBasicPlacement(
+                data,
+                payloadOffset,
+                6 * 65536,
+                8 * 65536,
+                18 * 65536);
+            int animatedPlacementOffset = payloadOffset + basicPlacementSize;
+            WriteInt16LittleEndian(
+                data,
+                animatedPlacementOffset,
+                animatedPlacementSize);
+            data[animatedPlacementOffset + 2] = 3;
+            data[animatedPlacementOffset + 3] = 0;
+            WriteInt16LittleEndian(data, animatedPlacementOffset + 4, 1);
+            WriteInt16LittleEndian(data, animatedPlacementOffset + 6, 8);
+            int frameOffset = animatedPlacementOffset + 8;
+            WriteInt32LittleEndian(data, frameOffset, 8 * 65536);
+            WriteInt32LittleEndian(data, frameOffset + 4, 8 * 65536);
+            WriteInt32LittleEndian(data, frameOffset + 8, 18 * 65536);
+            WriteInt16LittleEndian(data, frameOffset + 18, 0x4000);
+        }
+
+        private static void WriteVisibilityBlock(byte[] data, int blockOffset)
+        {
+            WriteInt32LittleEndian(data, blockOffset, 12);
+            WriteInt16LittleEndian(data, blockOffset + 4, 4);
+            WriteInt16LittleEndian(data, blockOffset + 6, 2);
+            WriteInt16LittleEndian(data, blockOffset + 8, 0);
+            WriteInt16LittleEndian(data, blockOffset + 10, 42);
+        }
+
+        private static void WriteBasicPlacement(
+            byte[] data,
+            int offset,
+            int sourceX,
+            int sourceZ,
+            int sourceY)
+        {
+            WriteInt16LittleEndian(data, offset, 16);
+            data[offset + 2] = 1;
+            data[offset + 3] = 0;
+            WriteInt32LittleEndian(data, offset + 4, sourceX);
+            WriteInt32LittleEndian(data, offset + 8, sourceZ);
+            WriteInt32LittleEndian(data, offset + 12, sourceY);
+        }
+
+        private static string BuildHorizon()
+            => string.Join(
+                " ",
+                new[]
+                {
+                    -100, 250, 0, 1, 1500, 300, 1000, -750, 1250,
+                    735, 960, 600, 132, 117, 115, 132, 117, 115,
+                    255, 122, 66, 255, 222, 91, 0, 0, 130
+                });
+
+        private static byte[] BuildTextureArchive(string textureName)
         {
             byte[] data = new byte[43];
             Encoding.ASCII.GetBytes("SHPI").CopyTo(data, 0);
             WriteInt32LittleEndian(data, 4, data.Length);
             WriteInt32LittleEndian(data, 8, 1);
-            Encoding.ASCII.GetBytes("TEST").CopyTo(data, 16);
+            Encoding.ASCII.GetBytes(textureName).CopyTo(data, 16);
             WriteInt32LittleEndian(data, 20, 24);
             WriteInt32LittleEndian(data, 24, 0x7F);
             WriteInt16LittleEndian(data, 28, 1);

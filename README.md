@@ -1,13 +1,15 @@
 # OpenSpeed Classic
 
-OpenSpeed Classic is a .NET 10 arcade racing game built on MonoGame via the NuciXNA package family. It loads track geometry, materials, and textures from an original Need for Speed II Special Edition installation.
+OpenSpeed Classic is a .NET 10 arcade racing game built on MonoGame via the NuciXNA package family. It loads and renders track geometry, placed scenery, materials, textures, and horizons from an original Need for Speed II Special Edition installation.
 
 ## Project Structure
 
 - [OpenSpeed.Classic.slnx](OpenSpeed.Classic.slnx) contains the solution.
 - [OpenSpeed.Classic](OpenSpeed.Classic) contains the game executable project.
 - [OpenSpeed.Classic.UnitTests](OpenSpeed.Classic.UnitTests) contains the NUnit unit test project.
-- [OpenSpeed.Classic/OpenSpeedClassicGame.cs](OpenSpeed.Classic/OpenSpeedClassicGame.cs) contains the MonoGame game shell.
+- [OpenSpeed.Classic/OpenSpeedClassicGame.cs](OpenSpeed.Classic/OpenSpeedClassicGame.cs) owns the MonoGame lifecycle, camera input, and track rendering.
+- [OpenSpeed.Classic/Input](OpenSpeed.Classic/Input) contains keyboard-to-camera input mapping.
+- [OpenSpeed.Classic/Rendering/Tracks](OpenSpeed.Classic/Rendering/Tracks) contains the track camera, horizon, vertex conversion, neighbour visibility, dynamic LOD, GPU batches, and renderer.
 - [OpenSpeed.Classic/Tracks](OpenSpeed.Classic/Tracks) contains renderer-neutral track models and loading contracts.
 - [OpenSpeed.Classic/Tracks/NeedForSpeed2](OpenSpeed.Classic/Tracks/NeedForSpeed2) contains the Need for Speed II catalogue and binary decoders.
 
@@ -17,18 +19,18 @@ Original game assets are not distributed with this project. Configure an install
 
 ```json
 {
-	"Assets": {
-		"Sources": [
-			{
-				"Game": "NeedForSpeed2SpecialEdition",
-				"RootDirectory": "/path/to/NFS2 SE"
-			}
-		]
-	},
-	"StartupTrack": {
-		"Game": "NeedForSpeed2SpecialEdition",
-		"Identifier": "Outback"
-	}
+  "Assets": {
+    "Sources": [
+      {
+        "Game": "NeedForSpeed2SpecialEdition",
+        "RootDirectory": "/path/to/NFS2 SE"
+      }
+    ]
+  },
+  "StartupTrack": {
+    "Game": "NeedForSpeed2SpecialEdition",
+    "Identifier": "Outback"
+  }
 }
 ```
 
@@ -57,6 +59,21 @@ Run the game project with:
 ```sh
 dotnet run --project OpenSpeed.Classic/OpenSpeed.Classic.csproj
 ```
+
+On a Wayland session where X11 reports an authorisation error, run:
+
+```sh
+env -u DISPLAY SDL_VIDEODRIVER=wayland \
+	dotnet run --project OpenSpeed.Classic/OpenSpeed.Classic.csproj
+```
+
+## Controls
+
+- `Up Arrow`: Move forwards.
+- `Down Arrow`: Move backwards.
+- `Left Arrow`: Turn left.
+- `Right Arrow`: Turn right.
+- `Escape`: Exit.
 
 ## Licence
 

@@ -29,9 +29,15 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
             string geometryPath = ResolveRequiredFile(
                 rootDirectory,
                 NeedForSpeed2TrackCatalogue.GetGeometryRelativePath(parsedIdentifier));
+            string horizonPath = ResolveRequiredFile(
+                rootDirectory,
+                NeedForSpeed2TrackCatalogue.GetHorizonRelativePath(parsedIdentifier));
             string materialPath = ResolveRequiredFile(
                 rootDirectory,
                 NeedForSpeed2TrackCatalogue.GetMaterialRelativePath(parsedIdentifier));
+            string skyTexturePath = ResolveRequiredFile(
+                rootDirectory,
+                NeedForSpeed2TrackCatalogue.GetSkyTextureRelativePath());
             string texturePath = ResolveRequiredFile(
                 rootDirectory,
                 NeedForSpeed2TrackCatalogue.GetTextureRelativePath(parsedIdentifier));
@@ -40,12 +46,29 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
             TrackBlock[] blocks = NeedForSpeed2TrackGeometryDecoder
                 .Decode(geometryData)
                 .ToArray();
+            byte[] collectionData = File.ReadAllBytes(materialPath);
+            NeedForSpeed2TrackExtraBlock[] collectionExtraBlocks =
+            [
+                .. NeedForSpeed2TrackExtraBlockReader.ReadCollection(collectionData)
+            ];
             TrackMaterial[] materials = NeedForSpeed2TrackMaterialDecoder
-                .Decode(File.ReadAllBytes(materialPath))
+                .Decode(collectionExtraBlocks)
+                .ToArray();
+            TrackSurface[] globalScenerySurfaces = NeedForSpeed2TrackSceneryDecoder
+                .Decode(collectionExtraBlocks)
                 .ToArray();
             TrackTexture[] textures = NeedForSpeed2TextureArchiveDecoder
                 .Decode(File.ReadAllBytes(texturePath))
                 .ToArray();
+            TrackTexture? skyTexture = NeedForSpeed2TextureArchiveDecoder
+                .Decode(File.ReadAllBytes(skyTexturePath))
+                .FirstOrDefault(texture => string.Equals(
+                    texture.Name,
+                    NeedForSpeed2TrackCatalogue.GetSkyTextureName(parsedIdentifier),
+                    StringComparison.Ordinal));
+            TrackHorizon horizon = NeedForSpeed2HorizonDecoder.Decode(
+                File.ReadAllText(horizonPath),
+                skyTexture);
 
             return new LoadedTrack
             {
@@ -53,9 +76,16 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 DisplayName = NeedForSpeed2TrackCatalogue.GetDisplayName(parsedIdentifier),
                 Game = Game,
                 Blocks = blocks,
+                Horizon = horizon,
                 Materials = materials,
+                ScenerySurfaces = globalScenerySurfaces,
                 Textures = textures,
-                SourceFiles = BuildSourceFiles(geometryPath, materialPath, texturePath)
+                SourceFiles = BuildSourceFiles(
+                    geometryPath,
+                    horizonPath,
+                    materialPath,
+                    skyTexturePath,
+                    texturePath)
             };
         }
 
@@ -76,7 +106,9 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
 
         private static IEnumerable<TrackAssetFile> BuildSourceFiles(
             string geometryPath,
+            string horizonPath,
             string materialPath,
+            string skyTexturePath,
             string texturePath)
             =>
             [
@@ -87,8 +119,18 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 },
                 new TrackAssetFile
                 {
+                    Role = TrackAssetRole.Horizon,
+                    Path = horizonPath
+                },
+                new TrackAssetFile
+                {
                     Role = TrackAssetRole.Materials,
                     Path = materialPath
+                },
+                new TrackAssetFile
+                {
+                    Role = TrackAssetRole.Sky,
+                    Path = skyTexturePath
                 },
                 new TrackAssetFile
                 {

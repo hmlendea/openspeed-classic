@@ -4,6 +4,7 @@ namespace OpenSpeed.Classic.Tracks
     {
         Low,
         Medium,
-        High
+        High,
+        Unrestricted
     }
 }
