@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="OpenSpeed.Classic.UnitTests/OpenSpeed.Classic.UnitTests.csproj" />
+  <Project Path="OpenSpeed.Classic/OpenSpeed.Classic.csproj" />
+</Solution>
