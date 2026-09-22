@@ -258,8 +258,14 @@ namespace OpenSpeed.Classic
                 return;
             }
 
+            if (CurrentTrack is null)
+            {
+                return;
+            }
+
             carWorld = CarWorldTransformUpdater.Update(
                 carWorld.Value,
+                CurrentTrack.RoutePoints,
                 elapsedSeconds,
                 drivingInput.MovementInput,
                 drivingInput.TurningInput);

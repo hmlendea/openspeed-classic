@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
+
+using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.Rendering.Cars
 {
@@ -42,6 +45,20 @@ namespace OpenSpeed.Classic.Rendering.Cars
 
             return Matrix.CreateWorld(position, forward, up);
         }
+
+        public static Matrix Update(
+            Matrix world,
+            IEnumerable<TrackRoutePoint> routePoints,
+            float elapsedSeconds,
+            float movementInput,
+            float turningInput)
+            => CarTrackCollisionResolver.Resolve(
+                Update(
+                    world,
+                    elapsedSeconds,
+                    movementInput,
+                    turningInput),
+                routePoints);
 
         private static Vector3 NormaliseOrFallback(
             Vector3 direction,

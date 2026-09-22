@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using NUnit.Framework;
 
 using OpenSpeed.Classic.Rendering.Cars;
+using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
 {
@@ -50,6 +51,33 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
                 Assert.That(updatedWorld.Forward.Z, Is.Zero.Within(ValueTolerance));
                 Assert.That(updatedWorld.Translation, Is.EqualTo(Vector3.Zero));
             });
+        }
+
+        [Test]
+        public void GivenMovementTowardsAWall_WhenUpdating_ThenTheCarStopsAtTheWall()
+        {
+            Matrix world = Matrix.CreateWorld(
+                new Vector3(6.0f, 0.0f, 0.0f),
+                Vector3.Right,
+                Vector3.Up);
+            TrackRoutePoint routePoint = new()
+            {
+                LeftBorderDistance = 8.0,
+                Right = new TrackVector
+                {
+                    X = 127.0
+                },
+                RightBorderDistance = 8.0
+            };
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [routePoint],
+                1.0f,
+                1.0f,
+                0.0f);
+
+            Assert.That(updatedWorld.Translation.X, Is.EqualTo(7.0f));
         }
 
         [TestCase(float.NaN)]
