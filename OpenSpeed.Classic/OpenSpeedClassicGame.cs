@@ -272,7 +272,7 @@ namespace OpenSpeed.Classic
                 drivingInput.MovementInput,
                 drivingInput.TurningInput,
                 drivingInput.IsHandbrakeApplied);
-            trackCamera.Follow(carWorld.Value);
+            trackCamera.Follow(carWorld.Value, elapsedSeconds);
         }
 
         protected override void UnloadContent()

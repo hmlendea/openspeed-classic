@@ -20,11 +20,15 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         private static float CameraHeight => 3.0f;
 
+        private static float CameraTurnVelocity => MathHelper.ToRadians(15.0f);
+
+        private static float MaximumCameraLagAngle => MathHelper.ToRadians(3.5f);
+
         private static float ChaseDistance => 6.0f;
 
         private static float FieldOfViewRadians => MathHelper.ToRadians(90.0f);
 
-        private static float LookAheadDistance => 12.0f;
+        private static float LookAheadDistance => 14.0f;
 
         private static float MinimumFarPlane => 1024.0f;
 
@@ -134,6 +138,73 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             Up = targetUp;
         }
 
+        public void Follow(Matrix targetWorld, float elapsedSeconds)
+        {
+            if (!float.IsFinite(elapsedSeconds) || elapsedSeconds < 0.0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(elapsedSeconds),
+                    elapsedSeconds,
+                    "The camera elapsed time must be finite and non-negative.");
+            }
+
+            Vector3 targetPosition = targetWorld.Translation;
+            Vector3 targetDirection = NormaliseOrFallback(
+                targetWorld.Forward,
+                Vector3.Forward);
+            Vector3 targetUp = NormaliseOrFallback(targetWorld.Up, Vector3.Up);
+
+            if (Vector3.Cross(targetDirection, targetUp).LengthSquared() == 0.0f)
+            {
+                targetUp = Vector3.Up;
+            }
+
+            Vector3 currentHorizontalDirection = ProjectOntoPlane(
+                Direction,
+                targetUp);
+            Vector3 targetHorizontalDirection = ProjectOntoPlane(
+                targetDirection,
+                targetUp);
+            Vector3 followDirection = RotateTowards(
+                currentHorizontalDirection,
+                targetHorizontalDirection,
+                CameraTurnVelocity * elapsedSeconds,
+                targetUp);
+
+            float followedHeadingDifference = MathF.Acos(MathHelper.Clamp(
+                Vector3.Dot(followDirection, targetHorizontalDirection),
+                -1.0f,
+                1.0f));
+
+            if (followedHeadingDifference > MaximumCameraLagAngle)
+            {
+                followDirection = RotateTowards(
+                    targetHorizontalDirection,
+                    currentHorizontalDirection,
+                    MaximumCameraLagAngle,
+                    targetUp);
+            }
+
+            Vector3 cameraOffset = -followDirection * ChaseDistance;
+            float backwardDistance = Vector3.Dot(
+                -cameraOffset,
+                targetHorizontalDirection);
+
+            if (backwardDistance > ChaseDistance)
+            {
+                cameraOffset += targetHorizontalDirection *
+                    (backwardDistance - ChaseDistance);
+            }
+
+            Position = targetPosition +
+                cameraOffset +
+                targetUp * CameraHeight;
+            Vector3 lookAtPosition = targetPosition +
+                followDirection * LookAheadDistance;
+            Direction = Vector3.Normalize(lookAtPosition - Position);
+            Up = targetUp;
+        }
+
         public void Update(
             float elapsedSeconds,
             float movementInput,
@@ -216,6 +287,45 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             }
 
             return Vector3.Normalize(direction);
+        }
+
+        private static Vector3 ProjectOntoPlane(
+            Vector3 direction,
+            Vector3 planeNormal)
+        {
+            Vector3 projectedDirection = direction -
+                planeNormal * Vector3.Dot(direction, planeNormal);
+
+            return NormaliseOrFallback(projectedDirection, Vector3.Forward);
+        }
+
+        private static Vector3 RotateTowards(
+            Vector3 currentDirection,
+            Vector3 targetDirection,
+            float maximumRadians,
+            Vector3 rotationAxis)
+        {
+            float dotProduct = MathHelper.Clamp(
+                Vector3.Dot(currentDirection, targetDirection),
+                -1.0f,
+                1.0f);
+            float angle = MathF.Acos(dotProduct);
+
+            if (angle <= maximumRadians)
+            {
+                return targetDirection;
+            }
+
+            float turnDirection = MathF.Sign(
+                Vector3.Dot(
+                    Vector3.Cross(currentDirection, targetDirection),
+                    rotationAxis));
+
+            return Vector3.Normalize(Vector3.TransformNormal(
+                currentDirection,
+                Matrix.CreateFromAxisAngle(
+                    rotationAxis,
+                    turnDirection * maximumRadians)));
         }
 
         private static Vector3 ToVector3(TrackPoint point)
