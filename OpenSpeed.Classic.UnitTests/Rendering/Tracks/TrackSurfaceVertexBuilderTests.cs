@@ -60,6 +60,34 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
         }
 
         [Test]
+        public void GivenDisabledShadows_WhenBuildingTexturedVertices_ThenEveryCornerUsesFullIntensity()
+        {
+            TrackSurface surface = BuildSurface();
+            surface.LightingLevels = 0;
+
+            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
+                .BuildTextured(surface, new TrackMaterial(), false)
+                .ToArray();
+
+            Assert.That(vertices.Select(vertex => vertex.Color), Is.All.EqualTo(Color.White));
+        }
+
+        [Test]
+        public void GivenDisabledShadows_WhenBuildingColouredVertices_ThenEveryCornerUsesTheSurfaceColour()
+        {
+            TrackSurface surface = BuildSurface();
+            surface.LightingLevels = 0;
+
+            VertexPositionColor[] vertices = TrackSurfaceVertexBuilder
+                .BuildColoured(surface, false)
+                .ToArray();
+
+            Assert.That(
+                vertices.Select(vertex => vertex.Color),
+                Is.All.EqualTo(new Color(72, 88, 80)));
+        }
+
+        [Test]
         public void GivenALeftBackgroundWall_WhenBuildingTexturedVertices_ThenTheTextureOrientationIsPreserved()
         {
             TrackSurface surface = BuildSurface();

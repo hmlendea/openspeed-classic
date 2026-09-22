@@ -9,7 +9,9 @@ using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.Rendering.Tracks
 {
-    public sealed class TrackRenderer(GraphicsDevice graphicsDevice) : ITrackRenderer
+    public sealed class TrackRenderer(
+        GraphicsDevice graphicsDevice,
+        bool areShadowsEnabled) : ITrackRenderer
     {
         private readonly BasicEffect colourEffect = new(graphicsDevice)
         {
@@ -59,6 +61,11 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             colourBatches.Length > 0 ||
             roadMarkingBatches.Length > 0 ||
             textureBatches.Length > 0;
+
+        public TrackRenderer(GraphicsDevice graphicsDevice)
+            : this(graphicsDevice, true)
+        {
+        }
 
         public void Dispose()
         {
@@ -230,7 +237,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             }
         }
 
-        private static void AddSurfaces(
+        private void AddSurfaces(
             int blockIdentifier,
             IEnumerable<TrackSurface> surfaces,
             Dictionary<int, TrackMaterial> materials,
@@ -260,7 +267,9 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     }
 
                     colouredVertices[colourBatchKey].AddRange(
-                        TrackSurfaceVertexBuilder.BuildColoured(surface));
+                        TrackSurfaceVertexBuilder.BuildColoured(
+                            surface,
+                            areShadowsEnabled));
 
                     continue;
                 }
@@ -276,7 +285,10 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 }
 
                 texturedVertices[textureBatchKey].AddRange(
-                    TrackSurfaceVertexBuilder.BuildTextured(surface, material));
+                    TrackSurfaceVertexBuilder.BuildTextured(
+                        surface,
+                        material,
+                        areShadowsEnabled));
             }
         }
 

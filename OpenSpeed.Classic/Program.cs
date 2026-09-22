@@ -16,10 +16,12 @@ namespace OpenSpeed.Classic
             ApplicationArguments applicationArguments =
                 ApplicationArgumentsParser.Parse(arguments);
             string settingsFilePath = Path.Combine(AppContext.BaseDirectory, SettingsFileName);
-            LoadedTrack loadedTrack = TrackLoadingBootstrapper.LoadConfiguredTrack(
-                settingsFilePath);
+            IApplicationSettingsLoader settingsLoader = new ApplicationSettingsLoader();
+            ApplicationSettings settings = settingsLoader.Load(settingsFilePath);
+            LoadedTrack loadedTrack = TrackLoadingBootstrapper.LoadConfiguredTrack(settings);
             using OpenSpeedClassicGame game = new(
                 loadedTrack,
+                settings.Rendering,
                 applicationArguments.CaptureFramePath);
             game.Run();
         }

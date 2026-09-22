@@ -35,10 +35,22 @@ namespace OpenSpeed.Classic.Tracks.Loading
                     $"No track loader supports '{request.Game}'.");
             }
 
+            TrackTextureVariant textureVariant = assetSource.TextureVariant;
+
+            if (applicationSettings.Rendering.Is3DfxEnabled.HasValue)
+            {
+                textureVariant = TrackTextureVariant.PC;
+
+                if (applicationSettings.Rendering.Is3DfxEnabled.Value)
+                {
+                    textureVariant = TrackTextureVariant.SE;
+                }
+            }
+
             return trackFormatLoader.Load(
                 assetSource.RootDirectory,
                 request.Identifier,
-                assetSource.TextureVariant);
+                textureVariant);
         }
 
         private static bool IsConfiguredFor(

@@ -53,6 +53,10 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                   "StartupTrack": {
                     "Game": "NeedForSpeed2SpecialEdition",
                     "Identifier": "Outback"
+                  },
+                  "Rendering": {
+                    "AreShadowsEnabled": false,
+                    "Is3DfxEnabled": true
                   }
                 }
                 """);
@@ -69,6 +73,8 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                     settings.StartupTrack.Game,
                     Is.EqualTo("NeedForSpeed2SpecialEdition"));
                 Assert.That(settings.StartupTrack.Identifier, Is.EqualTo("Outback"));
+                Assert.That(settings.Rendering.AreShadowsEnabled, Is.False);
+                Assert.That(settings.Rendering.Is3DfxEnabled, Is.True);
             });
         }
 
@@ -87,6 +93,8 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
             Assert.That(
                 settings.Assets.Sources.Single().TextureVariant,
                 Is.EqualTo(TrackTextureVariant.SE));
+            Assert.That(settings.Rendering.AreShadowsEnabled);
+            Assert.That(settings.Rendering.Is3DfxEnabled, Is.Null);
         }
 
         [TestCase("\"Minecraft\"")]
@@ -129,6 +137,7 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
         [TestCase("null")]
         [TestCase("{}")]
         [TestCase("{ \"Assets\": null }")]
+        [TestCase("{ \"Assets\": { \"Sources\": [] }, \"Rendering\": null }")]
         public void GivenMissingSettings_WhenLoading_ThenInvalidDataIsReported(string json)
         {
             string filePath = WriteSettings(json);

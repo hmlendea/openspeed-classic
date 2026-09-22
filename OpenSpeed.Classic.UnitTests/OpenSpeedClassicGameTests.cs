@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using NUnit.Framework;
 
 using OpenSpeed.Classic;
+using OpenSpeed.Classic.Configuration;
 using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.UnitTests
@@ -34,5 +35,15 @@ namespace OpenSpeed.Classic.UnitTests
             => Assert.That(
                 () => new OpenSpeedClassicGame(null!),
                 Throws.TypeOf<ArgumentNullException>());
+
+        [Test]
+        public void GivenNullRenderingSettings_WhenConstructingTheGame_ThenAnArgumentNullExceptionIsThrown()
+        {
+            LoadedTrack loadedTrack = new() { Identifier = "Outback" };
+
+            Assert.That(
+                () => new OpenSpeedClassicGame(loadedTrack, null!, null),
+                Throws.TypeOf<ArgumentNullException>());
+        }
     }
 }

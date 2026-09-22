@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
+using OpenSpeed.Classic.Configuration;
 using OpenSpeed.Classic.Input;
 using OpenSpeed.Classic.Rendering.Tracks;
 using OpenSpeed.Classic.Tracks;
@@ -14,6 +15,7 @@ namespace OpenSpeed.Classic
     public sealed class OpenSpeedClassicGame : Game
     {
         private readonly GraphicsDeviceManager graphicsDeviceManager;
+        private readonly bool areShadowsEnabled = true;
         private readonly string? captureFramePath;
         private bool hasCapturedDiagnosticFrame;
         private TrackCamera? trackCamera;
@@ -50,15 +52,25 @@ namespace OpenSpeed.Classic
         public OpenSpeedClassicGame(
             LoadedTrack loadedTrack,
             string? captureFramePath)
+            : this(loadedTrack, new RenderingSettings(), captureFramePath)
+        {
+        }
+
+        public OpenSpeedClassicGame(
+            LoadedTrack loadedTrack,
+            RenderingSettings renderingSettings,
+            string? captureFramePath)
             : this()
         {
             ArgumentNullException.ThrowIfNull(loadedTrack);
+            ArgumentNullException.ThrowIfNull(renderingSettings);
 
             if (!string.IsNullOrWhiteSpace(captureFramePath))
             {
                 this.captureFramePath = captureFramePath;
             }
 
+            areShadowsEnabled = renderingSettings.AreShadowsEnabled;
             CurrentTrack = loadedTrack;
             Window.Title = $"{WindowTitle} - {loadedTrack.DisplayName}";
         }
@@ -80,7 +92,7 @@ namespace OpenSpeed.Classic
             trackCamera = new TrackCamera(
                 CurrentTrack.Blocks,
                 CurrentTrack.RoutePoints);
-            trackRenderer = new TrackRenderer(GraphicsDevice);
+            trackRenderer = new TrackRenderer(GraphicsDevice, areShadowsEnabled);
             trackRenderer.Load(CurrentTrack);
         }
 

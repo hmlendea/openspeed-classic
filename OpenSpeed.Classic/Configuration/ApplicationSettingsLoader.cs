@@ -48,6 +48,12 @@ namespace OpenSpeed.Classic.Configuration
                     $"The application settings file '{filePath}' contains no asset sources.");
             }
 
+            if (settings.Rendering is null)
+            {
+                throw new InvalidDataException(
+                    $"The application settings file '{filePath}' contains no rendering settings.");
+            }
+
             ValidateAssetSources(settings.Assets.Sources, filePath);
             ValidateStartupTrack(settings.StartupTrack, filePath);
 

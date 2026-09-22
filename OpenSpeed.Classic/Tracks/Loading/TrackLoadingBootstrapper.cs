@@ -12,6 +12,14 @@ namespace OpenSpeed.Classic.Tracks.Loading
         {
             IApplicationSettingsLoader settingsLoader = new ApplicationSettingsLoader();
             ApplicationSettings settings = settingsLoader.Load(settingsFilePath);
+
+            return LoadConfiguredTrack(settings);
+        }
+
+        public static LoadedTrack LoadConfiguredTrack(ApplicationSettings settings)
+        {
+            ArgumentNullException.ThrowIfNull(settings);
+
             GameVersion gameVersion = ParseGameVersion(settings.StartupTrack.Game);
             IFilePathResolver filePathResolver = new FilePathResolver();
             ITrackFormatLoader[] formatLoaders =

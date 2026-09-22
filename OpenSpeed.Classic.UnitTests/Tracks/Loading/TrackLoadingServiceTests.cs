@@ -75,6 +75,104 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
         }
 
         [Test]
+        public void Given3DfxRendering_WhenLoadingATrack_ThenSpecialEditionTexturesAreSelected()
+        {
+            ApplicationSettings settings = new()
+            {
+                Assets = new AssetsSettings
+                {
+                    Sources =
+                    [
+                        new AssetSourceSettings
+                        {
+                            Game = nameof(GameVersion.NeedForSpeed2SpecialEdition),
+                            RootDirectory = AssetRootDirectory,
+                            TextureVariant = TrackTextureVariant.PC
+                        }
+                    ]
+                },
+                Rendering = new RenderingSettings
+                {
+                    Is3DfxEnabled = true
+                }
+            };
+            LoadedTrack expectedTrack = new() { Identifier = "Outback" };
+            formatLoader
+                .Setup(loader => loader.Load(
+                    AssetRootDirectory,
+                    "Outback",
+                    TrackTextureVariant.SE))
+                .Returns(expectedTrack);
+            ITrackLoadingService loadingService = new TrackLoadingService(
+                settings,
+                [formatLoader.Object]);
+            TrackLoadRequest request = new()
+            {
+                Identifier = "Outback",
+                Game = GameVersion.NeedForSpeed2SpecialEdition
+            };
+
+            LoadedTrack track = loadingService.Load(request);
+
+            Assert.That(track, Is.SameAs(expectedTrack));
+            formatLoader.Verify(
+                loader => loader.Load(
+                    AssetRootDirectory,
+                    "Outback",
+                    TrackTextureVariant.SE),
+                Times.Once);
+        }
+
+        [Test]
+        public void GivenSoftwareRendering_WhenLoadingATrack_ThenPcTexturesAreSelected()
+        {
+            ApplicationSettings settings = new()
+            {
+                Assets = new AssetsSettings
+                {
+                    Sources =
+                    [
+                        new AssetSourceSettings
+                        {
+                            Game = nameof(GameVersion.NeedForSpeed2SpecialEdition),
+                            RootDirectory = AssetRootDirectory,
+                            TextureVariant = TrackTextureVariant.SE
+                        }
+                    ]
+                },
+                Rendering = new RenderingSettings
+                {
+                    Is3DfxEnabled = false
+                }
+            };
+            LoadedTrack expectedTrack = new() { Identifier = "Outback" };
+            formatLoader
+                .Setup(loader => loader.Load(
+                    AssetRootDirectory,
+                    "Outback",
+                    TrackTextureVariant.PC))
+                .Returns(expectedTrack);
+            ITrackLoadingService loadingService = new TrackLoadingService(
+                settings,
+                [formatLoader.Object]);
+            TrackLoadRequest request = new()
+            {
+                Identifier = "Outback",
+                Game = GameVersion.NeedForSpeed2SpecialEdition
+            };
+
+            LoadedTrack track = loadingService.Load(request);
+
+            Assert.That(track, Is.SameAs(expectedTrack));
+            formatLoader.Verify(
+                loader => loader.Load(
+                    AssetRootDirectory,
+                    "Outback",
+                    TrackTextureVariant.PC),
+                Times.Once);
+        }
+
+        [Test]
         public void GivenNoConfiguredSource_WhenLoadingATrack_ThenAnInvalidOperationExceptionIsThrown()
         {
             ApplicationSettings settings = new();

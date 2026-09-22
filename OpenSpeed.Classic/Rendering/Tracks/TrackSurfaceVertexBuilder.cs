@@ -21,13 +21,18 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         private static float GroundNormalVerticalRatioMinimum => 0.8f;
 
         public static IEnumerable<VertexPositionColor> BuildColoured(TrackSurface surface)
+            => BuildColoured(surface, true);
+
+        public static IEnumerable<VertexPositionColor> BuildColoured(
+            TrackSurface surface,
+            bool areShadowsEnabled)
         {
             ArgumentNullException.ThrowIfNull(surface);
 
             TrackPoint[] points = GetPoints(surface);
-            Color[] lightingColours = TrackSurfaceLighting
-                .Build(surface.LightingLevels)
-                .ToArray();
+            Color[] lightingColours = BuildLightingColours(
+                surface.LightingLevels,
+                areShadowsEnabled);
 
             return
             [
@@ -43,14 +48,20 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         public static IEnumerable<VertexPositionColorTexture> BuildTextured(
             TrackSurface surface,
             TrackMaterial material)
+            => BuildTextured(surface, material, true);
+
+        public static IEnumerable<VertexPositionColorTexture> BuildTextured(
+            TrackSurface surface,
+            TrackMaterial material,
+            bool areShadowsEnabled)
         {
             ArgumentNullException.ThrowIfNull(surface);
             ArgumentNullException.ThrowIfNull(material);
 
             TrackPoint[] points = GetPoints(surface);
-            Color[] lightingColours = TrackSurfaceLighting
-                .Build(surface.LightingLevels)
-                .ToArray();
+            Color[] lightingColours = BuildLightingColours(
+                surface.LightingLevels,
+                areShadowsEnabled);
             Vector2[] textureCoordinates = TrackTextureCoordinateBuilder
                 .Build(material)
                 .ToArray();
@@ -104,6 +115,18 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             Color lightingColour,
             Vector2 textureCoordinate)
             => new(ToVector3(point), lightingColour, textureCoordinate);
+
+        private static Color[] BuildLightingColours(
+            ushort lightingLevels,
+            bool areShadowsEnabled)
+        {
+            if (!areShadowsEnabled)
+            {
+                return [Color.White, Color.White, Color.White, Color.White];
+            }
+
+            return TrackSurfaceLighting.Build(lightingLevels).ToArray();
+        }
 
         private static TrackPoint[] GetPoints(TrackSurface surface)
         {

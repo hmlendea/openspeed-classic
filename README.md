@@ -23,10 +23,13 @@ Original game assets are not distributed with this project. Configure an install
     "Sources": [
       {
         "Game": "NeedForSpeed2SpecialEdition",
-        "RootDirectory": "/path/to/NFS2 SE",
-        "TextureVariant": "PC"
+        "RootDirectory": "/path/to/NFS2 SE"
       }
     ]
+  },
+  "Rendering": {
+    "AreShadowsEnabled": true,
+    "Is3DfxEnabled": false
   },
   "StartupTrack": {
     "Game": "NeedForSpeed2SpecialEdition",
@@ -37,7 +40,9 @@ Original game assets are not distributed with this project. Configure an install
 
 Relative asset roots are resolved from the process working directory. Paths within an original Windows installation are resolved case-insensitively on every platform.
 
-`TextureVariant` accepts `PC` for higher-resolution, indexed-colour textures or `SE` for lower-resolution, higher-colour-depth textures. If the key is omitted, `SE` is selected to preserve the original application behaviour.
+`AreShadowsEnabled` controls the track's baked per-vertex shadow lighting. `Is3DfxEnabled` selects the `SE` 3dfx texture archive when enabled and the `PC` software-renderer archive when disabled.
+
+For compatibility with existing configurations, omitting `Is3DfxEnabled` uses the asset source's `TextureVariant`. `TextureVariant` accepts `PC` or `SE` and defaults to `SE` when omitted.
 
 Supported track identifiers are `ProvingGrounds`, `Outback`, `LastResort`, `NorthCountry`, `PacificSpirit`, `Mediterraneo`, `MysticPeaks`, and `MonolithicStudios`.
 
