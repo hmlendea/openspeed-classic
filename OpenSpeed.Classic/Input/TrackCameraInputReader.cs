@@ -19,6 +19,9 @@ namespace OpenSpeed.Classic.Input
 
             return new TrackCameraInput
             {
+                IsHandbrakeApplied = IsControlPressed(
+                    keyboardState,
+                    controls.Handbrake),
                 MovementInput = GetAxisValue(
                     IsControlPressed(keyboardState, controls.Accelerate),
                     IsControlPressed(keyboardState, controls.Reverse)),

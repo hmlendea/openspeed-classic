@@ -134,6 +134,132 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
         }
 
         [Test]
+        public void GivenTheHandbrakeWhileMoving_WhenUpdating_ThenMostMomentumIsRetained()
+        {
+            CarPhysicsState physicsState = new()
+            {
+                LongitudinalVelocity = 12.0f
+            };
+            Matrix world = Matrix.CreateWorld(Vector3.Zero, Vector3.Forward, Vector3.Up);
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [],
+                physicsState,
+                0.25f,
+                0.0f,
+                0.0f,
+                true);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(updatedWorld.Translation.Z, Is.EqualTo(-2.625f));
+                Assert.That(physicsState.LongitudinalVelocity, Is.EqualTo(9.0f));
+            });
+        }
+
+        [Test]
+        public void GivenTheHandbrakeWhileTurning_WhenUpdating_ThenTheCarDriftsLaterally()
+        {
+            CarPhysicsState physicsState = new()
+            {
+                LongitudinalVelocity = 16.0f
+            };
+            Matrix world = Matrix.CreateWorld(Vector3.Zero, Vector3.Forward, Vector3.Up);
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [],
+                physicsState,
+                0.25f,
+                0.0f,
+                1.0f,
+                true);
+            Vector3 displacement = updatedWorld.Translation - world.Translation;
+            float lateralDisplacement = Vector3.Dot(
+                displacement,
+                updatedWorld.Right);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(lateralDisplacement, Is.LessThan(0.0f));
+                Assert.That(physicsState.LateralVelocity, Is.LessThan(0.0f));
+            });
+        }
+
+        [Test]
+        public void GivenDriftMomentum_WhenReleasingTheHandbrake_ThenTheCarKeepsSliding()
+        {
+            CarPhysicsState physicsState = new()
+            {
+                LateralVelocity = -8.0f,
+                LongitudinalVelocity = 16.0f
+            };
+            Matrix world = Matrix.CreateWorld(Vector3.Zero, Vector3.Forward, Vector3.Up);
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [],
+                physicsState,
+                0.25f,
+                0.0f,
+                0.0f,
+                false);
+            Vector3 displacement = updatedWorld.Translation - world.Translation;
+            float lateralDisplacement = Vector3.Dot(
+                displacement,
+                updatedWorld.Right);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(lateralDisplacement, Is.LessThan(0.0f));
+                Assert.That(physicsState.LateralVelocity, Is.EqualTo(-5.5f));
+            });
+        }
+
+        [Test]
+        public void GivenADriftIntoAWall_WhenUpdating_ThenLateralMomentumIsCancelled()
+        {
+            CarPhysicsState physicsState = new()
+            {
+                LateralVelocity = 8.0f,
+                LongitudinalVelocity = 16.0f
+            };
+            Matrix world = Matrix.CreateWorld(
+                new Vector3(6.0f, 0.0f, 0.0f),
+                Vector3.Forward,
+                Vector3.Up);
+            TrackRoutePoint routePoint = new()
+            {
+                LeftBorderDistance = 8.0,
+                Normal = new TrackVector
+                {
+                    Y = 1.0
+                },
+                Right = new TrackVector
+                {
+                    X = 1.0
+                },
+                RightBorderDistance = 8.0
+            };
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [routePoint],
+                physicsState,
+                0.25f,
+                0.0f,
+                0.0f,
+                true);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(updatedWorld.Translation.X, Is.EqualTo(7.0f));
+                Assert.That(physicsState.LateralVelocity, Is.Zero);
+            });
+        }
+
+        [Test]
         public void GivenNoMomentum_WhenTurning_ThenTheCarDoesNotPivot()
         {
             Matrix world = Matrix.CreateWorld(Vector3.Zero, Vector3.Forward, Vector3.Up);

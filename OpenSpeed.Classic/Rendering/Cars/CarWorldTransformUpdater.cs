@@ -67,6 +67,23 @@ namespace OpenSpeed.Classic.Rendering.Cars
             float elapsedSeconds,
             float movementInput,
             float turningInput)
+            => Update(
+                world,
+                routePoints,
+                physicsState,
+                elapsedSeconds,
+                movementInput,
+                turningInput,
+                false);
+
+        public static Matrix Update(
+            Matrix world,
+            IEnumerable<TrackRoutePoint> routePoints,
+            CarPhysicsState physicsState,
+            float elapsedSeconds,
+            float movementInput,
+            float turningInput,
+            bool isHandbrakeApplied)
         {
             ArgumentNullException.ThrowIfNull(routePoints);
             ArgumentNullException.ThrowIfNull(physicsState);
@@ -76,13 +93,19 @@ namespace OpenSpeed.Classic.Rendering.Cars
                 physicsState,
                 elapsedSeconds,
                 movementInput,
-                turningInput);
+                turningInput,
+                isHandbrakeApplied);
             TrackRouteProjection? routeProjection = TrackRouteProjector.Project(
                 movedWorld.Translation,
                 routePoints);
             Matrix collisionResolvedWorld = CarTrackCollisionResolver.Resolve(
                 movedWorld,
                 routeProjection);
+
+            if (collisionResolvedWorld.Translation != movedWorld.Translation)
+            {
+                physicsState.LateralVelocity = 0.0f;
+            }
 
             return CarGravityResolver.Resolve(
                 collisionResolvedWorld,
@@ -96,25 +119,38 @@ namespace OpenSpeed.Classic.Rendering.Cars
             CarPhysicsState physicsState,
             float elapsedSeconds,
             float movementInput,
-            float turningInput)
+            float turningInput,
+            bool isHandbrakeApplied)
         {
             float previousVelocity = physicsState.LongitudinalVelocity;
+            float previousLateralVelocity = physicsState.LateralVelocity;
             CarLongitudinalVelocityUpdater.Update(
                 physicsState,
                 elapsedSeconds,
-                movementInput);
+                movementInput,
+                isHandbrakeApplied);
+            CarLateralVelocityUpdater.Update(
+                physicsState,
+                elapsedSeconds,
+                turningInput,
+                isHandbrakeApplied);
             float averageVelocity =
                 (previousVelocity + physicsState.LongitudinalVelocity) / 2.0f;
+            float averageLateralVelocity =
+                (previousLateralVelocity + physicsState.LateralVelocity) / 2.0f;
             Vector3 up = NormaliseOrFallback(world.Up, Vector3.Up);
             float rotation = CarSteeringCalculator.CalculateRotation(
                 averageVelocity,
                 turningInput,
-                elapsedSeconds);
+                elapsedSeconds,
+                isHandbrakeApplied);
             Vector3 forward = Vector3.Normalize(Vector3.TransformNormal(
                 world.Forward,
                 Matrix.CreateFromAxisAngle(up, rotation)));
+            Vector3 right = Vector3.Normalize(Vector3.Cross(forward, up));
             Vector3 position = world.Translation +
-                forward * averageVelocity * elapsedSeconds;
+                (forward * averageVelocity + right * averageLateralVelocity) *
+                elapsedSeconds;
 
             return Matrix.CreateWorld(position, forward, up);
         }

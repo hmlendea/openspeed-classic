@@ -38,6 +38,25 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
         }
 
         [Test]
+        public void GivenTheHandbrakeAtVelocity_WhenSteering_ThenYawIsAmplified()
+        {
+            float normalRotation = CarSteeringCalculator.CalculateRotation(
+                8.0f,
+                1.0f,
+                0.25f,
+                false);
+            float handbrakeRotation = CarSteeringCalculator.CalculateRotation(
+                8.0f,
+                1.0f,
+                0.25f,
+                true);
+
+            Assert.That(
+                MathF.Abs(handbrakeRotation),
+                Is.GreaterThan(MathF.Abs(normalRotation)));
+        }
+
+        [Test]
         public void GivenReverseVelocity_WhenSteeringRight_ThenTheRotationIsReversed()
         {
             float rotation = CarSteeringCalculator.CalculateRotation(

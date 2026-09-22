@@ -39,6 +39,10 @@ Original game assets are not distributed with this project. Configure an install
       "Primary": "Down",
       "Secondary": "S"
     },
+    "Handbrake": {
+      "Primary": "Space",
+      "Secondary": "LeftShift"
+    },
     "SteerLeft": {
       "Primary": "Left",
       "Secondary": "A"
@@ -119,14 +123,15 @@ env -u DISPLAY SDL_VIDEODRIVER=wayland \
 
 ## Controls
 - `Up Arrow` or `W`: Accelerate.
-- `Down Arrow` or `S`: Reverse.
+- `Down Arrow` or `S`: Brake, then reverse after stopping.
+- `Space` or `Left Shift`: Apply the handbrake.
 - `Left Arrow` or `A`: Steer left.
 - `Right Arrow` or `D`: Steer right.
 - `Escape`: Exit.
 
 Every driving action has a `Primary` and `Secondary` key in the `Controls` section of [OpenSpeed.Classic/appsettings.json](OpenSpeed.Classic/appsettings.json). Both bindings must be valid, distinct MonoGame key names.
 
-The car accelerates progressively, retains momentum while coasting, decelerates under drag, and brakes to a stop before engaging the opposite direction. Steering uses a wheelbase-based vehicle model, remains responsive at low velocity, reduces steering angle at high velocity, and reverses while travelling backwards.
+The car accelerates progressively, retains momentum while coasting, decelerates under drag, and brakes to a stop before engaging the opposite direction. Steering while applying the handbrake initiates a speed-retaining arcade powerslide with increased yaw and rear slip. Counter-steering stabilises the slide, while releasing the handbrake progressively restores tyre grip. Normal steering uses a wheelbase-based vehicle model, remains responsive at low velocity, reduces steering angle at high velocity, and reverses while travelling backwards.
 
 Asset file hits and misses are written by NuciLog to the console and, when `IsFileOutputEnabled` is enabled, to the configured `LogFilePath`.
 

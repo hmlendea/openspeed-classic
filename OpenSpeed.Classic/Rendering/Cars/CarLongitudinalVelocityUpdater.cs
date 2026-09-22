@@ -12,6 +12,8 @@ namespace OpenSpeed.Classic.Rendering.Cars
 
         private static float ForwardAcceleration => 12.0f;
 
+        private static float HandbrakeDeceleration => 12.0f;
+
         private static float MaximumForwardVelocity => 40.0f;
 
         private static float MaximumReverseVelocity => 16.0f;
@@ -22,6 +24,17 @@ namespace OpenSpeed.Classic.Rendering.Cars
             CarPhysicsState physicsState,
             float elapsedSeconds,
             float movementInput)
+            => Update(
+                physicsState,
+                elapsedSeconds,
+                movementInput,
+                false);
+
+        public static void Update(
+            CarPhysicsState physicsState,
+            float elapsedSeconds,
+            float movementInput,
+            bool isHandbrakeApplied)
         {
             ArgumentNullException.ThrowIfNull(physicsState);
 
@@ -48,7 +61,11 @@ namespace OpenSpeed.Classic.Rendering.Cars
             float targetVelocity = 0.0f;
             float velocityChangeRate = CoastingDeceleration;
 
-            if (clampedMovementInput > 0.0f)
+            if (isHandbrakeApplied)
+            {
+                velocityChangeRate = HandbrakeDeceleration;
+            }
+            else if (clampedMovementInput > 0.0f)
             {
                 targetVelocity = MaximumForwardVelocity * clampedMovementInput;
                 velocityChangeRate = ForwardAcceleration;

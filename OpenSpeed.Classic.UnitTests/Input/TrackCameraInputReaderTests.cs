@@ -65,6 +65,16 @@ namespace OpenSpeed.Classic.UnitTests.Input
             });
         }
 
+        [TestCase(Keys.Space)]
+        [TestCase(Keys.LeftShift)]
+        public void GivenAHandbrakeBinding_WhenReadingInput_ThenTheHandbrakeIsApplied(
+            Keys key)
+        {
+            TrackCameraInput input = TrackCameraInputReader.Read(new KeyboardState(key));
+
+            Assert.That(input.IsHandbrakeApplied);
+        }
+
         [Test]
         public void GivenNullControls_WhenReadingInput_ThenAnArgumentNullExceptionIsThrown()
             => Assert.That(

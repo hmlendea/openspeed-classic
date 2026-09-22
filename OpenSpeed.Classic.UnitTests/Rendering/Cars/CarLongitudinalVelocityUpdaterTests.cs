@@ -101,6 +101,42 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
             });
         }
 
+        [TestCase(12.0f, 9.0f)]
+        [TestCase(-12.0f, -9.0f)]
+        public void GivenTheHandbrakeWhileMoving_WhenUpdating_ThenMostVelocityIsRetained(
+            float initialVelocity,
+            float expectedVelocity)
+        {
+            CarPhysicsState physicsState = new()
+            {
+                LongitudinalVelocity = initialVelocity
+            };
+
+            CarLongitudinalVelocityUpdater.Update(
+                physicsState,
+                0.25f,
+                1.0f,
+                true);
+
+            Assert.That(
+                physicsState.LongitudinalVelocity,
+                Is.EqualTo(expectedVelocity));
+        }
+
+        [Test]
+        public void GivenTheHandbrakeAtRest_WhenUpdating_ThenReverseIsNotEngaged()
+        {
+            CarPhysicsState physicsState = new();
+
+            CarLongitudinalVelocityUpdater.Update(
+                physicsState,
+                1.0f,
+                -1.0f,
+                true);
+
+            Assert.That(physicsState.LongitudinalVelocity, Is.Zero);
+        }
+
         [TestCase(8.0f, 12.0f)]
         [TestCase(-8.0f, -8.0f)]
         public void GivenInputBeyondTheAxisRange_WhenUpdating_ThenTheInputIsClamped(

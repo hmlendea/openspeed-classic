@@ -79,6 +79,7 @@ namespace OpenSpeed.Classic.Configuration
 
             ValidateControlBinding(controls.Accelerate, nameof(controls.Accelerate), filePath);
             ValidateControlBinding(controls.Reverse, nameof(controls.Reverse), filePath);
+            ValidateControlBinding(controls.Handbrake, nameof(controls.Handbrake), filePath);
             ValidateControlBinding(controls.SteerLeft, nameof(controls.SteerLeft), filePath);
             ValidateControlBinding(controls.SteerRight, nameof(controls.SteerRight), filePath);
         }

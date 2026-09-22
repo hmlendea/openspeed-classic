@@ -16,6 +16,12 @@ namespace OpenSpeed.Classic.Configuration
             Secondary = Keys.S
         };
 
+        public ControlBindingSettings Handbrake { get; set; } = new()
+        {
+            Primary = Keys.Space,
+            Secondary = Keys.LeftShift
+        };
+
         public ControlBindingSettings SteerLeft { get; set; } = new()
         {
             Primary = Keys.Left,

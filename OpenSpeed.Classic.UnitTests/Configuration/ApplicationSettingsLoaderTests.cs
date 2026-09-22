@@ -74,9 +74,13 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                       "Primary": "Space",
                       "Secondary": "Enter"
                     },
-                    "Brake": {
+                    "Reverse": {
                       "Primary": "Down",
                       "Secondary": "S"
+                    },
+                    "Handbrake": {
+                      "Primary": "Space",
+                      "Secondary": "LeftShift"
                     },
                     "SteerLeft": {
                       "Primary": "Left",
@@ -113,6 +117,10 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                 Assert.That(settings.NuciLoggerSettings.IsFileOutputEnabled, Is.False);
                 Assert.That(settings.Controls.Accelerate.Primary, Is.EqualTo(Keys.Space));
                 Assert.That(settings.Controls.Accelerate.Secondary, Is.EqualTo(Keys.Enter));
+                Assert.That(settings.Controls.Reverse.Primary, Is.EqualTo(Keys.Down));
+                Assert.That(settings.Controls.Reverse.Secondary, Is.EqualTo(Keys.S));
+                Assert.That(settings.Controls.Handbrake.Primary, Is.EqualTo(Keys.Space));
+                Assert.That(settings.Controls.Handbrake.Secondary, Is.EqualTo(Keys.LeftShift));
             });
         }
 

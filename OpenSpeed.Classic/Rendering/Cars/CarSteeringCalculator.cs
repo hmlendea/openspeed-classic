@@ -9,6 +9,11 @@ namespace OpenSpeed.Classic.Rendering.Cars
         private static float HighVelocitySteeringAngle
             => MathHelper.ToRadians(10.0f);
 
+        private static float HandbrakeMaximumYawVelocity
+            => MathHelper.ToRadians(135.0f);
+
+        private static float HandbrakeYawMultiplier => 1.5f;
+
         private static float LowVelocitySteeringAngle
             => MathHelper.ToRadians(35.0f);
 
@@ -23,6 +28,17 @@ namespace OpenSpeed.Classic.Rendering.Cars
             float longitudinalVelocity,
             float turningInput,
             float elapsedSeconds)
+            => CalculateRotation(
+                longitudinalVelocity,
+                turningInput,
+                elapsedSeconds,
+                false);
+
+        public static float CalculateRotation(
+            float longitudinalVelocity,
+            float turningInput,
+            float elapsedSeconds,
+            bool isHandbrakeApplied)
         {
             if (!float.IsFinite(longitudinalVelocity))
             {
@@ -55,10 +71,18 @@ namespace OpenSpeed.Classic.Rendering.Cars
             float steeringAngle = clampedTurningInput * maximumSteeringAngle;
             float yawVelocity = longitudinalVelocity / Wheelbase *
                 MathF.Tan(steeringAngle);
+            float maximumYawVelocity = MaximumYawVelocity;
+
+            if (isHandbrakeApplied)
+            {
+                yawVelocity *= HandbrakeYawMultiplier;
+                maximumYawVelocity = HandbrakeMaximumYawVelocity;
+            }
+
             yawVelocity = MathHelper.Clamp(
                 yawVelocity,
-                -MaximumYawVelocity,
-                MaximumYawVelocity);
+                -maximumYawVelocity,
+                maximumYawVelocity);
 
             return -yawVelocity * elapsedSeconds;
         }
