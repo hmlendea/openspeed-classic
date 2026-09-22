@@ -259,6 +259,9 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 Centre = centrePoints[blockIdentifier],
                 ClippingPoints = DecodeClippingPoints(data, blockOffset),
                 ConnectedVertexCount = connectedVertexCount,
+                RoadMarkings = NeedForSpeed2TrackRoadMarkingDecoder.Decode(
+                    extraBlocks,
+                    vertices),
                 ScenerySurfaces = NeedForSpeed2TrackSceneryDecoder.Decode(extraBlocks),
                 Surfaces = DecodeSurfaces(
                     data,

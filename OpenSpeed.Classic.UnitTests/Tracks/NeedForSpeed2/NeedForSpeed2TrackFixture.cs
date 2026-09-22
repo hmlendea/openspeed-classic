@@ -64,13 +64,15 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 vertexCount * TrackVertexSize +
                 polygonCount * TrackPolygonSize;
             int extraBlockTableOffset = trackGeometrySize;
-            int objectGeometryBlockOffset = extraBlockTableOffset + sizeof(int) * 3;
+            int objectGeometryBlockOffset = extraBlockTableOffset + sizeof(int) * 4;
             int objectGeometryBlockSize = 48;
             int placementBlockOffset = objectGeometryBlockOffset + objectGeometryBlockSize;
             int placementBlockSize = 52;
             int visibilityBlockOffset = placementBlockOffset + placementBlockSize;
             int visibilityBlockSize = 12;
-            int blockSize = visibilityBlockOffset + visibilityBlockSize;
+            int roadLaneBlockOffset = visibilityBlockOffset + visibilityBlockSize;
+            int roadLaneBlockSize = 16;
+            int blockSize = roadLaneBlockOffset + roadLaneBlockSize;
             byte[] data = new byte[TrackBlockOffset + blockSize];
             Encoding.ASCII.GetBytes("TRAC").CopyTo(data, 0);
             WriteInt32LittleEndian(data, 4, 0x16);
@@ -86,7 +88,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             WriteInt32LittleEndian(data, 0x4C, TrackBlockOffset - 0x40);
             WriteInt32LittleEndian(data, TrackBlockOffset, blockSize);
             WriteInt32LittleEndian(data, TrackBlockOffset + 4, blockSize);
-            WriteInt16LittleEndian(data, TrackBlockOffset + 0x08, 3);
+            WriteInt16LittleEndian(data, TrackBlockOffset + 0x08, 4);
             WriteInt32LittleEndian(data, TrackBlockOffset + 0x0C, 0);
             WriteInt32LittleEndian(
                 data,
@@ -118,6 +120,10 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 data,
                 TrackBlockOffset + extraBlockTableOffset + sizeof(int) * 2,
                 visibilityBlockOffset);
+            WriteInt32LittleEndian(
+                data,
+                TrackBlockOffset + extraBlockTableOffset + sizeof(int) * 3,
+                roadLaneBlockOffset);
             WriteObjectGeometryBlock(
                 data,
                 TrackBlockOffset + objectGeometryBlockOffset);
@@ -127,8 +133,26 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             WriteVisibilityBlock(
                 data,
                 TrackBlockOffset + visibilityBlockOffset);
+            WriteRoadLaneBlock(
+                data,
+                TrackBlockOffset + roadLaneBlockOffset);
 
             return data;
+        }
+
+        private static void WriteRoadLaneBlock(byte[] data, int blockOffset)
+        {
+            WriteInt32LittleEndian(data, blockOffset, 16);
+            WriteInt16LittleEndian(data, blockOffset + 4, 9);
+            WriteInt16LittleEndian(data, blockOffset + 6, 2);
+            data[blockOffset + 8] = 0;
+            data[blockOffset + 9] = 0;
+            data[blockOffset + 10] = 5;
+            data[blockOffset + 11] = 0;
+            data[blockOffset + 12] = 3;
+            data[blockOffset + 13] = 1;
+            data[blockOffset + 14] = byte.MaxValue;
+            data[blockOffset + 15] = 0;
         }
 
         private static byte[] BuildTrackArchive(byte[] trackGeometry)

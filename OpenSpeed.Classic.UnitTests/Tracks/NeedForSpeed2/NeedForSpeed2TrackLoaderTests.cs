@@ -47,7 +47,9 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             TrackSurface surface = block.Surfaces.Single();
             TrackSurface[] blockScenery = block.ScenerySurfaces.ToArray();
             TrackSurface globalScenery = track.ScenerySurfaces.Single();
+            TrackRoadMarking roadMarking = block.RoadMarkings.Single();
             TrackRoutePoint routePoint = track.RoutePoints.Single();
+            TrackPoint[] roadMarkingPoints = roadMarking.Points.ToArray();
             TrackPoint[] points = surface.Points.ToArray();
             TrackMaterial material = track.Materials.Single();
             TrackTexture texture = track.Textures.Single();
@@ -66,6 +68,10 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 Assert.That(block.Centre.X, Is.EqualTo(4.0));
                 Assert.That(block.Centre.Y, Is.EqualTo(8.0));
                 Assert.That(block.Centre.Z, Is.EqualTo(-16.0));
+                Assert.That(roadMarking.Identifier, Is.Zero);
+                Assert.That(roadMarkingPoints, Has.Length.EqualTo(2));
+                Assert.That(roadMarkingPoints[0].X, Is.EqualTo(4.0));
+                Assert.That(roadMarkingPoints[1].Z, Is.EqualTo(-17.0));
                 Assert.That(surface.DetailLevel, Is.EqualTo(TrackGeometryDetailLevel.High));
                 Assert.That(surface.Group, Is.EqualTo(TrackSurfaceGroup.Primary));
                 Assert.That(surface.MaterialIdentifier, Is.Zero);

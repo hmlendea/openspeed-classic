@@ -32,6 +32,10 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         {
             CullMode = CullMode.CullClockwiseFace
         };
+        private readonly RasterizerState roadMarkingRasterizerState = new()
+        {
+            CullMode = CullMode.None
+        };
         private readonly AlphaTestEffect textureEffect = new(graphicsDevice)
         {
             AlphaFunction = CompareFunction.Greater,
@@ -44,6 +48,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         private TrackTextureBatch? horizonDomeBatch;
         private TrackColourBatch? horizonRingBatch;
         private TrackTextureResource? horizonTextureResource;
+        private TrackColourBatch[] roadMarkingBatches = [];
         private TrackTextureBatch[] textureBatches = [];
         private Dictionary<int, TrackTextureResource> textureResources = [];
         private Dictionary<int, HashSet<int>> visibleBlockIdentifiersByBlock = [];
@@ -51,6 +56,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         public bool HasGeometry =>
             colourBatches.Length > 0 ||
+            roadMarkingBatches.Length > 0 ||
             textureBatches.Length > 0;
 
         public void Dispose()
@@ -65,6 +71,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             horizonColourEffect.Dispose();
             horizonTextureEffect.Dispose();
             rasterizerState.Dispose();
+            roadMarkingRasterizerState.Dispose();
             colourEffect.Dispose();
             textureEffect.Dispose();
             isDisposed = true;
@@ -96,10 +103,17 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             HashSet<int>? visibleBlockIdentifiers = ResolveVisibleBlockIdentifiers(
                 camera.Position);
             DrawColourBatches(
+                colourBatches,
                 camera.Position,
                 viewFrustum,
                 visibleBlockIdentifiers);
             DrawTextureBatches(
+                camera.Position,
+                viewFrustum,
+                visibleBlockIdentifiers);
+            graphicsDevice.RasterizerState = roadMarkingRasterizerState;
+            DrawColourBatches(
+                roadMarkingBatches,
                 camera.Position,
                 viewFrustum,
                 visibleBlockIdentifiers);
@@ -148,6 +162,8 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             Dictionary<TrackRenderBatchKey, List<VertexPositionColorTexture>>
                 texturedVertices = [];
             Dictionary<TrackRenderBatchKey, List<VertexPositionColor>> colouredVertices = [];
+            Dictionary<TrackRenderBatchKey, List<VertexPositionColor>>
+                roadMarkingVertices = [];
 
             foreach (TrackBlock trackBlock in trackBlocks)
             {
@@ -165,6 +181,10 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     availableTextureIdentifiers,
                     texturedVertices,
                     colouredVertices);
+                AddRoadMarkings(
+                    trackBlock.Identifier,
+                    trackBlock.RoadMarkings,
+                    roadMarkingVertices);
             }
 
             AddSurfaces(
@@ -175,7 +195,37 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 texturedVertices,
                 colouredVertices);
             colourBatches = CreateColourBatches(colouredVertices);
+            roadMarkingBatches = CreateColourBatches(roadMarkingVertices);
             textureBatches = CreateTextureBatches(texturedVertices);
+        }
+
+        private static void AddRoadMarkings(
+            int blockIdentifier,
+            IEnumerable<TrackRoadMarking> roadMarkings,
+            Dictionary<TrackRenderBatchKey, List<VertexPositionColor>> vertices)
+        {
+            TrackRenderBatchKey batchKey = new(
+                blockIdentifier,
+                TrackGeometryDetailLevel.High,
+                -1);
+
+            foreach (TrackRoadMarking roadMarking in roadMarkings)
+            {
+                VertexPositionColor[] markingVertices =
+                    TrackRoadMarkingVertexBuilder.Build(roadMarking).ToArray();
+
+                if (markingVertices.Length == 0)
+                {
+                    continue;
+                }
+
+                if (!vertices.ContainsKey(batchKey))
+                {
+                    vertices.Add(batchKey, []);
+                }
+
+                vertices[batchKey].AddRange(markingVertices);
+            }
         }
 
         private static void AddSurfaces(
@@ -310,6 +360,11 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 currentColourBatch.Dispose();
             }
 
+            foreach (TrackColourBatch roadMarkingBatch in roadMarkingBatches)
+            {
+                roadMarkingBatch.Dispose();
+            }
+
             foreach (TrackTextureBatch textureBatch in textureBatches)
             {
                 textureBatch.Dispose();
@@ -325,6 +380,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             horizonDomeBatch = null;
             horizonRingBatch = null;
             horizonTextureResource = null;
+            roadMarkingBatches = [];
             textureBatches = [];
             textureResources = [];
             visibleBlockIdentifiersByBlock = [];
@@ -382,11 +438,12 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         }
 
         private void DrawColourBatches(
+            IEnumerable<TrackColourBatch> batches,
             Vector3 cameraPosition,
             BoundingFrustum viewFrustum,
             HashSet<int>? visibleBlockIdentifiers)
         {
-            foreach (TrackColourBatch currentColourBatch in colourBatches)
+            foreach (TrackColourBatch currentColourBatch in batches)
             {
                 if (!IsVisible(
                         currentColourBatch.BlockIdentifier,
