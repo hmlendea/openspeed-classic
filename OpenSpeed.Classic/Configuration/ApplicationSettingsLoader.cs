@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 
 using OpenSpeed.Classic.Assets;
+using OpenSpeed.Classic.Cars;
 
 namespace OpenSpeed.Classic.Configuration
 {
@@ -55,9 +56,49 @@ namespace OpenSpeed.Classic.Configuration
             }
 
             ValidateAssetSources(settings.Assets.Sources, filePath);
+            ValidateStartupCar(settings.StartupCar, filePath);
             ValidateStartupTrack(settings.StartupTrack, filePath);
 
             return settings;
+        }
+
+        private static void ValidateStartupCar(
+            StartupCarSettings startupCar,
+            string filePath)
+        {
+            if (startupCar is null)
+            {
+                throw new InvalidDataException(
+                    $"The application settings file '{filePath}' contains no startup car.");
+            }
+
+            if (!Enum.TryParse(
+                    startupCar.Game,
+                    true,
+                    out GameVersion gameVersion) ||
+                !Enum.IsDefined(gameVersion))
+            {
+                throw new InvalidDataException(
+                    $"The application settings file '{filePath}' contains the unsupported " +
+                    $"startup car game value '{startupCar.Game}'.");
+            }
+
+            if (string.IsNullOrWhiteSpace(startupCar.Identifier))
+            {
+                throw new InvalidDataException(
+                    $"The startup car identifier in '{filePath}' is empty.");
+            }
+
+            if (!Enum.TryParse(
+                    startupCar.Identifier,
+                    true,
+                    out CarIdentifier carIdentifier) ||
+                !Enum.IsDefined(carIdentifier))
+            {
+                throw new InvalidDataException(
+                    $"The application settings file '{filePath}' contains the unsupported " +
+                    $"startup car identifier '{startupCar.Identifier}'.");
+            }
         }
 
         private static void ValidateAssetSources(

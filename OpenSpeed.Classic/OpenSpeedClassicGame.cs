@@ -1,12 +1,15 @@
 using System;
 using System.IO;
+using System.Linq;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
+using OpenSpeed.Classic.Cars;
 using OpenSpeed.Classic.Configuration;
 using OpenSpeed.Classic.Input;
+using OpenSpeed.Classic.Rendering.Cars;
 using OpenSpeed.Classic.Rendering.Tracks;
 using OpenSpeed.Classic.Tracks;
 
@@ -17,9 +20,13 @@ namespace OpenSpeed.Classic
         private readonly GraphicsDeviceManager graphicsDeviceManager;
         private readonly bool areShadowsEnabled = true;
         private readonly string? captureFramePath;
+        private ICarRenderer? carRenderer;
+        private Matrix? carWorld;
         private bool hasCapturedDiagnosticFrame;
         private TrackCamera? trackCamera;
         private ITrackRenderer? trackRenderer;
+
+        public LoadedCar? CurrentCar { get; }
 
         public LoadedTrack? CurrentTrack { get; }
 
@@ -60,6 +67,15 @@ namespace OpenSpeed.Classic
             LoadedTrack loadedTrack,
             RenderingSettings renderingSettings,
             string? captureFramePath)
+            : this(loadedTrack, null, renderingSettings, captureFramePath)
+        {
+        }
+
+        public OpenSpeedClassicGame(
+            LoadedTrack loadedTrack,
+            LoadedCar? loadedCar,
+            RenderingSettings renderingSettings,
+            string? captureFramePath)
             : this()
         {
             ArgumentNullException.ThrowIfNull(loadedTrack);
@@ -71,6 +87,7 @@ namespace OpenSpeed.Classic
             }
 
             areShadowsEnabled = renderingSettings.AreShadowsEnabled;
+            CurrentCar = loadedCar;
             CurrentTrack = loadedTrack;
             Window.Title = $"{WindowTitle} - {loadedTrack.DisplayName}";
         }
@@ -94,6 +111,14 @@ namespace OpenSpeed.Classic
                 CurrentTrack.RoutePoints);
             trackRenderer = new TrackRenderer(GraphicsDevice, areShadowsEnabled);
             trackRenderer.Load(CurrentTrack);
+            LoadedCar? currentCar = CurrentCar;
+
+            if (currentCar is not null && CurrentTrack.RoutePoints.Any())
+            {
+                carWorld = CarWorldTransformBuilder.Build(CurrentTrack.RoutePoints);
+                carRenderer = new CarRenderer(GraphicsDevice);
+                carRenderer.Load(currentCar);
+            }
         }
 
         protected override void Update(GameTime gameTime)
@@ -127,6 +152,9 @@ namespace OpenSpeed.Classic
                     trackCamera,
                     GraphicsDevice.Viewport.Width,
                     GraphicsDevice.Viewport.Height);
+                DrawCar(
+                    GraphicsDevice.Viewport.Width,
+                    GraphicsDevice.Viewport.Height);
                 CaptureDiagnosticFrame();
             }
 
@@ -158,6 +186,7 @@ namespace OpenSpeed.Classic
             {
                 GraphicsDevice.Clear(BackgroundColour);
                 trackRenderer.Draw(trackCamera, width, height);
+                DrawCar(width, height);
             }
             finally
             {
@@ -177,8 +206,24 @@ namespace OpenSpeed.Classic
             Exit();
         }
 
+        private void DrawCar(int viewportWidth, int viewportHeight)
+        {
+            if (carRenderer is null || carWorld is null || trackCamera is null)
+            {
+                return;
+            }
+
+            carRenderer.Draw(
+                trackCamera,
+                carWorld.Value,
+                viewportWidth,
+                viewportHeight);
+        }
+
         protected override void UnloadContent()
         {
+            carRenderer?.Dispose();
+            carRenderer = null;
             trackRenderer?.Dispose();
             trackRenderer = null;
 

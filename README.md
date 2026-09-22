@@ -1,6 +1,6 @@
 # OpenSpeed Classic
 
-OpenSpeed Classic is a .NET 10 arcade racing game built on MonoGame via the NuciXNA package family. It loads and renders track geometry, placed scenery, materials, textures, and horizons from an original Need for Speed II Special Edition installation.
+OpenSpeed Classic is a .NET 10 arcade racing game built on MonoGame via the NuciXNA package family. It loads and renders track geometry, placed scenery, materials, textures, horizons, and a selected player car from an original Need for Speed II Special Edition installation.
 
 ## Project Structure
 
@@ -8,7 +8,9 @@ OpenSpeed Classic is a .NET 10 arcade racing game built on MonoGame via the Nuci
 - [OpenSpeed.Classic](OpenSpeed.Classic) contains the game executable project.
 - [OpenSpeed.Classic.UnitTests](OpenSpeed.Classic.UnitTests) contains the NUnit unit test project.
 - [OpenSpeed.Classic/OpenSpeedClassicGame.cs](OpenSpeed.Classic/OpenSpeedClassicGame.cs) owns the MonoGame lifecycle, camera input, and track rendering.
+- [OpenSpeed.Classic/Cars](OpenSpeed.Classic/Cars) contains renderer-neutral car models, NFS II car asset decoding, and loading orchestration.
 - [OpenSpeed.Classic/Input](OpenSpeed.Classic/Input) contains keyboard-to-camera input mapping.
+- [OpenSpeed.Classic/Rendering/Cars](OpenSpeed.Classic/Rendering/Cars) contains car vertex conversion, GPU resources, world placement, and rendering.
 - [OpenSpeed.Classic/Rendering/Tracks](OpenSpeed.Classic/Rendering/Tracks) contains the track camera, horizon, vertex conversion, neighbour visibility, dynamic LOD, GPU batches, and renderer.
 - [OpenSpeed.Classic/Tracks](OpenSpeed.Classic/Tracks) contains renderer-neutral track models and loading contracts.
 - [OpenSpeed.Classic/Tracks/NeedForSpeed2](OpenSpeed.Classic/Tracks/NeedForSpeed2) contains the Need for Speed II catalogue and binary decoders.
@@ -31,6 +33,10 @@ Original game assets are not distributed with this project. Configure an install
     "AreShadowsEnabled": true,
     "Is3DfxEnabled": false
   },
+  "StartupCar": {
+    "Game": "NeedForSpeed2SpecialEdition",
+    "Identifier": "McLarenF1"
+  },
   "StartupTrack": {
     "Game": "NeedForSpeed2SpecialEdition",
     "Identifier": "Outback"
@@ -42,9 +48,13 @@ Relative asset roots are resolved from the process working directory. Paths with
 
 `AreShadowsEnabled` controls the track's baked per-vertex shadow lighting. `Is3DfxEnabled` selects the `SE` 3dfx texture archive when enabled and the `PC` software-renderer archive when disabled.
 
+The player car is loaded from `gamedata/sim/cardata/cardata.viv` and `gamedata/carmodel/pc` beneath the configured asset root. It is positioned at the first decoded route point and rendered after the track. Omitting `StartupCar` selects `McLarenF1`.
+
 For compatibility with existing configurations, omitting `Is3DfxEnabled` uses the asset source's `TextureVariant`. `TextureVariant` accepts `PC` or `SE` and defaults to `SE` when omitted.
 
 Supported track identifiers are `ProvingGrounds`, `Outback`, `LastResort`, `NorthCountry`, `PacificSpirit`, `Mediterraneo`, `MysticPeaks`, and `MonolithicStudios`.
+
+Supported car identifiers are `McLarenF1`, `FerrariF50`, `FerrariF355`, `FordGT90`, `FordIndigo`, `FordMustangMachIII`, `JaguarXJ220`, `LotusGT1`, `LotusEspritV8`, `ItaldesignNazcaC2`, `ItaldesignCala`, `IsderaCommendatore`, `BonusCarChevrolet`, `BonusCarDaytona`, and `BonusCarFuture`.
 
 The generic loading service selects an `ITrackFormatLoader` by game version. Additional NFS1 or NFS3 implementations can provide their own catalogue and format decoders while returning the same renderer-neutral `LoadedTrack` model.
 

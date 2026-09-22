@@ -6,6 +6,8 @@ namespace OpenSpeed.Classic.Configuration
 
         public RenderingSettings Rendering { get; set; } = new();
 
+        public StartupCarSettings StartupCar { get; set; } = new();
+
         public StartupTrackSettings StartupTrack { get; set; } = new();
     }
 }
