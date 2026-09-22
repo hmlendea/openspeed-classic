@@ -12,6 +12,10 @@ namespace OpenSpeed.Classic.Configuration
     {
         private static readonly JsonSerializerOptions serializerOptions = new()
         {
+            Converters =
+            {
+                new TrackTextureVariantJsonConverter()
+            },
             PropertyNameCaseInsensitive = true,
             ReadCommentHandling = JsonCommentHandling.Skip
         };

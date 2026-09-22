@@ -7,5 +7,11 @@ namespace OpenSpeed.Classic.Tracks.Loading
         public GameVersion Game { get; }
 
         public LoadedTrack Load(string rootDirectory, string trackIdentifier);
+
+        public LoadedTrack Load(
+            string rootDirectory,
+            string trackIdentifier,
+            TrackTextureVariant textureVariant)
+            => Load(rootDirectory, trackIdentifier);
     }
 }

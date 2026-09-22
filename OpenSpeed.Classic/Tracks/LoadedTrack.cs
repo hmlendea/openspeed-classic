@@ -18,6 +18,8 @@ namespace OpenSpeed.Classic.Tracks
 
         public IEnumerable<TrackMaterial> Materials { get; set; } = [];
 
+        public IEnumerable<TrackRoutePoint> RoutePoints { get; set; } = [];
+
         public IEnumerable<TrackSurface> ScenerySurfaces { get; set; } = [];
 
         public IEnumerable<TrackAssetFile> SourceFiles { get; set; } = [];

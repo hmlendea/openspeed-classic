@@ -62,7 +62,9 @@ namespace OpenSpeed.Classic
                 return;
             }
 
-            trackCamera = new TrackCamera(CurrentTrack.Blocks);
+            trackCamera = new TrackCamera(
+                CurrentTrack.Blocks,
+                CurrentTrack.RoutePoints);
             trackRenderer = new TrackRenderer(GraphicsDevice);
             trackRenderer.Load(CurrentTrack);
         }

@@ -40,6 +40,67 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             });
         }
 
+        [Test]
+        public void GivenARoutePoint_WhenConstructing_ThenItsPositionAndBasisAreUsed()
+        {
+            TrackBlock[] trackBlocks =
+            [
+                BuildTrackBlock(0.0, 0.0, 0.0),
+                BuildTrackBlock(0.0, 0.0, -16.0)
+            ];
+            TrackRoutePoint routePoint = new()
+            {
+                Position = new TrackPoint
+                {
+                    X = 10.0,
+                    Y = 20.0,
+                    Z = 30.0
+                },
+                Forward = new TrackVector
+                {
+                    X = 1.0
+                },
+                Normal = new TrackVector
+                {
+                    Y = 1.0
+                }
+            };
+
+            TrackCamera camera = new(trackBlocks, [routePoint]);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(camera.Position, Is.EqualTo(new Vector3(4.0f, 23.0f, 30.0f)));
+                Assert.That(camera.Direction.X, Is.GreaterThan(0.0f));
+                Assert.That(camera.Direction.Y, Is.LessThan(0.0f));
+                Assert.That(camera.Direction.Z, Is.Zero.Within(PositionTolerance));
+                Assert.That(camera.Up, Is.EqualTo(Vector3.Up));
+            });
+        }
+
+        [Test]
+        public void GivenAZeroRouteBasis_WhenConstructing_ThenTheBlockDirectionIsUsed()
+        {
+            TrackBlock[] trackBlocks =
+            [
+                BuildTrackBlock(0.0, 0.0, 0.0),
+                BuildTrackBlock(0.0, 0.0, -16.0)
+            ];
+            TrackRoutePoint routePoint = new()
+            {
+                Position = new TrackPoint()
+            };
+
+            TrackCamera camera = new(trackBlocks, [routePoint]);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(camera.Position, Is.EqualTo(new Vector3(0.0f, 3.0f, 6.0f)));
+                Assert.That(camera.Direction.Z, Is.LessThan(0.0f));
+                Assert.That(camera.Up, Is.EqualTo(Vector3.Up));
+            });
+        }
+
         [TestCase(1.0f, -14.0f)]
         [TestCase(-1.0f, 26.0f)]
         public void GivenMovementInput_WhenUpdating_ThenTheCameraMovesHorizontally(

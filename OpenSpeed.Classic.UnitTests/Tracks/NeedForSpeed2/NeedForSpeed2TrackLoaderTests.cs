@@ -39,11 +39,15 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
         [Test]
         public void GivenACompleteNfs2Installation_WhenLoadingOutback_ThenTrackAssetsAreDecoded()
         {
-            LoadedTrack track = trackLoader.Load(testDirectory, "outback");
+            LoadedTrack track = trackLoader.Load(
+                testDirectory,
+                "outback",
+                TrackTextureVariant.SE);
             TrackBlock block = track.Blocks.Single();
             TrackSurface surface = block.Surfaces.Single();
             TrackSurface[] blockScenery = block.ScenerySurfaces.ToArray();
             TrackSurface globalScenery = track.ScenerySurfaces.Single();
+            TrackRoutePoint routePoint = track.RoutePoints.Single();
             TrackPoint[] points = surface.Points.ToArray();
             TrackMaterial material = track.Materials.Single();
             TrackTexture texture = track.Textures.Single();
@@ -79,6 +83,13 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 Assert.That(blockScenery[0].Group, Is.EqualTo(TrackSurfaceGroup.Unrestricted));
                 Assert.That(block.VisibleBlockIdentifiers, Is.EqualTo(new[] { 0, 42 }));
                 Assert.That(globalScenery.Points.First().X, Is.EqualTo(10.0));
+                Assert.That(routePoint.BlockIdentifier, Is.Zero);
+                Assert.That(routePoint.Position.X, Is.EqualTo(4.0));
+                Assert.That(routePoint.Position.Y, Is.EqualTo(8.0));
+                Assert.That(routePoint.Position.Z, Is.EqualTo(-16.0));
+                Assert.That(routePoint.Normal.Y, Is.EqualTo(127.0));
+                Assert.That(routePoint.Forward.Z, Is.EqualTo(-127.0));
+                Assert.That(routePoint.Right.X, Is.EqualTo(127.0));
                 Assert.That(material.Identifier, Is.Zero);
                 Assert.That(material.TextureIdentifier, Is.Zero);
                 Assert.That(material.Alignment, Is.EqualTo(0x0401));
@@ -92,6 +103,28 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 Assert.That(pixel.Green, Is.EqualTo(32));
                 Assert.That(pixel.Blue, Is.EqualTo(16));
                 Assert.That(pixel.Alpha, Is.EqualTo(byte.MaxValue));
+            });
+        }
+
+        [Test]
+        public void GivenPcTextures_WhenLoadingOutback_ThenThePcTextureArchiveIsDecoded()
+        {
+            LoadedTrack track = trackLoader.Load(
+                testDirectory,
+                "Outback",
+                TrackTextureVariant.PC);
+            TrackTexture texture = track.Textures.Single();
+            TrackAssetFile textureSource = track.SourceFiles.Single(
+                sourceFile => Equals(sourceFile.Role, TrackAssetRole.Textures));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(texture.Name, Is.EqualTo("PCTX"));
+                Assert.That(
+                    textureSource.Path,
+                    Is.EqualTo(Path.Combine(
+                        testDirectory,
+                        NeedForSpeed2TrackFixture.PcTextureRelativePath)));
             });
         }
 

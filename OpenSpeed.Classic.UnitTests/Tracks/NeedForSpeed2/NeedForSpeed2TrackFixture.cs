@@ -18,22 +18,40 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
         internal static string MaterialRelativePath
             => Path.Combine("gAmEdAtA", "tRaCkS", "sE", "TR02.COL");
 
+        internal static string PcTextureRelativePath
+            => Path.Combine("gAmEdAtA", "tRaCkS", "pC", "TR020.QFS");
+
         internal static void Write(string rootDirectory)
         {
-            string trackDirectory = Path.Combine(rootDirectory, "gAmEdAtA", "tRaCkS", "sE");
-            Directory.CreateDirectory(trackDirectory);
+            string specialEditionTrackDirectory = Path.Combine(
+                rootDirectory,
+                "gAmEdAtA",
+                "tRaCkS",
+                "sE");
+            string pcTrackDirectory = Path.Combine(
+                rootDirectory,
+                "gAmEdAtA",
+                "tRaCkS",
+                "pC");
+            Directory.CreateDirectory(specialEditionTrackDirectory);
+            Directory.CreateDirectory(pcTrackDirectory);
             File.WriteAllBytes(
-                Path.Combine(trackDirectory, "TR02.TRK"),
+                Path.Combine(specialEditionTrackDirectory, "TR02.TRK"),
                 BuildTrackArchive(BuildTrackGeometry()));
-            File.WriteAllBytes(Path.Combine(trackDirectory, "TR02.COL"), BuildMaterials());
             File.WriteAllBytes(
-                Path.Combine(trackDirectory, "TR020.QFS"),
+                Path.Combine(specialEditionTrackDirectory, "TR02.COL"),
+                BuildMaterials());
+            File.WriteAllBytes(
+                Path.Combine(specialEditionTrackDirectory, "TR020.QFS"),
                 CompressWithLiteralCommands(BuildTextureArchive("TEST")));
+            File.WriteAllBytes(
+                Path.Combine(pcTrackDirectory, "TR020.QFS"),
+                CompressWithLiteralCommands(BuildTextureArchive("PCTX")));
             File.WriteAllText(
-                Path.Combine(trackDirectory, "3TR02.HRZ"),
+                Path.Combine(specialEditionTrackDirectory, "3TR02.HRZ"),
                 BuildHorizon());
             File.WriteAllBytes(
-                Path.Combine(trackDirectory, "SKY.FSH"),
+                Path.Combine(specialEditionTrackDirectory, "SKY.FSH"),
                 BuildTextureArchive("CLD2"));
         }
 
@@ -133,7 +151,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
 
         private static byte[] BuildMaterials()
         {
-            int recordCount = 3;
+            int recordCount = 4;
             int recordOffsetTableSize = recordCount * sizeof(int);
             int materialRecordOffset = recordOffsetTableSize;
             int materialRecordSize = 18;
@@ -141,7 +159,9 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             int objectGeometryRecordSize = 48;
             int placementRecordOffset = objectGeometryRecordOffset + objectGeometryRecordSize;
             int placementRecordSize = 24;
-            byte[] data = new byte[16 + placementRecordOffset + placementRecordSize];
+            int routeRecordOffset = placementRecordOffset + placementRecordSize;
+            int routeRecordSize = 44;
+            byte[] data = new byte[16 + routeRecordOffset + routeRecordSize];
             Encoding.ASCII.GetBytes("COLL").CopyTo(data, 0);
             WriteInt32LittleEndian(data, 4, 0x0B);
             WriteInt32LittleEndian(data, 8, data.Length);
@@ -149,6 +169,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             WriteInt32LittleEndian(data, 16, materialRecordOffset);
             WriteInt32LittleEndian(data, 20, objectGeometryRecordOffset);
             WriteInt32LittleEndian(data, 24, placementRecordOffset);
+            WriteInt32LittleEndian(data, 28, routeRecordOffset);
             int materialFileOffset = 16 + materialRecordOffset;
             WriteInt32LittleEndian(data, materialFileOffset, materialRecordSize);
             WriteInt16LittleEndian(data, materialFileOffset + 4, 2);
@@ -172,6 +193,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 10 * 65536,
                 8 * 65536,
                 18 * 65536);
+            WriteRouteBlock(data, 16 + routeRecordOffset);
 
             return data;
         }
@@ -239,6 +261,27 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             WriteInt16LittleEndian(data, blockOffset + 6, 2);
             WriteInt16LittleEndian(data, blockOffset + 8, 0);
             WriteInt16LittleEndian(data, blockOffset + 10, 42);
+        }
+
+        private static void WriteRouteBlock(byte[] data, int blockOffset)
+        {
+            WriteInt32LittleEndian(data, blockOffset, 44);
+            WriteInt16LittleEndian(data, blockOffset + 4, 15);
+            WriteInt16LittleEndian(data, blockOffset + 6, 1);
+            int payloadOffset = blockOffset + 8;
+            WriteInt32LittleEndian(data, payloadOffset, 4 * 65536);
+            WriteInt32LittleEndian(data, payloadOffset + 4, 8 * 65536);
+            WriteInt32LittleEndian(data, payloadOffset + 8, 16 * 65536);
+            data[payloadOffset + 12] = 0;
+            data[payloadOffset + 13] = 127;
+            data[payloadOffset + 14] = 0;
+            data[payloadOffset + 15] = 0;
+            data[payloadOffset + 16] = 0;
+            data[payloadOffset + 17] = 127;
+            data[payloadOffset + 18] = 127;
+            data[payloadOffset + 19] = 0;
+            data[payloadOffset + 20] = 0;
+            WriteInt16LittleEndian(data, payloadOffset + 22, 0);
         }
 
         private static void WriteBasicPlacement(

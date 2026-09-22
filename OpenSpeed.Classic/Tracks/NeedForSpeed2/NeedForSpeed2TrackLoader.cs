@@ -14,9 +14,16 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
         public GameVersion Game => GameVersion.NeedForSpeed2SpecialEdition;
 
         public LoadedTrack Load(string rootDirectory, string trackIdentifier)
+            => Load(rootDirectory, trackIdentifier, TrackTextureVariant.SE);
+
+        public LoadedTrack Load(
+            string rootDirectory,
+            string trackIdentifier,
+            TrackTextureVariant textureVariant)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(rootDirectory);
             ArgumentException.ThrowIfNullOrWhiteSpace(trackIdentifier);
+            ArgumentNullException.ThrowIfNull(textureVariant);
 
             if (!Directory.Exists(rootDirectory))
             {
@@ -40,7 +47,9 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 NeedForSpeed2TrackCatalogue.GetSkyTextureRelativePath());
             string texturePath = ResolveRequiredFile(
                 rootDirectory,
-                NeedForSpeed2TrackCatalogue.GetTextureRelativePath(parsedIdentifier));
+                NeedForSpeed2TrackCatalogue.GetTextureRelativePath(
+                    parsedIdentifier,
+                    textureVariant));
             byte[] geometryData = NeedForSpeed2TrackArchiveReader.Read(
                 File.ReadAllBytes(geometryPath));
             TrackBlock[] blocks = NeedForSpeed2TrackGeometryDecoder
@@ -52,6 +61,9 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 .. NeedForSpeed2TrackExtraBlockReader.ReadCollection(collectionData)
             ];
             TrackMaterial[] materials = NeedForSpeed2TrackMaterialDecoder
+                .Decode(collectionExtraBlocks)
+                .ToArray();
+            TrackRoutePoint[] routePoints = NeedForSpeed2TrackRouteDecoder
                 .Decode(collectionExtraBlocks)
                 .ToArray();
             TrackSurface[] globalScenerySurfaces = NeedForSpeed2TrackSceneryDecoder
@@ -78,6 +90,7 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 Blocks = blocks,
                 Horizon = horizon,
                 Materials = materials,
+                RoutePoints = routePoints,
                 ScenerySurfaces = globalScenerySurfaces,
                 Textures = textures,
                 SourceFiles = BuildSourceFiles(

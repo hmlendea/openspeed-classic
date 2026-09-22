@@ -1,9 +1,11 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 
 using NUnit.Framework;
 
+using OpenSpeed.Classic.Assets;
 using OpenSpeed.Classic.Configuration;
 
 namespace OpenSpeed.Classic.UnitTests.Configuration
@@ -43,7 +45,8 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                     "Sources": [
                       {
                         "Game": "NeedForSpeed2SpecialEdition",
-                        "RootDirectory": "/test-assets"
+                        "RootDirectory": "/test-assets",
+                        "TextureVariant": "PC"
                       }
                     ]
                   },
@@ -61,11 +64,60 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
             {
                 Assert.That(assetSource.Game, Is.EqualTo("NeedForSpeed2SpecialEdition"));
                 Assert.That(assetSource.RootDirectory, Is.EqualTo("/test-assets"));
+                Assert.That(assetSource.TextureVariant, Is.EqualTo(TrackTextureVariant.PC));
                 Assert.That(
                     settings.StartupTrack.Game,
                     Is.EqualTo("NeedForSpeed2SpecialEdition"));
                 Assert.That(settings.StartupTrack.Identifier, Is.EqualTo("Outback"));
             });
+        }
+
+        [Test]
+        public void GivenNoTextureVariant_WhenLoading_ThenSpecialEditionTexturesAreSelected()
+        {
+            string filePath = WriteSettings(
+                BuildSettingsJson(
+                    "NeedForSpeed2SpecialEdition",
+                    "/test-assets",
+                    "NeedForSpeed2SpecialEdition",
+                    "Outback"));
+
+            ApplicationSettings settings = settingsLoader.Load(filePath);
+
+            Assert.That(
+                settings.Assets.Sources.Single().TextureVariant,
+                Is.EqualTo(TrackTextureVariant.SE));
+        }
+
+        [TestCase("\"Minecraft\"")]
+        [TestCase("\" \"")]
+        [TestCase("42")]
+        [TestCase("null")]
+        public void GivenAnInvalidTextureVariant_WhenLoading_ThenJsonExceptionIsThrown(
+            string textureVariant)
+        {
+            string filePath = WriteSettings(
+                $$"""
+                {
+                  "Assets": {
+                    "Sources": [
+                      {
+                        "Game": "NeedForSpeed2SpecialEdition",
+                        "RootDirectory": "/test-assets",
+                        "TextureVariant": {{textureVariant}}
+                      }
+                    ]
+                  },
+                  "StartupTrack": {
+                    "Game": "NeedForSpeed2SpecialEdition",
+                    "Identifier": "Outback"
+                  }
+                }
+                """);
+
+            Assert.That(
+                () => settingsLoader.Load(filePath),
+                Throws.TypeOf<JsonException>());
         }
 
         [Test]
@@ -178,4 +230,4 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                 }
                 """;
     }
-}
+  }

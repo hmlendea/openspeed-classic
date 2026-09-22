@@ -1,13 +1,18 @@
 using System;
 using System.IO;
 
+using OpenSpeed.Classic.Assets;
+
 namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
 {
     internal static class NeedForSpeed2TrackCatalogue
     {
         private static int TextureNumberMultiplier => 10;
 
-        private static string TrackDirectory => Path.Combine("GameData", "Tracks", "SE");
+        private static string TrackDirectory => Path.Combine("GameData", "Tracks");
+
+        private static string SpecialEditionTrackDirectory
+            => Path.Combine(TrackDirectory, TrackTextureVariant.SE.Name);
 
         internal static string GetDisplayName(NeedForSpeed2TrackIdentifier trackIdentifier)
             => trackIdentifier switch
@@ -29,25 +34,27 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
         internal static string GetGeometryRelativePath(
             NeedForSpeed2TrackIdentifier trackIdentifier)
             => Path.Combine(
-                TrackDirectory,
+                SpecialEditionTrackDirectory,
                 $"Tr{GetOriginalTrackNumber(trackIdentifier):D2}.trk");
 
         internal static string GetHorizonRelativePath(
             NeedForSpeed2TrackIdentifier trackIdentifier)
             => Path.Combine(
-                TrackDirectory,
+                SpecialEditionTrackDirectory,
                 $"3Tr{GetOriginalTrackNumber(trackIdentifier):D2}.hrz");
 
         internal static string GetMaterialRelativePath(
             NeedForSpeed2TrackIdentifier trackIdentifier)
             => Path.Combine(
-                TrackDirectory,
+                SpecialEditionTrackDirectory,
                 $"Tr{GetOriginalTrackNumber(trackIdentifier):D2}.col");
 
         internal static string GetTextureRelativePath(
-            NeedForSpeed2TrackIdentifier trackIdentifier)
+            NeedForSpeed2TrackIdentifier trackIdentifier,
+            TrackTextureVariant textureVariant)
             => Path.Combine(
                 TrackDirectory,
+                textureVariant.Name,
                 $"Tr{GetOriginalTrackNumber(trackIdentifier) * TextureNumberMultiplier:D3}.qfs");
 
         internal static string GetSkyTextureName(
@@ -55,7 +62,7 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
             => $"CLD{GetOriginalTrackNumber(trackIdentifier)}";
 
         internal static string GetSkyTextureRelativePath()
-            => Path.Combine(TrackDirectory, "sky.fsh");
+            => Path.Combine(SpecialEditionTrackDirectory, "sky.fsh");
 
         internal static NeedForSpeed2TrackIdentifier ParseIdentifier(string trackIdentifier)
         {

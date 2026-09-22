@@ -23,7 +23,8 @@ Original game assets are not distributed with this project. Configure an install
     "Sources": [
       {
         "Game": "NeedForSpeed2SpecialEdition",
-        "RootDirectory": "/path/to/NFS2 SE"
+        "RootDirectory": "/path/to/NFS2 SE",
+        "TextureVariant": "PC"
       }
     ]
   },
@@ -35,6 +36,8 @@ Original game assets are not distributed with this project. Configure an install
 ```
 
 Relative asset roots are resolved from the process working directory. Paths within an original Windows installation are resolved case-insensitively on every platform.
+
+`TextureVariant` accepts `PC` for higher-resolution, indexed-colour textures or `SE` for lower-resolution, higher-colour-depth textures. If the key is omitted, `SE` is selected to preserve the original application behaviour.
 
 Supported track identifiers are `ProvingGrounds`, `Outback`, `LastResort`, `NorthCountry`, `PacificSpirit`, `Mediterraneo`, `MysticPeaks`, and `MonolithicStudios`.
 

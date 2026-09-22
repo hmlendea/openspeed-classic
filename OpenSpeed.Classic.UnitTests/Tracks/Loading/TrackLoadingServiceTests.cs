@@ -31,7 +31,8 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
                         new AssetSourceSettings
                         {
                             Game = nameof(GameVersion.NeedForSpeed2SpecialEdition),
-                            RootDirectory = AssetRootDirectory
+                            RootDirectory = AssetRootDirectory,
+                            TextureVariant = TrackTextureVariant.PC
                         }
                     ]
                 }
@@ -51,7 +52,10 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
                 Identifier = "Outback"
             };
             formatLoader
-                .Setup(loader => loader.Load(AssetRootDirectory, "Outback"))
+                .Setup(loader => loader.Load(
+                    AssetRootDirectory,
+                    "Outback",
+                    TrackTextureVariant.PC))
                 .Returns(expectedTrack);
             TrackLoadRequest request = new()
             {
@@ -63,7 +67,10 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
 
             Assert.That(track, Is.SameAs(expectedTrack));
             formatLoader.Verify(
-                loader => loader.Load(AssetRootDirectory, "Outback"),
+                loader => loader.Load(
+                    AssetRootDirectory,
+                    "Outback",
+                    TrackTextureVariant.PC),
                 Times.Once);
         }
 

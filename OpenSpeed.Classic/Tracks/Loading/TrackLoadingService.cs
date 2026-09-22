@@ -35,7 +35,10 @@ namespace OpenSpeed.Classic.Tracks.Loading
                     $"No track loader supports '{request.Game}'.");
             }
 
-            return trackFormatLoader.Load(assetSource.RootDirectory, request.Identifier);
+            return trackFormatLoader.Load(
+                assetSource.RootDirectory,
+                request.Identifier,
+                assetSource.TextureVariant);
         }
 
         private static bool IsConfiguredFor(

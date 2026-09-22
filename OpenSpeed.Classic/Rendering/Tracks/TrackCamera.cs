@@ -35,8 +35,16 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         private static float TurnVelocity => MathHelper.ToRadians(90.0f);
 
         public TrackCamera(IEnumerable<TrackBlock> trackBlocks)
+            : this(trackBlocks, [])
+        {
+        }
+
+        public TrackCamera(
+            IEnumerable<TrackBlock> trackBlocks,
+            IEnumerable<TrackRoutePoint> routePoints)
         {
             ArgumentNullException.ThrowIfNull(trackBlocks);
+            ArgumentNullException.ThrowIfNull(routePoints);
 
             Vector3[] centres = trackBlocks
                 .Select(trackBlock => ToVector3(trackBlock.Centre))
@@ -49,13 +57,33 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     nameof(trackBlocks));
             }
 
+            TrackRoutePoint? firstRoutePoint = routePoints.FirstOrDefault();
+            Vector3 targetPosition = centres[0];
             Vector3 trackDirection = GetTrackDirection(centres);
-            Position = centres[0] -
+            Vector3 up = Vector3.Up;
+
+            if (firstRoutePoint is not null)
+            {
+                targetPosition = ToVector3(firstRoutePoint.Position);
+                trackDirection = NormaliseOrFallback(
+                    ToVector3(firstRoutePoint.Forward),
+                    trackDirection);
+                up = NormaliseOrFallback(
+                    ToVector3(firstRoutePoint.Normal),
+                    Vector3.Up);
+
+                if (Vector3.Cross(trackDirection, up).LengthSquared() == 0.0f)
+                {
+                    up = Vector3.Up;
+                }
+            }
+
+            Position = targetPosition -
                 trackDirection * ChaseDistance +
-                Vector3.Up * CameraHeight;
-            Vector3 target = centres[0] + trackDirection * LookAheadDistance;
+                up * CameraHeight;
+            Vector3 target = targetPosition + trackDirection * LookAheadDistance;
             Direction = Vector3.Normalize(target - Position);
-            Up = Vector3.Up;
+            Up = up;
             FarPlane = CalculateFarPlane(centres, Position);
         }
 
@@ -161,7 +189,22 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             return Vector3.Normalize(direction);
         }
 
+        private static Vector3 NormaliseOrFallback(
+            Vector3 direction,
+            Vector3 fallback)
+        {
+            if (direction.LengthSquared() == 0.0f)
+            {
+                return fallback;
+            }
+
+            return Vector3.Normalize(direction);
+        }
+
         private static Vector3 ToVector3(TrackPoint point)
             => new((float)point.X, (float)point.Y, (float)point.Z);
+
+        private static Vector3 ToVector3(TrackVector vector)
+            => new((float)vector.X, (float)vector.Y, (float)vector.Z);
     }
 }
