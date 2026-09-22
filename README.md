@@ -126,6 +126,8 @@ env -u DISPLAY SDL_VIDEODRIVER=wayland \
 
 Every driving action has a `Primary` and `Secondary` key in the `Controls` section of [OpenSpeed.Classic/appsettings.json](OpenSpeed.Classic/appsettings.json). Both bindings must be valid, distinct MonoGame key names.
 
+The car accelerates progressively, retains momentum while coasting, decelerates under drag, and brakes to a stop before engaging the opposite direction. Steering uses a wheelbase-based vehicle model, remains responsive at low velocity, reduces steering angle at high velocity, and reverses while travelling backwards.
+
 Asset file hits and misses are written by NuciLog to the console and, when `IsFileOutputEnabled` is enabled, to the configured `LogFilePath`.
 
 ## Licence

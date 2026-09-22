@@ -81,6 +81,95 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
         }
 
         [Test]
+        public void GivenRepeatedForwardInput_WhenUpdating_ThenTheCarAccelerates()
+        {
+            CarPhysicsState physicsState = new();
+            Matrix world = Matrix.CreateWorld(Vector3.Zero, Vector3.Forward, Vector3.Up);
+
+            Matrix firstWorld = CarWorldTransformUpdater.Update(
+                world,
+                [],
+                physicsState,
+                1.0f,
+                1.0f,
+                0.0f);
+            Matrix secondWorld = CarWorldTransformUpdater.Update(
+                firstWorld,
+                [],
+                physicsState,
+                1.0f,
+                1.0f,
+                0.0f);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(firstWorld.Translation.Z, Is.EqualTo(-6.0f));
+                Assert.That(secondWorld.Translation.Z, Is.EqualTo(-24.0f));
+                Assert.That(physicsState.LongitudinalVelocity, Is.EqualTo(24.0f));
+            });
+        }
+
+        [Test]
+        public void GivenNoInputWhileMoving_WhenUpdating_ThenMomentumMovesTheCarForwards()
+        {
+            CarPhysicsState physicsState = new()
+            {
+                LongitudinalVelocity = 12.0f
+            };
+            Matrix world = Matrix.CreateWorld(Vector3.Zero, Vector3.Forward, Vector3.Up);
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [],
+                physicsState,
+                1.0f,
+                0.0f,
+                0.0f);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(updatedWorld.Translation.Z, Is.EqualTo(-9.0f));
+                Assert.That(physicsState.LongitudinalVelocity, Is.EqualTo(6.0f));
+            });
+        }
+
+        [Test]
+        public void GivenNoMomentum_WhenTurning_ThenTheCarDoesNotPivot()
+        {
+            Matrix world = Matrix.CreateWorld(Vector3.Zero, Vector3.Forward, Vector3.Up);
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [],
+                new CarPhysicsState(),
+                1.0f,
+                0.0f,
+                1.0f);
+
+            Assert.That(updatedWorld.Forward, Is.EqualTo(Vector3.Forward));
+        }
+
+        [Test]
+        public void GivenReverseMomentum_WhenTurningRight_ThenTheCarSteersInReverse()
+        {
+            CarPhysicsState physicsState = new()
+            {
+                LongitudinalVelocity = -16.0f
+            };
+            Matrix world = Matrix.CreateWorld(Vector3.Zero, Vector3.Forward, Vector3.Up);
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [],
+                physicsState,
+                1.0f,
+                -1.0f,
+                1.0f);
+
+            Assert.That(updatedWorld.Forward.X, Is.LessThan(0.0f));
+        }
+
+        [Test]
         public void GivenMovementAlongAnAscendingRoad_WhenUpdating_ThenTheCarAscendsTheSlope()
         {
             Vector3 slopeNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, 1.0f));

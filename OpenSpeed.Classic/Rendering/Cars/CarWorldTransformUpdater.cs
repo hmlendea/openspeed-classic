@@ -68,10 +68,12 @@ namespace OpenSpeed.Classic.Rendering.Cars
             float movementInput,
             float turningInput)
         {
+            ArgumentNullException.ThrowIfNull(routePoints);
             ArgumentNullException.ThrowIfNull(physicsState);
 
-            Matrix movedWorld = Update(
+            Matrix movedWorld = UpdateWithMomentum(
                 world,
+                physicsState,
                 elapsedSeconds,
                 movementInput,
                 turningInput);
@@ -87,6 +89,34 @@ namespace OpenSpeed.Classic.Rendering.Cars
                 routeProjection,
                 physicsState,
                 elapsedSeconds);
+        }
+
+        private static Matrix UpdateWithMomentum(
+            Matrix world,
+            CarPhysicsState physicsState,
+            float elapsedSeconds,
+            float movementInput,
+            float turningInput)
+        {
+            float previousVelocity = physicsState.LongitudinalVelocity;
+            CarLongitudinalVelocityUpdater.Update(
+                physicsState,
+                elapsedSeconds,
+                movementInput);
+            float averageVelocity =
+                (previousVelocity + physicsState.LongitudinalVelocity) / 2.0f;
+            Vector3 up = NormaliseOrFallback(world.Up, Vector3.Up);
+            float rotation = CarSteeringCalculator.CalculateRotation(
+                averageVelocity,
+                turningInput,
+                elapsedSeconds);
+            Vector3 forward = Vector3.Normalize(Vector3.TransformNormal(
+                world.Forward,
+                Matrix.CreateFromAxisAngle(up, rotation)));
+            Vector3 position = world.Translation +
+                forward * averageVelocity * elapsedSeconds;
+
+            return Matrix.CreateWorld(position, forward, up);
         }
 
         private static Vector3 NormaliseOrFallback(
