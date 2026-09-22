@@ -20,6 +20,7 @@ namespace OpenSpeed.Classic.Input
             return new TrackCameraInput
             {
                 CameraView = ReadCameraView(keyboardState),
+                IsCameraModeTogglePressed = keyboardState.IsKeyDown(Keys.C),
                 IsHandbrakeApplied = IsControlPressed(
                     keyboardState,
                     controls.Handbrake),

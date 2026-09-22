@@ -23,6 +23,8 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         private static float CameraDistance => 6.0f;
 
+        private static float FarCameraDistance => 12.0f;
+
         private static float HighSpeedKilometresPerHour => 120.0f;
 
         private static float HighSpeedFieldOfViewRadians => MathHelper.ToRadians(40.0f);
@@ -31,7 +33,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         private static float LowSpeedFieldOfViewRadians => MathHelper.ToRadians(60.0f);
 
-        private static float TargetHeightOffset => 0.0f;
+        private static float TargetHeightOffset => 1.5f;
 
         private static float MinimumFarPlane => 1024.0f;
 
@@ -147,6 +149,19 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             float elapsedSeconds,
             float longitudinalVelocity,
             TrackCameraView cameraView)
+            => Follow(
+                targetWorld,
+                elapsedSeconds,
+                longitudinalVelocity,
+                cameraView,
+                TrackCameraMode.Close);
+
+        public void Follow(
+            Matrix targetWorld,
+            float elapsedSeconds,
+            float longitudinalVelocity,
+            TrackCameraView cameraView,
+            TrackCameraMode cameraMode)
         {
             if (!float.IsFinite(elapsedSeconds) || elapsedSeconds < 0.0f)
             {
@@ -165,7 +180,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             }
 
             currentLongitudinalVelocity = longitudinalVelocity;
-            UpdateFollow(targetWorld, cameraView);
+            UpdateFollow(targetWorld, cameraView, cameraMode);
         }
 
         public void Follow(
@@ -176,7 +191,8 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 targetWorld,
                 elapsedSeconds,
                 longitudinalVelocity,
-                TrackCameraView.Centre);
+                TrackCameraView.Centre,
+                TrackCameraMode.Close);
 
         public void Update(
             float elapsedSeconds,
@@ -278,11 +294,15 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         }
 
         private void UpdateFollow(Matrix targetWorld)
-            => UpdateFollow(targetWorld, TrackCameraView.Centre);
+            => UpdateFollow(
+                targetWorld,
+                TrackCameraView.Centre,
+                TrackCameraMode.Close);
 
         private void UpdateFollow(
             Matrix targetWorld,
-            TrackCameraView cameraView)
+            TrackCameraView cameraView,
+            TrackCameraMode cameraMode)
         {
             Vector3 targetPosition = targetWorld.Translation;
             Vector3 targetPositionOnGround = targetPosition;
@@ -291,12 +311,14 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             cameraPositionOnGround.Y = 0.0f;
             Vector3 direction = cameraPositionOnGround - targetPositionOnGround;
             float distance = direction.Length();
+            float desiredDistance = CalculateCameraDistance(cameraMode);
 
-            if (distance > CameraDistance)
+            if (distance > desiredDistance ||
+                cameraMode == TrackCameraMode.Far && distance > 0.0f)
             {
                 direction /= distance;
                 cameraPositionOnGround = targetPositionOnGround +
-                    direction * CameraDistance;
+                    direction * desiredDistance;
             }
 
             cameraPositionOnGround.Y = targetPosition.Y + CameraHeightOffset;
@@ -317,6 +339,16 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 targetPoint - Position,
                 Vector3.Forward);
             Up = Vector3.Up;
+        }
+
+        private static float CalculateCameraDistance(TrackCameraMode cameraMode)
+        {
+            if (cameraMode == TrackCameraMode.Far)
+            {
+                return FarCameraDistance;
+            }
+
+            return CameraDistance;
         }
 
         private static float CalculateYaw(TrackCameraView cameraView)

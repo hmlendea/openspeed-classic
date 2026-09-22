@@ -157,7 +157,8 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             trackCamera.Follow(carWorld);
             Vector3 horizontalOffset = trackCamera.Position - carWorld.Translation;
             horizontalOffset.Y = 0.0f;
-            Vector3 expectedLookDirection = carWorld.Translation - trackCamera.Position;
+            Vector3 expectedLookTarget = carWorld.Translation + Vector3.Up * 1.5f;
+            Vector3 expectedLookDirection = expectedLookTarget - trackCamera.Position;
             expectedLookDirection.Normalize();
 
             Assert.Multiple(() =>
@@ -199,7 +200,8 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
                 Vector3.Normalize(new Vector3(0.0f, 1.0f, 1.0f)));
 
             trackCamera.Follow(carWorld);
-            Vector3 expectedLookDirection = carWorld.Translation - trackCamera.Position;
+            Vector3 expectedLookTarget = carWorld.Translation + Vector3.Up * 1.5f;
+            Vector3 expectedLookDirection = expectedLookTarget - trackCamera.Position;
             expectedLookDirection.Normalize();
 
             Assert.Multiple(() =>
@@ -243,7 +245,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
 
             Assert.That(
                 fieldOfViewRadians,
-                Is.EqualTo(MathHelper.ToRadians(50.0f)).Within(PositionTolerance));
+                Is.EqualTo(MathHelper.ToRadians(55.0f)).Within(PositionTolerance));
         }
 
         [TestCase(TrackCameraView.Right, 60.0f)]
@@ -272,6 +274,26 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
 
             Assert.That(offset.X, Is.EqualTo(expectedOffset.X).Within(PositionTolerance));
             Assert.That(offset.Z, Is.EqualTo(expectedOffset.Z).Within(PositionTolerance));
+        }
+
+        [Test]
+        public void GivenFarCameraMode_WhenFollowing_ThenTheCameraUsesTheFarOrbitDistance()
+        {
+            Matrix carWorld = Matrix.CreateWorld(
+                new Vector3(42.0f, 8.0f, 16.0f),
+                Vector3.Forward,
+                Vector3.Up);
+
+            trackCamera.Follow(
+                carWorld,
+                0.0f,
+                0.0f,
+                TrackCameraView.Centre,
+                TrackCameraMode.Far);
+            Vector3 offset = trackCamera.Position - carWorld.Translation;
+            offset.Y = 0.0f;
+
+            Assert.That(offset.Length(), Is.EqualTo(12.0f).Within(PositionTolerance));
         }
 
         [TestCase(0, 720)]

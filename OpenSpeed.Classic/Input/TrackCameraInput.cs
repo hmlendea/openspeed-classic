@@ -4,6 +4,8 @@ namespace OpenSpeed.Classic.Input
     {
         public TrackCameraView CameraView { get; set; }
 
+        public bool IsCameraModeTogglePressed { get; set; }
+
         public bool IsHandbrakeApplied { get; set; }
 
         public float MovementInput { get; set; }

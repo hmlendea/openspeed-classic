@@ -25,6 +25,8 @@ namespace OpenSpeed.Classic
         private ICarRenderer? carRenderer;
         private Matrix? carWorld;
         private bool hasCapturedDiagnosticFrame;
+        private bool wasCameraModeTogglePressed;
+        private TrackCameraMode cameraMode;
         private TrackCamera? trackCamera;
         private ITrackRenderer? trackRenderer;
 
@@ -154,6 +156,20 @@ namespace OpenSpeed.Classic
                 TrackCameraInput drivingInput = TrackCameraInputReader.Read(
                     keyboardState,
                     drivingControls);
+                if (drivingInput.IsCameraModeTogglePressed &&
+                    !wasCameraModeTogglePressed)
+                {
+                    if (cameraMode == TrackCameraMode.Close)
+                    {
+                        cameraMode = TrackCameraMode.Far;
+                    }
+                    else
+                    {
+                        cameraMode = TrackCameraMode.Close;
+                    }
+                }
+
+                wasCameraModeTogglePressed = drivingInput.IsCameraModeTogglePressed;
                 UpdateCarAndCamera(
                     (float)gameTime.ElapsedGameTime.TotalSeconds,
                     drivingInput);
@@ -276,7 +292,8 @@ namespace OpenSpeed.Classic
                 carWorld.Value,
                 elapsedSeconds,
                 carPhysicsState.LongitudinalVelocity,
-                drivingInput.CameraView);
+                drivingInput.CameraView,
+                cameraMode);
         }
 
         protected override void UnloadContent()

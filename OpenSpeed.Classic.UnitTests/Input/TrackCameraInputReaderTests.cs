@@ -75,6 +75,15 @@ namespace OpenSpeed.Classic.UnitTests.Input
             Assert.That(input.IsHandbrakeApplied);
         }
 
+        [Test]
+        public void GivenTheCameraModeKey_WhenReadingInput_ThenTheCameraModeToggleIsPressed()
+        {
+            TrackCameraInput input = TrackCameraInputReader.Read(
+                new KeyboardState(Keys.C));
+
+            Assert.That(input.IsCameraModeTogglePressed);
+        }
+
         [TestCase(Keys.F1, TrackCameraView.Right)]
         [TestCase(Keys.D1, TrackCameraView.Right)]
         [TestCase(Keys.F2, TrackCameraView.Left)]
