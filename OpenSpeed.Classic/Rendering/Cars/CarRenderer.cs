@@ -72,7 +72,7 @@ namespace OpenSpeed.Classic.Rendering.Cars
             graphicsDevice.DepthStencilState = DepthStencilState.Default;
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.RasterizerState = rasterizerState;
-            graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
+            graphicsDevice.SamplerStates[0] = SamplerState.AnisotropicClamp;
             ConfigureEffect(colourEffect, world, view, projection);
             ConfigureEffect(textureEffect, world, view, projection);
             DrawColouredGeometry();

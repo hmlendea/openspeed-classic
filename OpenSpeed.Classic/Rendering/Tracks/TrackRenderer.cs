@@ -104,7 +104,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             graphicsDevice.DepthStencilState = DepthStencilState.Default;
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.RasterizerState = rasterizerState;
-            graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
+            graphicsDevice.SamplerStates[0] = SamplerState.AnisotropicClamp;
             ConfigureEffect(colourEffect, view, projection);
             ConfigureEffect(textureEffect, view, projection);
             BoundingFrustum viewFrustum = new(view * projection);
@@ -424,7 +424,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             graphicsDevice.DepthStencilState = DepthStencilState.None;
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.RasterizerState = horizonRasterizerState;
-            graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
+            graphicsDevice.SamplerStates[0] = SamplerState.AnisotropicClamp;
 
             if (horizonDomeBatch is not null)
             {

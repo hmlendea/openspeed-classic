@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using OpenSpeed.Classic.Cars;
+using OpenSpeed.Classic.Rendering;
 using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.Rendering.Cars
@@ -35,13 +36,11 @@ namespace OpenSpeed.Classic.Rendering.Cars
             }
 
             Name = carTexture.Name;
-            Texture = new Texture2D(
+            Texture = TextureMipmapResourceBuilder.Build(
                 graphicsDevice,
                 carTexture.Width,
                 carTexture.Height,
-                false,
-                SurfaceFormat.Color);
-            Texture.SetData(sourcePixels.Select(ToColour).ToArray());
+                sourcePixels.Select(ToColour));
         }
 
         public void Dispose() => Texture.Dispose();

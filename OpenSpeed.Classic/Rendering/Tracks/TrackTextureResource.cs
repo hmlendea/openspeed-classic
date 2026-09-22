@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using OpenSpeed.Classic.Rendering;
 using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.Rendering.Tracks
@@ -37,13 +38,11 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 .Select(ConvertColour)
                 .ToArray();
             Identifier = trackTexture.Identifier;
-            Texture = new Texture2D(
+            Texture = TextureMipmapResourceBuilder.Build(
                 graphicsDevice,
                 trackTexture.Width,
                 trackTexture.Height,
-                false,
-                SurfaceFormat.Color);
-            Texture.SetData(pixels);
+                pixels);
         }
 
         public void Dispose() => Texture.Dispose();
