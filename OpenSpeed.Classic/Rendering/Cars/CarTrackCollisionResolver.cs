@@ -9,8 +9,6 @@ namespace OpenSpeed.Classic.Rendering.Cars
 {
     public static class CarTrackCollisionResolver
     {
-        private static float CarHalfWidth => 1.0f;
-
         public static Matrix Resolve(
             Matrix world,
             IEnumerable<TrackRoutePoint> routePoints)
@@ -38,10 +36,10 @@ namespace OpenSpeed.Classic.Rendering.Cars
                 routeProjection.Right);
             float minimumLateralPosition = -MathF.Max(
                 0.0f,
-                routeProjection.LeftBorderDistance - CarHalfWidth);
+                routeProjection.LeftBorderDistance - CarDimensions.HalfWidth);
             float maximumLateralPosition = MathF.Max(
                 0.0f,
-                routeProjection.RightBorderDistance - CarHalfWidth);
+                routeProjection.RightBorderDistance - CarDimensions.HalfWidth);
             float resolvedLateralPosition = MathHelper.Clamp(
                 lateralPosition,
                 minimumLateralPosition,

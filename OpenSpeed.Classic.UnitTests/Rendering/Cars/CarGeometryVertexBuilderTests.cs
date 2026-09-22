@@ -27,9 +27,9 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
             Assert.Multiple(() =>
             {
                 Assert.That(vertices, Has.Length.EqualTo(3));
-                Assert.That(vertices[0].Position.X, Is.EqualTo(1.03125f).Within(PositionTolerance));
-                Assert.That(vertices[0].Position.Y, Is.EqualTo(3.125f).Within(PositionTolerance));
-                Assert.That(vertices[0].Position.Z, Is.EqualTo(-2.0625f).Within(PositionTolerance));
+                Assert.That(vertices[0].Position.X, Is.EqualTo(1.2890625f).Within(PositionTolerance));
+                Assert.That(vertices[0].Position.Y, Is.EqualTo(3.90625f).Within(PositionTolerance));
+                Assert.That(vertices[0].Position.Z, Is.EqualTo(-2.578125f).Within(PositionTolerance));
             });
         }
 

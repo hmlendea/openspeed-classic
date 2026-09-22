@@ -77,7 +77,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
                 1.0f,
                 0.0f);
 
-            Assert.That(updatedWorld.Translation.X, Is.EqualTo(7.0f));
+            Assert.That(updatedWorld.Translation.X, Is.EqualTo(6.75f));
         }
 
         [Test]
@@ -254,7 +254,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
 
             Assert.Multiple(() =>
             {
-                Assert.That(updatedWorld.Translation.X, Is.EqualTo(7.0f));
+                Assert.That(updatedWorld.Translation.X, Is.EqualTo(6.75f));
                 Assert.That(physicsState.LateralVelocity, Is.Zero);
             });
         }

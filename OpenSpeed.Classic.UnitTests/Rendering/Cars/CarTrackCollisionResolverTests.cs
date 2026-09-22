@@ -12,8 +12,8 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
     [TestFixture]
     public sealed class CarTrackCollisionResolverTests
     {
-        [TestCase(-8.0f, -7.0f)]
-        [TestCase(8.0f, 7.0f)]
+        [TestCase(-8.0f, -6.75f)]
+        [TestCase(8.0f, 6.75f)]
         public void GivenACarBeyondAWall_WhenResolving_ThenTheCarStopsAtTheWall(
             float positionX,
             float expectedPositionX)

@@ -99,7 +99,8 @@ namespace OpenSpeed.Classic.Rendering.Cars
             return new Vector3(
                 fixedPositionX / CoordinateScale,
                 fixedPositionZ / CoordinateScale,
-                -fixedPositionY / CoordinateScale);
+                -fixedPositionY / CoordinateScale) *
+                CarDimensions.ModelScale;
         }
     }
 }
