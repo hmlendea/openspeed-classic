@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -13,6 +14,8 @@ namespace OpenSpeed.Classic
     public sealed class OpenSpeedClassicGame : Game
     {
         private readonly GraphicsDeviceManager graphicsDeviceManager;
+        private readonly string? captureFramePath;
+        private bool hasCapturedDiagnosticFrame;
         private TrackCamera? trackCamera;
         private ITrackRenderer? trackRenderer;
 
@@ -40,9 +43,21 @@ namespace OpenSpeed.Classic
         }
 
         public OpenSpeedClassicGame(LoadedTrack loadedTrack)
+            : this(loadedTrack, null)
+        {
+        }
+
+        public OpenSpeedClassicGame(
+            LoadedTrack loadedTrack,
+            string? captureFramePath)
             : this()
         {
             ArgumentNullException.ThrowIfNull(loadedTrack);
+
+            if (!string.IsNullOrWhiteSpace(captureFramePath))
+            {
+                this.captureFramePath = captureFramePath;
+            }
 
             CurrentTrack = loadedTrack;
             Window.Title = $"{WindowTitle} - {loadedTrack.DisplayName}";
@@ -100,9 +115,54 @@ namespace OpenSpeed.Classic
                     trackCamera,
                     GraphicsDevice.Viewport.Width,
                     GraphicsDevice.Viewport.Height);
+                CaptureDiagnosticFrame();
             }
 
             base.Draw(gameTime);
+        }
+
+        private void CaptureDiagnosticFrame()
+        {
+            if (captureFramePath is null ||
+                hasCapturedDiagnosticFrame ||
+                trackCamera is null ||
+                trackRenderer is null)
+            {
+                return;
+            }
+
+            int width = GraphicsDevice.Viewport.Width;
+            int height = GraphicsDevice.Viewport.Height;
+            using RenderTarget2D renderTarget = new(
+                GraphicsDevice,
+                width,
+                height,
+                false,
+                SurfaceFormat.Color,
+                DepthFormat.Depth24);
+            GraphicsDevice.SetRenderTarget(renderTarget);
+
+            try
+            {
+                GraphicsDevice.Clear(BackgroundColour);
+                trackRenderer.Draw(trackCamera, width, height);
+            }
+            finally
+            {
+                GraphicsDevice.SetRenderTarget(null);
+            }
+
+            string? outputDirectory = Path.GetDirectoryName(captureFramePath);
+
+            if (!string.IsNullOrWhiteSpace(outputDirectory))
+            {
+                Directory.CreateDirectory(outputDirectory);
+            }
+
+            using FileStream stream = File.Create(captureFramePath);
+            renderTarget.SaveAsPng(stream, width, height);
+            hasCapturedDiagnosticFrame = true;
+            Exit();
         }
 
         protected override void UnloadContent()

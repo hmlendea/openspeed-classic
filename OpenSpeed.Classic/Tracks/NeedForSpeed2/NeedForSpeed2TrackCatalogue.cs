@@ -14,6 +14,9 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
         private static string SpecialEditionTrackDirectory
             => Path.Combine(TrackDirectory, TrackTextureVariant.SE.Name);
 
+        private static string LegacyTrackDirectory
+            => Path.Combine(TrackDirectory, TrackTextureVariant.PC.Name);
+
         internal static string GetDisplayName(NeedForSpeed2TrackIdentifier trackIdentifier)
             => trackIdentifier switch
             {
@@ -43,6 +46,12 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 SpecialEditionTrackDirectory,
                 $"3Tr{GetOriginalTrackNumber(trackIdentifier):D2}.hrz");
 
+        internal static string GetLegacyHorizonRelativePath(
+            NeedForSpeed2TrackIdentifier trackIdentifier)
+            => Path.Combine(
+                LegacyTrackDirectory,
+                $"Tr{GetOriginalTrackNumber(trackIdentifier):D2}.hrz");
+
         internal static string GetMaterialRelativePath(
             NeedForSpeed2TrackIdentifier trackIdentifier)
             => Path.Combine(
@@ -56,13 +65,6 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 TrackDirectory,
                 textureVariant.Name,
                 $"Tr{GetOriginalTrackNumber(trackIdentifier) * TextureNumberMultiplier:D3}.qfs");
-
-        internal static string GetSkyTextureName(
-            NeedForSpeed2TrackIdentifier trackIdentifier)
-            => $"CLD{GetOriginalTrackNumber(trackIdentifier)}";
-
-        internal static string GetSkyTextureRelativePath()
-            => Path.Combine(SpecialEditionTrackDirectory, "sky.fsh");
 
         internal static NeedForSpeed2TrackIdentifier ParseIdentifier(string trackIdentifier)
         {

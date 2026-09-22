@@ -63,6 +63,13 @@ Run the game project with:
 dotnet run --project OpenSpeed.Classic/OpenSpeed.Classic.csproj
 ```
 
+Capture one rendered frame to a PNG file and exit with:
+
+```sh
+dotnet run --project OpenSpeed.Classic/OpenSpeed.Classic.csproj -- \
+  --capture-frame /tmp/openspeed-frame.png
+```
+
 On a Wayland session where X11 reports an authorisation error, run:
 
 ```sh

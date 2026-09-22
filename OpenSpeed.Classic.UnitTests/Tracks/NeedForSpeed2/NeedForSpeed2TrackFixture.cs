@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -43,16 +44,16 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 BuildMaterials());
             File.WriteAllBytes(
                 Path.Combine(specialEditionTrackDirectory, "TR020.QFS"),
-                CompressWithLiteralCommands(BuildTextureArchive("TEST")));
+                CompressWithLiteralCommands(BuildTextureArchive("TEST", 8)));
             File.WriteAllBytes(
                 Path.Combine(pcTrackDirectory, "TR020.QFS"),
-                CompressWithLiteralCommands(BuildTextureArchive("PCTX")));
+                CompressWithLiteralCommands(BuildTextureArchive("PCTX", 8)));
             File.WriteAllText(
                 Path.Combine(specialEditionTrackDirectory, "3TR02.HRZ"),
                 BuildHorizon());
-            File.WriteAllBytes(
-                Path.Combine(specialEditionTrackDirectory, "SKY.FSH"),
-                BuildTextureArchive("CLD2"));
+            File.WriteAllText(
+                Path.Combine(pcTrackDirectory, "TR02.HRZ"),
+                BuildLegacyHorizon());
         }
 
         private static byte[] BuildTrackGeometry()
@@ -306,6 +307,8 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             data[payloadOffset + 19] = 0;
             data[payloadOffset + 20] = 0;
             WriteInt16LittleEndian(data, payloadOffset + 22, 0);
+            WriteInt16LittleEndian(data, payloadOffset + 26, 2048);
+            WriteInt16LittleEndian(data, payloadOffset + 28, 2048);
         }
 
         private static void WriteBasicPlacement(
@@ -333,45 +336,81 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                     255, 122, 66, 255, 222, 91, 0, 0, 130
                 });
 
-        private static byte[] BuildTextureArchive(string textureName)
+        private static string BuildLegacyHorizon()
+            => string.Join(
+                " ",
+                new[]
+                {
+                    0, 1, 1500, 300, 1000, -700, 1000, 40,
+                    56, 80, 131, 45, 72, 94, 0, 250, 500, 900,
+                    0, 0, 10, 15, 0, 40, 40, 40
+                });
+
+        private static byte[] BuildTextureArchive(
+            string firstTextureName,
+            int textureCount)
         {
-            byte[] data = new byte[43];
+            int directorySize = textureCount * 8;
+            int entrySize = 19;
+            int firstEntryOffset = 16 + directorySize;
+            byte[] data = new byte[firstEntryOffset + textureCount * entrySize];
             Encoding.ASCII.GetBytes("SHPI").CopyTo(data, 0);
             WriteInt32LittleEndian(data, 4, data.Length);
-            WriteInt32LittleEndian(data, 8, 1);
-            Encoding.ASCII.GetBytes(textureName).CopyTo(data, 16);
-            WriteInt32LittleEndian(data, 20, 24);
-            WriteInt32LittleEndian(data, 24, 0x7F);
-            WriteInt16LittleEndian(data, 28, 1);
-            WriteInt16LittleEndian(data, 30, 1);
-            data[40] = 16;
-            data[41] = 32;
-            data[42] = 48;
+            WriteInt32LittleEndian(data, 8, textureCount);
+
+            for (int textureIndex = 0; textureIndex < textureCount; textureIndex += 1)
+            {
+                int directoryOffset = 16 + textureIndex * 8;
+                int entryOffset = firstEntryOffset + textureIndex * entrySize;
+                string textureName = $"{textureIndex:D4}";
+
+                if (textureIndex == 0)
+                {
+                    textureName = firstTextureName;
+                }
+
+                Encoding.ASCII.GetBytes(textureName).CopyTo(data, directoryOffset);
+                WriteInt32LittleEndian(data, directoryOffset + 4, entryOffset);
+                WriteInt32LittleEndian(data, entryOffset, 0x7F);
+                WriteInt16LittleEndian(data, entryOffset + 4, 1);
+                WriteInt16LittleEndian(data, entryOffset + 6, 1);
+                data[entryOffset + 16] = (byte)(16 + textureIndex);
+                data[entryOffset + 17] = (byte)(32 + textureIndex);
+                data[entryOffset + 18] = (byte)(48 + textureIndex);
+            }
 
             return data;
         }
 
         private static byte[] CompressWithLiteralCommands(byte[] data)
         {
-            int leadingLiteralCount = data.Length - 3;
-            byte literalCommand = (byte)(0xE0 + (leadingLiteralCount - 4) / 4);
-            byte[] compressedData = new byte[5 + 1 + leadingLiteralCount + 1 + 3];
-            compressedData[0] = 0x10;
-            compressedData[1] = 0xFB;
-            compressedData[2] = (byte)(data.Length >> 16);
-            compressedData[3] = (byte)(data.Length >> 8);
-            compressedData[4] = (byte)data.Length;
-            compressedData[5] = literalCommand;
-            Array.Copy(data, 0, compressedData, 6, leadingLiteralCount);
-            compressedData[6 + leadingLiteralCount] = 0xFF;
-            Array.Copy(
-                data,
-                leadingLiteralCount,
-                compressedData,
-                7 + leadingLiteralCount,
-                3);
+            List<byte> compressedData =
+            [
+                0x10,
+                0xFB,
+                (byte)(data.Length >> 16),
+                (byte)(data.Length >> 8),
+                (byte)data.Length
+            ];
+            int sourcePosition = 0;
 
-            return compressedData;
+            while (data.Length - sourcePosition > 3)
+            {
+                int remainingCount = data.Length - sourcePosition;
+                int literalCount = Math.Min(112, remainingCount / 4 * 4);
+                byte literalCommand = (byte)(0xE0 + (literalCount - 4) / 4);
+                compressedData.Add(literalCommand);
+                compressedData.AddRange(
+                    data.AsSpan(sourcePosition, literalCount).ToArray());
+                sourcePosition += literalCount;
+            }
+
+            int finalLiteralCount = data.Length - sourcePosition;
+            compressedData.Add((byte)(0xFC + finalLiteralCount));
+            compressedData.AddRange(
+                data.AsSpan(sourcePosition, finalLiteralCount).ToArray());
+
+            return [.. compressedData];
         }
 
         private static void WriteVertex(

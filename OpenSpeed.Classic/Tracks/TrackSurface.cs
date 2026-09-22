@@ -15,5 +15,7 @@ namespace OpenSpeed.Classic.Tracks
         public TrackGeometryDetailLevel DetailLevel { get; set; }
 
         public TrackSurfaceGroup Group { get; set; }
+
+        public TrackSurfaceSide Side { get; set; }
     }
 }

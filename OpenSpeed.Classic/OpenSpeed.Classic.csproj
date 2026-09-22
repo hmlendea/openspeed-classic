@@ -12,6 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="NuciCLI.Arguments" Version="1.0.1" />
     <PackageReference Include="NuciXNA.Graphics" Version="2.2.5" />
     <PackageReference Include="NuciXNA.Gui" Version="3.4.2" />
     <PackageReference Include="NuciXNA.Input" Version="2.1.1" />

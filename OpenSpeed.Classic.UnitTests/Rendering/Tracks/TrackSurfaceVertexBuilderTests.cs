@@ -60,26 +60,148 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
         }
 
         [Test]
-        public void GivenVerticalReflection_WhenBuildingTextureCoordinates_ThenTheCornersArePermuted()
+        public void GivenALeftBackgroundWall_WhenBuildingTexturedVertices_ThenTheTextureOrientationIsPreserved()
         {
-            TrackMaterial material = new()
-            {
-                Alignment = 0x1000
-            };
+            TrackSurface surface = BuildSurface();
+            surface.Points =
+            [
+                new TrackPoint { X = 4.0, Y = 8.0, Z = 16.0 },
+                new TrackPoint { X = 4.0, Y = 48.0, Z = 16.0 },
+                new TrackPoint { X = 4.0, Y = 48.0, Z = 44.0 },
+                new TrackPoint { X = 4.0, Y = 8.0, Z = 44.0 }
+            ];
+            TrackMaterial material = new();
 
-            Vector2[] textureCoordinates = TrackTextureCoordinateBuilder
-                .Build(material)
+            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
+                .BuildTextured(surface, material)
                 .ToArray();
 
-            Assert.That(
-                textureCoordinates,
-                Is.EqualTo(new[]
-                {
-                    Vector2.UnitY,
-                    Vector2.Zero,
-                    Vector2.One,
-                    Vector2.UnitX
-                }));
+            Assert.Multiple(() =>
+            {
+                Assert.That(vertices[0].TextureCoordinate, Is.EqualTo(Vector2.UnitX));
+                Assert.That(vertices[1].TextureCoordinate, Is.EqualTo(Vector2.Zero));
+                Assert.That(vertices[2].TextureCoordinate, Is.EqualTo(Vector2.UnitY));
+                Assert.That(vertices[5].TextureCoordinate, Is.EqualTo(Vector2.One));
+            });
+        }
+
+        [Test]
+        public void GivenASlopedLeftBackgroundWall_WhenBuildingTexturedVertices_ThenTheTextureOrientationIsPreserved()
+        {
+            TrackSurface surface = BuildSurface();
+            surface.Points =
+            [
+                new TrackPoint { X = 4.0, Y = 8.0, Z = 16.0 },
+                new TrackPoint { X = 8.0, Y = 36.0, Z = 16.0 },
+                new TrackPoint { X = 8.0, Y = 36.0, Z = 44.0 },
+                new TrackPoint { X = 4.0, Y = 8.0, Z = 44.0 }
+            ];
+            TrackMaterial material = new();
+
+            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
+                .BuildTextured(surface, material)
+                .ToArray();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(vertices[0].TextureCoordinate, Is.EqualTo(Vector2.UnitX));
+                Assert.That(vertices[1].TextureCoordinate, Is.EqualTo(Vector2.Zero));
+                Assert.That(vertices[2].TextureCoordinate, Is.EqualTo(Vector2.UnitY));
+                Assert.That(vertices[5].TextureCoordinate, Is.EqualTo(Vector2.One));
+            });
+        }
+
+        [Test]
+        public void GivenARightBackgroundWall_WhenBuildingTexturedVertices_ThenTheTextureIsRotatedByAHalfTurn()
+        {
+            TrackSurface surface = BuildSurface();
+            surface.Points =
+            [
+                new TrackPoint { X = 4.0, Y = 48.0, Z = 16.0 },
+                new TrackPoint { X = 4.0, Y = 8.0, Z = 16.0 },
+                new TrackPoint { X = 4.0, Y = 8.0, Z = 44.0 },
+                new TrackPoint { X = 4.0, Y = 48.0, Z = 44.0 }
+            ];
+            TrackMaterial material = new();
+
+            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
+                .BuildTextured(surface, material)
+                .ToArray();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(vertices[0].TextureCoordinate, Is.EqualTo(Vector2.UnitY));
+                Assert.That(vertices[1].TextureCoordinate, Is.EqualTo(Vector2.One));
+                Assert.That(vertices[2].TextureCoordinate, Is.EqualTo(Vector2.UnitX));
+                Assert.That(vertices[5].TextureCoordinate, Is.EqualTo(Vector2.Zero));
+            });
+        }
+
+        [Test]
+        public void GivenAPlacedSceneryWall_WhenBuildingTexturedVertices_ThenTheTextureOrientationIsPreserved()
+        {
+            TrackSurface surface = BuildSurface();
+            surface.Group = TrackSurfaceGroup.Unrestricted;
+            surface.Points =
+            [
+                new TrackPoint { X = 4.0, Y = 8.0, Z = 16.0 },
+                new TrackPoint { X = 32.0, Y = 8.0, Z = 16.0 },
+                new TrackPoint { X = 32.0, Y = 48.0, Z = 16.0 },
+                new TrackPoint { X = 4.0, Y = 48.0, Z = 16.0 }
+            ];
+            TrackMaterial material = new();
+
+            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
+                .BuildTextured(surface, material)
+                .ToArray();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(vertices[0].TextureCoordinate, Is.EqualTo(Vector2.UnitX));
+                Assert.That(vertices[1].TextureCoordinate, Is.EqualTo(Vector2.Zero));
+                Assert.That(vertices[2].TextureCoordinate, Is.EqualTo(Vector2.UnitY));
+                Assert.That(vertices[5].TextureCoordinate, Is.EqualTo(Vector2.One));
+            });
+        }
+
+        [Test]
+        public void GivenARightRoadShoulder_WhenBuildingTexturedVertices_ThenTheTextureIsReflectedAcrossTheLateralAxis()
+        {
+            TrackSurface surface = BuildSurfaceMatchingWallHeuristic();
+            surface.Side = TrackSurfaceSide.Right;
+            TrackMaterial material = new() { Alignment = 0x0900 };
+
+            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
+                .BuildTextured(surface, material)
+                .ToArray();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(vertices[0].TextureCoordinate, Is.EqualTo(Vector2.UnitY));
+                Assert.That(vertices[1].TextureCoordinate, Is.EqualTo(Vector2.Zero));
+                Assert.That(vertices[2].TextureCoordinate, Is.EqualTo(Vector2.UnitX));
+                Assert.That(vertices[5].TextureCoordinate, Is.EqualTo(Vector2.One));
+            });
+        }
+
+        [Test]
+        public void GivenALeftRoadShoulder_WhenBuildingTexturedVertices_ThenTheTextureOrientationIsPreserved()
+        {
+            TrackSurface surface = BuildSurfaceMatchingWallHeuristic();
+            surface.Side = TrackSurfaceSide.Left;
+            TrackMaterial material = new();
+
+            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
+                .BuildTextured(surface, material)
+                .ToArray();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(vertices[0].TextureCoordinate, Is.EqualTo(Vector2.UnitX));
+                Assert.That(vertices[1].TextureCoordinate, Is.EqualTo(Vector2.Zero));
+                Assert.That(vertices[2].TextureCoordinate, Is.EqualTo(Vector2.UnitY));
+                Assert.That(vertices[5].TextureCoordinate, Is.EqualTo(Vector2.One));
+            });
         }
 
         [Test]
@@ -109,5 +231,19 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
                     new TrackPoint { X = 4.0, Y = 8.0, Z = 48.0 }
                 ]
             };
+
+        private static TrackSurface BuildSurfaceMatchingWallHeuristic()
+        {
+            TrackSurface surface = BuildSurface();
+            surface.Points =
+            [
+                new TrackPoint { X = 4.0, Y = 48.0, Z = 16.0 },
+                new TrackPoint { X = 4.0, Y = 8.0, Z = 16.0 },
+                new TrackPoint { X = 4.0, Y = 8.0, Z = 44.0 },
+                new TrackPoint { X = 4.0, Y = 48.0, Z = 44.0 }
+            ];
+
+            return surface;
+        }
     }
 }

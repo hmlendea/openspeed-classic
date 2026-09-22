@@ -35,6 +35,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
                 Assert.That(vertices[1].Position.X, Is.GreaterThan(4.0f));
                 Assert.That(vertices[0].Position.Y, Is.GreaterThan(8.0f));
                 Assert.That(vertices[2].Position.Z, Is.EqualTo(-16.0f));
+                Assert.That(vertices[0].Color.A, Is.EqualTo(96));
             });
         }
 

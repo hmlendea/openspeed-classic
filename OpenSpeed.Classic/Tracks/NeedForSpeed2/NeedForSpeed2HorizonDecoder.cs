@@ -11,13 +11,22 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
 
         private static int ColourValueOffset => 12;
 
+        private static int LegacyRequiredValueCount => 26;
+
+        private static int LegacySkyColourOffset => 8;
+
         private static int RequiredValueCount => 27;
 
-        internal static TrackHorizon Decode(string text, TrackTexture? skyTexture)
+        internal static TrackHorizon Decode(
+            string text,
+            string legacyText,
+            TrackTexture? panoramaTexture)
         {
             ArgumentNullException.ThrowIfNull(text);
+            ArgumentNullException.ThrowIfNull(legacyText);
 
-            int[] values = ParseValues(text);
+            int[] values = ParseValues(text, RequiredValueCount);
+            int[] legacyValues = ParseValues(legacyText, LegacyRequiredValueCount);
             TrackColour[] colours = new TrackColour[ColourCount];
 
             for (int colourIndex = 0; colourIndex < colours.Length; colourIndex += 1)
@@ -40,6 +49,13 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 IsMirrored = values[3] != 0,
                 RingRadius = values[4],
                 RingRotationDegrees = values[5],
+                SkyColour = new TrackColour
+                {
+                    Alpha = byte.MaxValue,
+                    Red = unchecked((byte)legacyValues[LegacySkyColourOffset]),
+                    Green = unchecked((byte)legacyValues[LegacySkyColourOffset + 1]),
+                    Blue = unchecked((byte)legacyValues[LegacySkyColourOffset + 2])
+                },
                 FlatProjectionDistance = values[6],
                 RingBaseHeight = values[7],
                 RingHeight = values[8],
@@ -47,16 +63,16 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 HorizonTextureTopHeight = values[10],
                 HorizonTextureBottomHeight = values[11],
                 Colours = colours,
-                SkyTexture = skyTexture
+                PanoramaTexture = panoramaTexture
             };
         }
 
-        private static int[] ParseValues(string text)
+        private static int[] ParseValues(string text, int requiredValueCount)
         {
             List<int> values = [];
             int position = 0;
 
-            while (position < text.Length && values.Count < RequiredValueCount)
+            while (position < text.Length && values.Count < requiredValueCount)
             {
                 char character = text[position];
 
@@ -94,11 +110,11 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 }
             }
 
-            if (values.Count != RequiredValueCount)
+            if (values.Count != requiredValueCount)
             {
                 throw new InvalidDataException(
                     $"The horizon file contains {values.Count} values; " +
-                    $"{RequiredValueCount} are required.");
+                    $"{requiredValueCount} are required.");
             }
 
             return [.. values];

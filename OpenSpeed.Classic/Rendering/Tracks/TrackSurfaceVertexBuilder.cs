@@ -18,6 +18,8 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         private static int SurfacePointCount => 4;
 
+        private static float GroundNormalVerticalRatioMinimum => 0.8f;
+
         public static IEnumerable<VertexPositionColor> BuildColoured(TrackSurface surface)
         {
             ArgumentNullException.ThrowIfNull(surface);
@@ -52,6 +54,16 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             Vector2[] textureCoordinates = TrackTextureCoordinateBuilder
                 .Build(material)
                 .ToArray();
+
+            if (surface.Side == TrackSurfaceSide.Right)
+            {
+                textureCoordinates = ReflectAcrossLateralAxis(textureCoordinates);
+            }
+            else if (surface.Side == TrackSurfaceSide.Centre &&
+                IsBackgroundWall(surface, points))
+            {
+                textureCoordinates = RotateByHalfTurn(textureCoordinates);
+            }
 
             return
             [
@@ -105,6 +117,46 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             }
 
             return points;
+        }
+
+        private static Vector2[] ReflectAcrossLateralAxis(
+            Vector2[] textureCoordinates) =>
+            [
+                textureCoordinates[3],
+                textureCoordinates[2],
+                textureCoordinates[1],
+                textureCoordinates[0]
+            ];
+
+        private static Vector2[] RotateByHalfTurn(Vector2[] textureCoordinates) =>
+            [
+                textureCoordinates[2],
+                textureCoordinates[3],
+                textureCoordinates[0],
+                textureCoordinates[1]
+            ];
+
+        private static bool IsBackgroundWall(
+            TrackSurface surface,
+            TrackPoint[] points)
+        {
+            if (surface.Group == TrackSurfaceGroup.Unrestricted)
+            {
+                return false;
+            }
+
+            Vector3 firstEdge = ToVector3(points[1]) - ToVector3(points[0]);
+            Vector3 secondEdge = ToVector3(points[2]) - ToVector3(points[0]);
+            Vector3 normal = Vector3.Cross(firstEdge, secondEdge);
+
+            if (normal.LengthSquared() == 0.0f || firstEdge.Y >= 0.0f)
+            {
+                return false;
+            }
+
+            float verticalRatio = MathF.Abs(normal.Y) / normal.Length();
+
+            return verticalRatio < GroundNormalVerticalRatioMinimum;
         }
 
         private static Color ApplyLighting(Color lightingColour)

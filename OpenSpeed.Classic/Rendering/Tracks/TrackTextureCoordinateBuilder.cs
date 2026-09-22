@@ -9,15 +9,13 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 {
     public static class TrackTextureCoordinateBuilder
     {
-        private static byte PreviousCornerRotationFlag => 0x02;
-
         private static byte HalfRotationFlag => 0x04;
 
         private static byte NextCornerRotationFlag => 0x08;
 
-        private static byte VerticalAxisReflectionFlag => 0x10;
+        private static byte PreviousCornerRotationFlag => 0x02;
 
-        private static byte HorizontalAxisReflectionFlag => 0x40;
+        private static byte VerticalAxisReflectionFlag => 0x10;
 
         public static IEnumerable<Vector2> Build(TrackMaterial material)
         {
@@ -29,10 +27,6 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             if ((orientationFlags & VerticalAxisReflectionFlag) != 0)
             {
                 cornerIndices = ApplySourcePermutation(cornerIndices, 0);
-            }
-            else if ((orientationFlags & HorizontalAxisReflectionFlag) != 0)
-            {
-                cornerIndices = ApplySourcePermutation(cornerIndices, 1);
             }
 
             if ((orientationFlags & PreviousCornerRotationFlag) != 0)
@@ -76,17 +70,6 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     cornerIndices[2],
                     cornerIndices[1],
                     cornerIndices[3],
-                    cornerIndices[0]
-                ];
-            }
-
-            if (permutationCase == 1)
-            {
-                return
-                [
-                    cornerIndices[3],
-                    cornerIndices[2],
-                    cornerIndices[1],
                     cornerIndices[0]
                 ];
             }

@@ -11,7 +11,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 {
     public static class TrackRoadMarkingVertexBuilder
     {
-        private static Color MarkingColour => new(224, 224, 208);
+        private static Color MarkingColour => new(224, 224, 208, 96);
 
         private static float HalfWidth => 0.08f;
 

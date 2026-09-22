@@ -11,6 +11,10 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
     public sealed class NeedForSpeed2TrackLoader(IFilePathResolver filePathResolver)
         : ITrackFormatLoader
     {
+        private static int MinimumPanoramaDimension => 64;
+
+        private static int PanoramaTextureCount => 8;
+
         public GameVersion Game => GameVersion.NeedForSpeed2SpecialEdition;
 
         public LoadedTrack Load(string rootDirectory, string trackIdentifier)
@@ -39,12 +43,13 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
             string horizonPath = ResolveRequiredFile(
                 rootDirectory,
                 NeedForSpeed2TrackCatalogue.GetHorizonRelativePath(parsedIdentifier));
+            string legacyHorizonPath = ResolveRequiredFile(
+                rootDirectory,
+                NeedForSpeed2TrackCatalogue.GetLegacyHorizonRelativePath(
+                    parsedIdentifier));
             string materialPath = ResolveRequiredFile(
                 rootDirectory,
                 NeedForSpeed2TrackCatalogue.GetMaterialRelativePath(parsedIdentifier));
-            string skyTexturePath = ResolveRequiredFile(
-                rootDirectory,
-                NeedForSpeed2TrackCatalogue.GetSkyTextureRelativePath());
             string texturePath = ResolveRequiredFile(
                 rootDirectory,
                 NeedForSpeed2TrackCatalogue.GetTextureRelativePath(
@@ -66,21 +71,34 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
             TrackRoutePoint[] routePoints = NeedForSpeed2TrackRouteDecoder
                 .Decode(collectionExtraBlocks)
                 .ToArray();
+            ClassifyRoadShoulders(blocks, routePoints);
             TrackSurface[] globalScenerySurfaces = NeedForSpeed2TrackSceneryDecoder
                 .Decode(collectionExtraBlocks)
                 .ToArray();
             TrackTexture[] textures = NeedForSpeed2TextureArchiveDecoder
                 .Decode(File.ReadAllBytes(texturePath))
                 .ToArray();
-            TrackTexture? skyTexture = NeedForSpeed2TextureArchiveDecoder
-                .Decode(File.ReadAllBytes(skyTexturePath))
-                .FirstOrDefault(texture => string.Equals(
-                    texture.Name,
-                    NeedForSpeed2TrackCatalogue.GetSkyTextureName(parsedIdentifier),
-                    StringComparison.Ordinal));
+            TrackTexture[] panoramaSourceTextures = textures
+                .Where(texture => texture.Identifier < PanoramaTextureCount)
+                .OrderBy(texture => texture.Identifier)
+                .ToArray();
+            TrackTexture? panoramaTexture = null;
+
+            if (panoramaSourceTextures.Length == PanoramaTextureCount &&
+                panoramaSourceTextures.All(texture =>
+                    texture.Width >= MinimumPanoramaDimension &&
+                    texture.Height >= MinimumPanoramaDimension))
+            {
+                panoramaTexture = TrackTextureStripBuilder.BuildMirrored(
+                    int.MaxValue,
+                    "HorizonPanorama",
+                    panoramaSourceTextures);
+            }
+
             TrackHorizon horizon = NeedForSpeed2HorizonDecoder.Decode(
                 File.ReadAllText(horizonPath),
-                skyTexture);
+                File.ReadAllText(legacyHorizonPath),
+                panoramaTexture);
 
             return new LoadedTrack
             {
@@ -96,8 +114,8 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 SourceFiles = BuildSourceFiles(
                     geometryPath,
                     horizonPath,
+                    legacyHorizonPath,
                     materialPath,
-                    skyTexturePath,
                     texturePath)
             };
         }
@@ -117,11 +135,32 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
             return filePath;
         }
 
+        private static void ClassifyRoadShoulders(
+            IEnumerable<TrackBlock> blocks,
+            IEnumerable<TrackRoutePoint> routePoints)
+        {
+            TrackRoutePoint[] routePointArray = routePoints.ToArray();
+
+            foreach (TrackBlock block in blocks)
+            {
+                TrackRoutePoint[] blockRoutePoints = routePointArray
+                    .Where(routePoint => routePoint.BlockIdentifier == block.Identifier)
+                    .ToArray();
+
+                foreach (TrackSurface surface in block.Surfaces)
+                {
+                    surface.Side = TrackRoadShoulderSelector.Select(
+                        surface,
+                        blockRoutePoints);
+                }
+            }
+        }
+
         private static IEnumerable<TrackAssetFile> BuildSourceFiles(
             string geometryPath,
             string horizonPath,
+            string legacyHorizonPath,
             string materialPath,
-            string skyTexturePath,
             string texturePath)
             =>
             [
@@ -137,13 +176,13 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 },
                 new TrackAssetFile
                 {
-                    Role = TrackAssetRole.Materials,
-                    Path = materialPath
+                    Role = TrackAssetRole.Horizon,
+                    Path = legacyHorizonPath
                 },
                 new TrackAssetFile
                 {
-                    Role = TrackAssetRole.Sky,
-                    Path = skyTexturePath
+                    Role = TrackAssetRole.Materials,
+                    Path = materialPath
                 },
                 new TrackAssetFile
                 {

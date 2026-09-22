@@ -30,6 +30,8 @@ namespace OpenSpeed.Classic.Tracks
 
         public int RingRotationDegrees { get; set; }
 
-        public TrackTexture? SkyTexture { get; set; }
+        public TrackTexture? PanoramaTexture { get; set; }
+
+        public TrackColour SkyColour { get; set; } = new();
     }
 }

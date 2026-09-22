@@ -11,21 +11,11 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 {
     internal sealed class TrackTextureResource : IDisposable
     {
-        private static byte DarkPixelThreshold => 16;
-
         internal int Identifier { get; }
 
         internal Texture2D Texture { get; }
 
         internal TrackTextureResource(GraphicsDevice graphicsDevice, TrackTexture trackTexture)
-            : this(graphicsDevice, trackTexture, false)
-        {
-        }
-
-        internal TrackTextureResource(
-            GraphicsDevice graphicsDevice,
-            TrackTexture trackTexture,
-            bool keysDarkPixels)
         {
             ArgumentNullException.ThrowIfNull(graphicsDevice);
             ArgumentNullException.ThrowIfNull(trackTexture);
@@ -44,7 +34,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             }
 
             Color[] pixels = sourcePixels
-                .Select(sourcePixel => ConvertColour(sourcePixel, keysDarkPixels))
+                .Select(ConvertColour)
                 .ToArray();
             Identifier = trackTexture.Identifier;
             Texture = new Texture2D(
@@ -58,24 +48,11 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         public void Dispose() => Texture.Dispose();
 
-        private static Color ConvertColour(
-            TrackColour sourceColour,
-            bool keysDarkPixels)
-        {
-            byte maximumChannel = Math.Max(
-                sourceColour.Red,
-                Math.Max(sourceColour.Green, sourceColour.Blue));
-
-            if (keysDarkPixels && maximumChannel <= DarkPixelThreshold)
-            {
-                return Color.Transparent;
-            }
-
-            return new Color(
+        private static Color ConvertColour(TrackColour sourceColour)
+            => new(
                 sourceColour.Red,
                 sourceColour.Green,
                 sourceColour.Blue,
                 sourceColour.Alpha);
-        }
     }
 }

@@ -52,7 +52,9 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             TrackPoint[] roadMarkingPoints = roadMarking.Points.ToArray();
             TrackPoint[] points = surface.Points.ToArray();
             TrackMaterial material = track.Materials.Single();
-            TrackTexture texture = track.Textures.Single();
+            TrackTexture texture = track.Textures.Single(
+                trackTexture => trackTexture.Identifier == 0);
+            TrackHorizon horizon = track.Horizon!;
             TrackColour pixel = texture.Pixels.Single();
 
             Assert.Multiple(() =>
@@ -61,9 +63,11 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 Assert.That(track.DisplayName, Is.EqualTo("Outback"));
                 Assert.That(track.Game, Is.EqualTo(GameVersion.NeedForSpeed2SpecialEdition));
                 Assert.That(track.SourceFiles.Count(), Is.EqualTo(5));
-                Assert.That(track.Horizon, Is.Not.Null);
-                Assert.That(track.Horizon!.RingRadius, Is.EqualTo(1500));
-                Assert.That(track.Horizon.SkyTexture!.Name, Is.EqualTo("CLD2"));
+                Assert.That(horizon.RingRadius, Is.EqualTo(1500));
+                Assert.That(horizon.SkyColour.Red, Is.EqualTo(56));
+                Assert.That(horizon.SkyColour.Green, Is.EqualTo(80));
+                Assert.That(horizon.SkyColour.Blue, Is.EqualTo(131));
+                Assert.That(horizon.PanoramaTexture, Is.Null);
                 Assert.That(block.Identifier, Is.Zero);
                 Assert.That(block.Centre.X, Is.EqualTo(4.0));
                 Assert.That(block.Centre.Y, Is.EqualTo(8.0));
@@ -96,6 +100,8 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 Assert.That(routePoint.Normal.Y, Is.EqualTo(127.0));
                 Assert.That(routePoint.Forward.Z, Is.EqualTo(-127.0));
                 Assert.That(routePoint.Right.X, Is.EqualTo(127.0));
+                Assert.That(routePoint.LeftBorderDistance, Is.EqualTo(7.9375));
+                Assert.That(routePoint.RightBorderDistance, Is.EqualTo(7.9375));
                 Assert.That(material.Identifier, Is.Zero);
                 Assert.That(material.TextureIdentifier, Is.Zero);
                 Assert.That(material.Alignment, Is.EqualTo(0x0401));
@@ -119,7 +125,8 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 testDirectory,
                 "Outback",
                 TrackTextureVariant.PC);
-            TrackTexture texture = track.Textures.Single();
+            TrackTexture texture = track.Textures.Single(
+                trackTexture => trackTexture.Identifier == 0);
             TrackAssetFile textureSource = track.SourceFiles.Single(
                 sourceFile => Equals(sourceFile.Role, TrackAssetRole.Textures));
 

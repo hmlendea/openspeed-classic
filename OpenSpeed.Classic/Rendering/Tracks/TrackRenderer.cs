@@ -45,7 +45,8 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         private Dictionary<int, Vector3> blockCentres = [];
         private TrackColourBatch[] colourBatches = [];
-        private TrackTextureBatch? horizonDomeBatch;
+        private TrackColourBatch? horizonDomeBatch;
+        private TrackTextureBatch? horizonPanoramaBatch;
         private TrackColourBatch? horizonRingBatch;
         private TrackTextureResource? horizonTextureResource;
         private TrackColourBatch[] roadMarkingBatches = [];
@@ -111,6 +112,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 camera.Position,
                 viewFrustum,
                 visibleBlockIdentifiers);
+            graphicsDevice.BlendState = BlendState.NonPremultiplied;
             graphicsDevice.RasterizerState = roadMarkingRasterizerState;
             DrawColourBatches(
                 roadMarkingBatches,
@@ -352,6 +354,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         private void DisposeTrackResources()
         {
             horizonDomeBatch?.Dispose();
+            horizonPanoramaBatch?.Dispose();
             horizonRingBatch?.Dispose();
             horizonTextureResource?.Dispose();
 
@@ -378,6 +381,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             blockCentres = [];
             colourBatches = [];
             horizonDomeBatch = null;
+            horizonPanoramaBatch = null;
             horizonRingBatch = null;
             horizonTextureResource = null;
             roadMarkingBatches = [];
@@ -391,7 +395,9 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             Matrix view,
             Matrix projection)
         {
-            if (horizonDomeBatch is null && horizonRingBatch is null)
+            if (horizonDomeBatch is null &&
+                horizonPanoramaBatch is null &&
+                horizonRingBatch is null)
             {
                 return;
             }
@@ -404,15 +410,13 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             horizonTextureEffect.View = view;
             horizonTextureEffect.Projection = projection;
             graphicsDevice.DepthStencilState = DepthStencilState.None;
-            graphicsDevice.BlendState = BlendState.AlphaBlend;
+            graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.RasterizerState = horizonRasterizerState;
-            graphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
+            graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
 
-            if (horizonDomeBatch is not null && horizonTextureResource is not null)
+            if (horizonDomeBatch is not null)
             {
-                horizonTextureEffect.Texture = horizonTextureResource.Texture;
-
-                foreach (EffectPass pass in horizonTextureEffect.CurrentTechnique.Passes)
+                foreach (EffectPass pass in horizonColourEffect.CurrentTechnique.Passes)
                 {
                     pass.Apply();
                     graphicsDevice.SetVertexBuffer(horizonDomeBatch.VertexBuffer);
@@ -433,6 +437,22 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                         PrimitiveType.TriangleList,
                         0,
                         horizonRingBatch.PrimitiveCount);
+                }
+            }
+
+            if (horizonPanoramaBatch is not null && horizonTextureResource is not null)
+            {
+                graphicsDevice.BlendState = BlendState.Opaque;
+                horizonTextureEffect.Texture = horizonTextureResource.Texture;
+
+                foreach (EffectPass pass in horizonTextureEffect.CurrentTechnique.Passes)
+                {
+                    pass.Apply();
+                    graphicsDevice.SetVertexBuffer(horizonPanoramaBatch.VertexBuffer);
+                    graphicsDevice.DrawPrimitives(
+                        PrimitiveType.TriangleList,
+                        0,
+                        horizonPanoramaBatch.PrimitiveCount);
                 }
             }
         }
@@ -552,25 +572,44 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     ringVertices);
             }
 
-            if (horizon.SkyTexture is null)
-            {
-                return;
-            }
-
-            horizonTextureResource = new TrackTextureResource(
-                graphicsDevice,
-                horizon.SkyTexture,
-                true);
+            TrackColour sourceSkyColour = horizon.SkyColour;
+            Color skyColour = new(
+                sourceSkyColour.Red,
+                sourceSkyColour.Green,
+                sourceSkyColour.Blue);
             VertexPositionColorTexture[] domeVertices = TrackHorizonVertexBuilder
                 .BuildDome(horizon)
                 .ToArray();
 
             if (domeVertices.Length > 0)
             {
-                horizonDomeBatch = new TrackTextureBatch(
+                horizonDomeBatch = new TrackColourBatch(
                     graphicsDevice,
-                    horizon.SkyTexture.Identifier,
-                    domeVertices);
+                    domeVertices
+                        .Select(vertex => new VertexPositionColor(
+                            vertex.Position,
+                            skyColour))
+                        .ToArray());
+            }
+
+            if (horizon.PanoramaTexture is null)
+            {
+                return;
+            }
+
+            horizonTextureResource = new TrackTextureResource(
+                graphicsDevice,
+                horizon.PanoramaTexture);
+            VertexPositionColorTexture[] panoramaVertices = TrackHorizonVertexBuilder
+                .BuildPanorama(horizon)
+                .ToArray();
+
+            if (panoramaVertices.Length > 0)
+            {
+                horizonPanoramaBatch = new TrackTextureBatch(
+                    graphicsDevice,
+                    horizon.PanoramaTexture.Identifier,
+                    panoramaVertices);
             }
         }
 
