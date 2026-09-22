@@ -7,9 +7,9 @@ OpenSpeed Classic is a .NET 10 arcade racing game built on MonoGame via the Nuci
 - [OpenSpeed.Classic.slnx](OpenSpeed.Classic.slnx) contains the solution.
 - [OpenSpeed.Classic](OpenSpeed.Classic) contains the game executable project.
 - [OpenSpeed.Classic.UnitTests](OpenSpeed.Classic.UnitTests) contains the NUnit unit test project.
-- [OpenSpeed.Classic/OpenSpeedClassicGame.cs](OpenSpeed.Classic/OpenSpeedClassicGame.cs) owns the MonoGame lifecycle, camera input, and track rendering.
+- [OpenSpeed.Classic/OpenSpeedClassicGame.cs](OpenSpeed.Classic/OpenSpeedClassicGame.cs) owns the MonoGame lifecycle, driving input, and track rendering.
 - [OpenSpeed.Classic/Cars](OpenSpeed.Classic/Cars) contains renderer-neutral car models, NFS II car asset decoding, and loading orchestration.
-- [OpenSpeed.Classic/Input](OpenSpeed.Classic/Input) contains keyboard-to-camera input mapping.
+- [OpenSpeed.Classic/Input](OpenSpeed.Classic/Input) contains keyboard-to-driving input mapping.
 - [OpenSpeed.Classic/Rendering/Cars](OpenSpeed.Classic/Rendering/Cars) contains car vertex conversion, GPU resources, world placement, and rendering.
 - [OpenSpeed.Classic/Rendering/Tracks](OpenSpeed.Classic/Rendering/Tracks) contains the track camera, horizon, vertex conversion, neighbour visibility, dynamic LOD, GPU batches, and renderer.
 - [OpenSpeed.Classic/Tracks](OpenSpeed.Classic/Tracks) contains renderer-neutral track models and loading contracts.
@@ -28,6 +28,24 @@ Original game assets are not distributed with this project. Configure an install
         "RootDirectory": "/path/to/NFS2 SE"
       }
     ]
+  },
+  "Controls": {
+    "Accelerate": {
+      "Primary": "Up",
+      "Secondary": "W"
+    },
+    "Reverse": {
+      "Primary": "Down",
+      "Secondary": "S"
+    },
+    "SteerLeft": {
+      "Primary": "Left",
+      "Secondary": "A"
+    },
+    "SteerRight": {
+      "Primary": "Right",
+      "Secondary": "D"
+    }
   },
   "Rendering": {
     "AreShadowsEnabled": true,
@@ -48,7 +66,7 @@ Relative asset roots are resolved from the process working directory. Paths with
 
 `AreShadowsEnabled` controls the track's baked per-vertex shadow lighting. `Is3DfxEnabled` selects the `SE` 3dfx texture archive when enabled and the `PC` software-renderer archive when disabled.
 
-The player car is loaded from `gamedata/sim/cardata/cardata.viv` and `gamedata/carmodel/pc` beneath the configured asset root. It is positioned at the first decoded route point and rendered after the track. Omitting `StartupCar` selects `McLarenF1`.
+The player car is loaded from `gamedata/sim/cardata/cardata.viv` and `gamedata/carmodel/pc` beneath the configured asset root. It is positioned at the first decoded route point, controlled by the configured keyboard bindings, and followed by the camera. Omitting `StartupCar` selects `McLarenF1`.
 
 For compatibility with existing configurations, omitting `Is3DfxEnabled` uses the asset source's `TextureVariant`. `TextureVariant` accepts `PC` or `SE` and defaults to `SE` when omitted.
 
@@ -93,12 +111,13 @@ env -u DISPLAY SDL_VIDEODRIVER=wayland \
 ```
 
 ## Controls
-
-- `Up Arrow`: Move forwards.
-- `Down Arrow`: Move backwards.
-- `Left Arrow`: Turn left.
-- `Right Arrow`: Turn right.
+- `Up Arrow` or `W`: Accelerate.
+- `Down Arrow` or `S`: Reverse.
+- `Left Arrow` or `A`: Steer left.
+- `Right Arrow` or `D`: Steer right.
 - `Escape`: Exit.
+
+Every driving action has a `Primary` and `Secondary` key in the `Controls` section of [OpenSpeed.Classic/appsettings.json](OpenSpeed.Classic/appsettings.json). Both bindings must be valid, distinct MonoGame key names.
 
 ## Licence
 

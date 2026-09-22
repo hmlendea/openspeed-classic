@@ -145,6 +145,28 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             });
         }
 
+        [Test]
+        public void GivenACarWorldTransform_WhenFollowing_ThenTheCameraChasesTheCar()
+        {
+            Matrix carWorld = Matrix.CreateWorld(
+                new Vector3(42.0f, 8.0f, 16.0f),
+                Vector3.Right,
+                Vector3.Up);
+
+            trackCamera.Follow(carWorld);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(
+                    trackCamera.Position,
+                    Is.EqualTo(new Vector3(36.0f, 11.0f, 16.0f)));
+                Assert.That(trackCamera.Direction.X, Is.GreaterThan(0.0f));
+                Assert.That(trackCamera.Direction.Y, Is.LessThan(0.0f));
+                Assert.That(trackCamera.Direction.Z, Is.Zero.Within(PositionTolerance));
+                Assert.That(trackCamera.Up, Is.EqualTo(Vector3.Up));
+            });
+        }
+
         [TestCase(0, 720)]
         [TestCase(1280, 0)]
         public void GivenAnInvalidViewport_WhenCreatingProjection_ThenTheDimensionIsRejected(

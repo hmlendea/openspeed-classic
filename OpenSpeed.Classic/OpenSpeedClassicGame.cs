@@ -20,6 +20,7 @@ namespace OpenSpeed.Classic
         private readonly GraphicsDeviceManager graphicsDeviceManager;
         private readonly bool areShadowsEnabled = true;
         private readonly string? captureFramePath;
+        private readonly DrivingControlsSettings drivingControls = new();
         private ICarRenderer? carRenderer;
         private Matrix? carWorld;
         private bool hasCapturedDiagnosticFrame;
@@ -76,10 +77,26 @@ namespace OpenSpeed.Classic
             LoadedCar? loadedCar,
             RenderingSettings renderingSettings,
             string? captureFramePath)
+            : this(
+                loadedTrack,
+                loadedCar,
+                renderingSettings,
+                new DrivingControlsSettings(),
+                captureFramePath)
+        {
+        }
+
+        public OpenSpeedClassicGame(
+            LoadedTrack loadedTrack,
+            LoadedCar? loadedCar,
+            RenderingSettings renderingSettings,
+            DrivingControlsSettings drivingControls,
+            string? captureFramePath)
             : this()
         {
             ArgumentNullException.ThrowIfNull(loadedTrack);
             ArgumentNullException.ThrowIfNull(renderingSettings);
+            ArgumentNullException.ThrowIfNull(drivingControls);
 
             if (!string.IsNullOrWhiteSpace(captureFramePath))
             {
@@ -87,6 +104,7 @@ namespace OpenSpeed.Classic
             }
 
             areShadowsEnabled = renderingSettings.AreShadowsEnabled;
+            this.drivingControls = drivingControls;
             CurrentCar = loadedCar;
             CurrentTrack = loadedTrack;
             Window.Title = $"{WindowTitle} - {loadedTrack.DisplayName}";
@@ -132,11 +150,12 @@ namespace OpenSpeed.Classic
 
             if (trackCamera is not null)
             {
-                TrackCameraInput cameraInput = TrackCameraInputReader.Read(keyboardState);
-                trackCamera.Update(
+                TrackCameraInput drivingInput = TrackCameraInputReader.Read(
+                    keyboardState,
+                    drivingControls);
+                UpdateCarAndCamera(
                     (float)gameTime.ElapsedGameTime.TotalSeconds,
-                    cameraInput.MovementInput,
-                    cameraInput.TurningInput);
+                    drivingInput);
             }
 
             base.Update(gameTime);
@@ -218,6 +237,33 @@ namespace OpenSpeed.Classic
                 carWorld.Value,
                 viewportWidth,
                 viewportHeight);
+        }
+
+        private void UpdateCarAndCamera(
+            float elapsedSeconds,
+            TrackCameraInput drivingInput)
+        {
+            if (trackCamera is null)
+            {
+                return;
+            }
+
+            if (carWorld is null)
+            {
+                trackCamera.Update(
+                    elapsedSeconds,
+                    drivingInput.MovementInput,
+                    drivingInput.TurningInput);
+
+                return;
+            }
+
+            carWorld = CarWorldTransformUpdater.Update(
+                carWorld.Value,
+                elapsedSeconds,
+                drivingInput.MovementInput,
+                drivingInput.TurningInput);
+            trackCamera.Follow(carWorld.Value);
         }
 
         protected override void UnloadContent()

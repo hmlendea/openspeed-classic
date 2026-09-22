@@ -16,7 +16,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         public Vector3 Position { get; private set; }
 
-        public Vector3 Up { get; }
+        public Vector3 Up { get; private set; }
 
         private static float CameraHeight => 3.0f;
 
@@ -78,12 +78,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 }
             }
 
-            Position = targetPosition -
-                trackDirection * ChaseDistance +
-                up * CameraHeight;
-            Vector3 target = targetPosition + trackDirection * LookAheadDistance;
-            Direction = Vector3.Normalize(target - Position);
-            Up = up;
+            Follow(Matrix.CreateWorld(targetPosition, trackDirection, up));
             FarPlane = CalculateFarPlane(centres, Position);
         }
 
@@ -116,6 +111,28 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         public Matrix CreateView()
             => Matrix.CreateLookAt(Position, Position + Direction, Up);
+
+        public void Follow(Matrix targetWorld)
+        {
+            Vector3 targetPosition = targetWorld.Translation;
+            Vector3 targetDirection = NormaliseOrFallback(
+                targetWorld.Forward,
+                Vector3.Forward);
+            Vector3 targetUp = NormaliseOrFallback(targetWorld.Up, Vector3.Up);
+
+            if (Vector3.Cross(targetDirection, targetUp).LengthSquared() == 0.0f)
+            {
+                targetUp = Vector3.Up;
+            }
+
+            Position = targetPosition -
+                targetDirection * ChaseDistance +
+                targetUp * CameraHeight;
+            Vector3 lookAtPosition = targetPosition +
+                targetDirection * LookAheadDistance;
+            Direction = Vector3.Normalize(lookAtPosition - Position);
+            Up = targetUp;
+        }
 
         public void Update(
             float elapsedSeconds,

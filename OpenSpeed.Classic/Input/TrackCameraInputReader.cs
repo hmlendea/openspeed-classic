@@ -1,19 +1,38 @@
+using System;
+
 using Microsoft.Xna.Framework.Input;
+
+using OpenSpeed.Classic.Configuration;
 
 namespace OpenSpeed.Classic.Input
 {
     public static class TrackCameraInputReader
     {
         public static TrackCameraInput Read(KeyboardState keyboardState)
-            => new()
+            => Read(keyboardState, new DrivingControlsSettings());
+
+        public static TrackCameraInput Read(
+            KeyboardState keyboardState,
+            DrivingControlsSettings controls)
+        {
+            ArgumentNullException.ThrowIfNull(controls);
+
+            return new TrackCameraInput
             {
                 MovementInput = GetAxisValue(
-                    keyboardState.IsKeyDown(Keys.Up),
-                    keyboardState.IsKeyDown(Keys.Down)),
+                    IsControlPressed(keyboardState, controls.Accelerate),
+                    IsControlPressed(keyboardState, controls.Reverse)),
                 TurningInput = GetAxisValue(
-                    keyboardState.IsKeyDown(Keys.Right),
-                    keyboardState.IsKeyDown(Keys.Left))
+                    IsControlPressed(keyboardState, controls.SteerRight),
+                    IsControlPressed(keyboardState, controls.SteerLeft))
             };
+                }
+
+        private static bool IsControlPressed(
+            KeyboardState keyboardState,
+            ControlBindingSettings binding)
+            => keyboardState.IsKeyDown(binding.Primary) ||
+                keyboardState.IsKeyDown(binding.Secondary);
 
         private static float GetAxisValue(bool positiveIsPressed, bool negativeIsPressed)
         {

@@ -26,6 +26,7 @@ namespace OpenSpeed.Classic
                 loadedTrack,
                 loadedCar,
                 settings.Rendering,
+                settings.Controls,
                 applicationArguments.CaptureFramePath);
             game.Run();
         }

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+
+using Microsoft.Xna.Framework.Input;
 
 using OpenSpeed.Classic.Assets;
 using OpenSpeed.Classic.Cars;
@@ -15,7 +18,8 @@ namespace OpenSpeed.Classic.Configuration
         {
             Converters =
             {
-                new TrackTextureVariantJsonConverter()
+                new TrackTextureVariantJsonConverter(),
+                new JsonStringEnumConverter(null, false)
             },
             PropertyNameCaseInsensitive = true,
             ReadCommentHandling = JsonCommentHandling.Skip
@@ -56,10 +60,57 @@ namespace OpenSpeed.Classic.Configuration
             }
 
             ValidateAssetSources(settings.Assets.Sources, filePath);
+            ValidateControls(settings.Controls, filePath);
             ValidateStartupCar(settings.StartupCar, filePath);
             ValidateStartupTrack(settings.StartupTrack, filePath);
 
             return settings;
+        }
+
+        private static void ValidateControls(
+            DrivingControlsSettings controls,
+            string filePath)
+        {
+            if (controls is null)
+            {
+                throw new InvalidDataException(
+                    $"The application settings file '{filePath}' contains no controls.");
+            }
+
+            ValidateControlBinding(controls.Accelerate, nameof(controls.Accelerate), filePath);
+            ValidateControlBinding(controls.Reverse, nameof(controls.Reverse), filePath);
+            ValidateControlBinding(controls.SteerLeft, nameof(controls.SteerLeft), filePath);
+            ValidateControlBinding(controls.SteerRight, nameof(controls.SteerRight), filePath);
+        }
+
+        private static void ValidateControlBinding(
+            ControlBindingSettings binding,
+            string controlName,
+            string filePath)
+        {
+            if (binding is null)
+            {
+                throw new InvalidDataException(
+                    $"The '{controlName}' control in '{filePath}' contains no bindings.");
+            }
+
+            if (!Enum.IsDefined(binding.Primary) || binding.Primary == Keys.None)
+            {
+                throw new InvalidDataException(
+                    $"The primary binding for '{controlName}' in '{filePath}' is invalid.");
+            }
+
+            if (!Enum.IsDefined(binding.Secondary) || binding.Secondary == Keys.None)
+            {
+                throw new InvalidDataException(
+                    $"The secondary binding for '{controlName}' in '{filePath}' is invalid.");
+            }
+
+            if (binding.Primary == binding.Secondary)
+            {
+                throw new InvalidDataException(
+                    $"The bindings for '{controlName}' in '{filePath}' must be distinct.");
+            }
         }
 
         private static void ValidateStartupCar(

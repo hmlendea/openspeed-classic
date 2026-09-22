@@ -45,5 +45,20 @@ namespace OpenSpeed.Classic.UnitTests
                 () => new OpenSpeedClassicGame(loadedTrack, null!, null),
                 Throws.TypeOf<ArgumentNullException>());
         }
+
+        [Test]
+        public void GivenNullControls_WhenConstructingTheGame_ThenAnArgumentNullExceptionIsThrown()
+        {
+            LoadedTrack loadedTrack = new() { Identifier = "Outback" };
+
+            Assert.That(
+                () => new OpenSpeedClassicGame(
+                    loadedTrack,
+                    null,
+                    new RenderingSettings(),
+                    null!,
+                    null),
+                Throws.TypeOf<ArgumentNullException>());
+        }
     }
 }

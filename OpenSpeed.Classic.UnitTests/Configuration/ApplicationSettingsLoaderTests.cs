@@ -3,6 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 
+using Microsoft.Xna.Framework.Input;
+
 using NUnit.Framework;
 
 using OpenSpeed.Classic.Assets;
@@ -61,6 +63,24 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                   "Rendering": {
                     "AreShadowsEnabled": false,
                     "Is3DfxEnabled": true
+                  },
+                  "Controls": {
+                    "Accelerate": {
+                      "Primary": "Space",
+                      "Secondary": "Enter"
+                    },
+                    "Brake": {
+                      "Primary": "Down",
+                      "Secondary": "S"
+                    },
+                    "SteerLeft": {
+                      "Primary": "Left",
+                      "Secondary": "A"
+                    },
+                    "SteerRight": {
+                      "Primary": "Right",
+                      "Secondary": "D"
+                    }
                   }
                 }
                 """);
@@ -83,6 +103,8 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                 Assert.That(settings.StartupCar.Identifier, Is.EqualTo("FerrariF50"));
                 Assert.That(settings.Rendering.AreShadowsEnabled, Is.False);
                 Assert.That(settings.Rendering.Is3DfxEnabled, Is.True);
+                Assert.That(settings.Controls.Accelerate.Primary, Is.EqualTo(Keys.Space));
+                Assert.That(settings.Controls.Accelerate.Secondary, Is.EqualTo(Keys.Enter));
             });
         }
 
@@ -104,6 +126,75 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
             Assert.That(settings.Rendering.AreShadowsEnabled);
             Assert.That(settings.Rendering.Is3DfxEnabled, Is.Null);
             Assert.That(settings.StartupCar.Identifier, Is.EqualTo("McLarenF1"));
+            Assert.That(settings.Controls.Accelerate.Primary, Is.EqualTo(Keys.Up));
+            Assert.That(settings.Controls.Accelerate.Secondary, Is.EqualTo(Keys.W));
+        }
+
+        [TestCase("None", "W")]
+        [TestCase("Up", "Up")]
+        public void GivenInvalidControlBindings_WhenLoading_ThenInvalidDataIsReported(
+            string primary,
+            string secondary)
+        {
+            string filePath = WriteSettings(
+                $$"""
+                {
+                  "Assets": {
+                    "Sources": [
+                      {
+                        "Game": "NeedForSpeed2SpecialEdition",
+                        "RootDirectory": "/test-assets"
+                      }
+                    ]
+                  },
+                  "Controls": {
+                    "Accelerate": {
+                      "Primary": "{{primary}}",
+                      "Secondary": "{{secondary}}"
+                    }
+                  },
+                  "StartupTrack": {
+                    "Game": "NeedForSpeed2SpecialEdition",
+                    "Identifier": "Outback"
+                  }
+                }
+                """);
+
+            Assert.That(
+                () => settingsLoader.Load(filePath),
+                Throws.TypeOf<InvalidDataException>());
+        }
+
+        [Test]
+        public void GivenAnUnknownControlKey_WhenLoading_ThenJsonExceptionIsThrown()
+        {
+            string filePath = WriteSettings(
+                """
+                {
+                  "Assets": {
+                    "Sources": [
+                      {
+                        "Game": "NeedForSpeed2SpecialEdition",
+                        "RootDirectory": "/test-assets"
+                      }
+                    ]
+                  },
+                  "Controls": {
+                    "Accelerate": {
+                      "Primary": "Banana",
+                      "Secondary": "W"
+                    }
+                  },
+                  "StartupTrack": {
+                    "Game": "NeedForSpeed2SpecialEdition",
+                    "Identifier": "Outback"
+                  }
+                }
+                """);
+
+            Assert.That(
+                () => settingsLoader.Load(filePath),
+                Throws.TypeOf<JsonException>());
         }
 
         [TestCase("\"Minecraft\"")]
