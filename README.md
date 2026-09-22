@@ -77,7 +77,7 @@ Relative asset roots are resolved from the process working directory. Paths with
 
 Track, horizon, and car textures receive complete mipmap chains and anisotropic filtering to reduce distant aliasing and shimmer.
 
-The player car is loaded from `gamedata/sim/cardata/cardata.viv` and `gamedata/carmodel/pc` beneath the configured asset root. Car geometry is enlarged uniformly while retaining matching physical wall clearance. The car is positioned at the first decoded route point, constrained by the decoded track walls, aligned to slopes, affected by gravity, controlled by the configured keyboard bindings, and followed by the camera. Omitting `StartupCar` selects `McLarenF1`.
+The player car is loaded from `gamedata/sim/cardata/cardata.viv` and `gamedata/carmodel/pc` beneath the configured asset root. Car geometry is enlarged uniformly while retaining matching physical wall clearance. The car is positioned at the first decoded route point, constrained by the decoded track walls, aligned to slopes, affected by gravity, controlled by the configured keyboard bindings, and followed by the camera. Uphill momentum is preserved at convex crests, permitting sufficiently rapid cars to become briefly airborne before gravity returns them to the road. Omitting `StartupCar` selects `McLarenF1`.
 
 For compatibility with existing configurations, omitting `Is3DfxEnabled` uses the asset source's `TextureVariant`. `TextureVariant` accepts `PC` or `SE` and defaults to `SE` when omitted.
 

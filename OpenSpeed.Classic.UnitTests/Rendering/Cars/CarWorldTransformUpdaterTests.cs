@@ -350,6 +350,105 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
             });
         }
 
+        [Test]
+        public void GivenHighSpeedAtAnUphillCrest_WhenUpdating_ThenTheCarBecomesAirborne()
+        {
+            Vector3 uphillNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, 1.0f));
+            Vector3 uphillForward = Vector3.Normalize(new Vector3(0.0f, 1.0f, -2.0f));
+            Vector3 downhillNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, -1.0f));
+            CarPhysicsState physicsState = new()
+            {
+                IsGrounded = true,
+                LongitudinalVelocity = 32.0f,
+                VerticalVelocity = uphillForward.Y * 32.0f
+            };
+            Matrix world = Matrix.CreateWorld(
+                new Vector3(0.0f, 8.0f, -16.0f),
+                uphillForward,
+                uphillNormal);
+            TrackRoutePoint start = BuildSlopeRoutePoint(
+                0.0,
+                0.0,
+                uphillForward,
+                uphillNormal);
+            TrackRoutePoint crest = BuildSlopeRoutePoint(
+                8.0,
+                -16.0,
+                Vector3.Forward,
+                Vector3.Up);
+            TrackRoutePoint end = BuildSlopeRoutePoint(
+                0.0,
+                -32.0,
+                Vector3.Normalize(new Vector3(0.0f, -1.0f, -2.0f)),
+                downhillNormal);
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [start, crest, end],
+                physicsState,
+                0.1f,
+                0.0f,
+                0.0f);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(physicsState.IsGrounded, Is.False);
+                Assert.That(physicsState.VerticalVelocity, Is.GreaterThan(0.0f));
+                Assert.That(updatedWorld.Translation.Y, Is.GreaterThan(8.0f));
+                Assert.That(updatedWorld.Up.X, Is.EqualTo(uphillNormal.X).Within(ValueTolerance));
+                Assert.That(updatedWorld.Up.Y, Is.EqualTo(uphillNormal.Y).Within(ValueTolerance));
+                Assert.That(updatedWorld.Up.Z, Is.EqualTo(uphillNormal.Z).Within(ValueTolerance));
+            });
+        }
+
+        [Test]
+        public void GivenHighSpeedAtTheTopOfADownhill_WhenUpdating_ThenTheCarBecomesAirborne()
+        {
+            Vector3 uphillNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, 1.0f));
+            Vector3 uphillForward = Vector3.Normalize(new Vector3(0.0f, 1.0f, -2.0f));
+            Vector3 downhillNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, -1.0f));
+            CarPhysicsState physicsState = new()
+            {
+                IsGrounded = true,
+                LongitudinalVelocity = 32.0f,
+                VerticalVelocity = uphillForward.Y * 32.0f
+            };
+            Matrix world = Matrix.CreateWorld(
+                new Vector3(0.0f, 8.0f, -16.0f),
+                uphillForward,
+                uphillNormal);
+            TrackRoutePoint start = BuildSlopeRoutePoint(
+                0.0,
+                0.0,
+                uphillForward,
+                uphillNormal);
+            TrackRoutePoint crest = BuildSlopeRoutePoint(
+                8.0,
+                -16.0,
+                Vector3.Forward,
+                Vector3.Up);
+            TrackRoutePoint end = BuildSlopeRoutePoint(
+                0.0,
+                -32.0,
+                Vector3.Normalize(new Vector3(0.0f, -1.0f, -2.0f)),
+                downhillNormal);
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [start, crest, end],
+                physicsState,
+                0.1f,
+                0.0f,
+                0.0f);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(physicsState.IsGrounded, Is.False);
+                Assert.That(physicsState.VerticalVelocity, Is.GreaterThan(0.0f));
+                Assert.That(updatedWorld.Translation.Y, Is.GreaterThan(8.0f));
+            });
+        }
+
         [TestCase(float.NaN)]
         [TestCase(float.NegativeInfinity)]
         [TestCase(-1.0f)]

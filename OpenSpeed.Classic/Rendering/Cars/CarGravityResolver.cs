@@ -9,7 +9,7 @@ namespace OpenSpeed.Classic.Rendering.Cars
 {
     public static class CarGravityResolver
     {
-        private static float GravityAcceleration => 9.81f;
+        private static float GravityAcceleration => 10.0f;
 
         private static float GroundContactTolerance => 0.01f;
 
@@ -50,7 +50,13 @@ namespace OpenSpeed.Classic.Rendering.Cars
             if (routeProjection is null ||
                 MathF.Abs(routeProjection.Normal.Y) < MinimumGroundNormalY)
             {
-                return world;
+                if (!physicsState.IsGrounded &&
+                    physicsState.VerticalVelocity == 0.0f)
+                {
+                    return world;
+                }
+
+                return ResolveAirborneWorld(world, physicsState, elapsedSeconds);
             }
 
             Vector3 position = world.Translation;
@@ -58,27 +64,34 @@ namespace OpenSpeed.Classic.Rendering.Cars
                 position,
                 routeProjection.Position,
                 routeProjection.Normal);
-            bool isGrounded = position.Y <= groundHeight + GroundContactTolerance;
+            float surfaceVerticalVelocity = CalculateSurfaceVerticalVelocity(
+                routeProjection,
+                physicsState);
+            bool isLeavingSurface = physicsState.IsGrounded &&
+                physicsState.VerticalVelocity > surfaceVerticalVelocity;
+            bool hasGroundContact =
+                !isLeavingSurface &&
+                position.Y <= groundHeight + GroundContactTolerance;
 
-            if (isGrounded)
+            if (hasGroundContact)
             {
                 position.Y = groundHeight;
-                physicsState.VerticalVelocity = 0.0f;
+                physicsState.IsGrounded = true;
             }
             else
             {
+                physicsState.IsGrounded = false;
                 physicsState.VerticalVelocity -= GravityAcceleration * elapsedSeconds;
                 position.Y += physicsState.VerticalVelocity * elapsedSeconds;
 
                 if (position.Y <= groundHeight)
                 {
                     position.Y = groundHeight;
-                    physicsState.VerticalVelocity = 0.0f;
-                    isGrounded = true;
+                    physicsState.IsGrounded = true;
                 }
             }
 
-            if (!isGrounded)
+            if (!physicsState.IsGrounded)
             {
                 return Matrix.CreateWorld(position, world.Forward, world.Up);
             }
@@ -97,10 +110,45 @@ namespace OpenSpeed.Classic.Rendering.Cars
                 forward = Vector3.Forward;
             }
 
+            forward = Vector3.Normalize(forward);
+            physicsState.VerticalVelocity =
+                forward.Y * physicsState.LongitudinalVelocity;
+
             return Matrix.CreateWorld(
                 position,
-                Vector3.Normalize(forward),
+                forward,
                 routeProjection.Normal);
+        }
+
+        private static Matrix ResolveAirborneWorld(
+            Matrix world,
+            CarPhysicsState physicsState,
+            float elapsedSeconds)
+        {
+            physicsState.IsGrounded = false;
+            physicsState.VerticalVelocity -= GravityAcceleration * elapsedSeconds;
+            Vector3 position = world.Translation;
+            position.Y += physicsState.VerticalVelocity * elapsedSeconds;
+
+            return Matrix.CreateWorld(position, world.Forward, world.Up);
+        }
+
+        private static float CalculateSurfaceVerticalVelocity(
+            TrackRouteProjection routeProjection,
+            CarPhysicsState physicsState)
+        {
+            Vector3 surfaceForward = ProjectOntoGround(
+                routeProjection.Forward,
+                routeProjection.Normal);
+
+            if (surfaceForward.LengthSquared() == 0.0f)
+            {
+                return 0.0f;
+            }
+
+            surfaceForward.Normalize();
+
+            return surfaceForward.Y * physicsState.LongitudinalVelocity;
         }
 
         private static float CalculateGroundHeight(

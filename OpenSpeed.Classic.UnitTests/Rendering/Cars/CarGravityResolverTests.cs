@@ -37,9 +37,9 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
 
             Assert.Multiple(() =>
             {
-                Assert.That(firstWorld.Translation.Y, Is.EqualTo(13.5475f).Within(ValueTolerance));
-                Assert.That(secondWorld.Translation.Y, Is.EqualTo(8.6425f).Within(ValueTolerance));
-                Assert.That(physicsState.VerticalVelocity, Is.EqualTo(-9.81f).Within(ValueTolerance));
+                Assert.That(firstWorld.Translation.Y, Is.EqualTo(13.5f).Within(ValueTolerance));
+                Assert.That(secondWorld.Translation.Y, Is.EqualTo(8.5f).Within(ValueTolerance));
+                Assert.That(physicsState.VerticalVelocity, Is.EqualTo(-10.0f).Within(ValueTolerance));
             });
         }
 
@@ -90,6 +90,131 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
                 0.0f);
 
             Assert.That(resolvedWorld.Translation.Y, Is.EqualTo(2.0f).Within(ValueTolerance));
+        }
+
+        [Test]
+        public void GivenGroundedUphillMotion_WhenResolving_ThenVerticalMomentumIsRetained()
+        {
+            Vector3 slopeNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, 1.0f));
+            Vector3 slopeForward = Vector3.Normalize(new Vector3(0.0f, 1.0f, -2.0f));
+            CarPhysicsState physicsState = new()
+            {
+                LongitudinalVelocity = 16.0f
+            };
+            Matrix world = Matrix.CreateWorld(Vector3.Zero, slopeForward, slopeNormal);
+
+            CarGravityResolver.Resolve(
+                world,
+                [BuildRoutePoint(0.0, 0.0, slopeNormal)],
+                physicsState,
+                0.0f);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(physicsState.IsGrounded);
+                Assert.That(
+                    physicsState.VerticalVelocity,
+                    Is.EqualTo(slopeForward.Y * 16.0f).Within(ValueTolerance));
+            });
+        }
+
+        [Test]
+        public void GivenAnUphillCrestAtVelocity_WhenResolving_ThenTheCarBecomesAirborne()
+        {
+            Vector3 uphillNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, 1.0f));
+            Vector3 uphillForward = Vector3.Normalize(new Vector3(0.0f, 1.0f, -2.0f));
+            Vector3 downhillNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, -1.0f));
+            CarPhysicsState physicsState = new()
+            {
+                IsGrounded = true,
+                LongitudinalVelocity = 32.0f,
+                VerticalVelocity = uphillForward.Y * 32.0f
+            };
+            Matrix world = Matrix.CreateWorld(
+                new Vector3(0.0f, 8.0f, -17.0f),
+                uphillForward,
+                uphillNormal);
+            TrackRoutePoint start = BuildRoutePoint(0.0, 0.0, uphillNormal);
+            TrackRoutePoint crest = BuildRoutePoint(8.0, -16.0, Vector3.Up);
+            TrackRoutePoint end = BuildRoutePoint(0.0, -32.0, downhillNormal);
+
+            Matrix resolvedWorld = CarGravityResolver.Resolve(
+                world,
+                [start, crest, end],
+                physicsState,
+                0.1f);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(physicsState.IsGrounded, Is.False);
+                Assert.That(physicsState.VerticalVelocity, Is.GreaterThan(0.0f));
+                Assert.That(resolvedWorld.Translation.Y, Is.GreaterThan(8.0f));
+                Assert.That(resolvedWorld.Up, Is.EqualTo(uphillNormal));
+            });
+        }
+
+        [Test]
+        public void GivenAnUphillCarWithinContactTolerance_WhenResolvingAtADownhillTransition_ThenTheCarRemainsAirborne()
+        {
+            Vector3 downhillNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, -1.0f));
+            CarPhysicsState physicsState = new()
+            {
+                IsGrounded = true,
+                LongitudinalVelocity = 32.0f,
+                VerticalVelocity = 8.0f
+            };
+            Matrix world = Matrix.CreateWorld(
+                new Vector3(0.0f, 0.005f, -16.0f),
+                Vector3.Normalize(new Vector3(0.0f, 1.0f, -2.0f)),
+                Vector3.Up);
+
+            Matrix resolvedWorld = CarGravityResolver.Resolve(
+                world,
+                [BuildRoutePoint(0.0, -16.0, downhillNormal)],
+                physicsState,
+                0.1f);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(physicsState.IsGrounded, Is.False);
+                Assert.That(physicsState.VerticalVelocity, Is.EqualTo(7.0f).Within(ValueTolerance));
+                Assert.That(resolvedWorld.Translation.Y, Is.EqualTo(0.705f).Within(ValueTolerance));
+            });
+        }
+
+        [Test]
+        public void GivenAnAirborneCarAboveADownhill_WhenResolvingRepeatedly_ThenItLands()
+        {
+            Vector3 downhillNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, -1.0f));
+            CarPhysicsState physicsState = new()
+            {
+                IsGrounded = false,
+                LongitudinalVelocity = 16.0f,
+                VerticalVelocity = 2.0f
+            };
+            Matrix world = Matrix.CreateWorld(
+                new Vector3(0.0f, 8.0f, -24.0f),
+                Vector3.Forward,
+                Vector3.Up);
+            TrackRoutePoint routePoint = BuildRoutePoint(4.0, -24.0, downhillNormal);
+
+            for (int updateIndex = 0;
+                updateIndex < 8 && !physicsState.IsGrounded;
+                updateIndex += 1)
+            {
+                world = CarGravityResolver.Resolve(
+                    world,
+                    [routePoint],
+                    physicsState,
+                    0.25f);
+            }
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(physicsState.IsGrounded);
+                Assert.That(world.Translation.Y, Is.EqualTo(4.0f).Within(ValueTolerance));
+                Assert.That(world.Up.Y, Is.EqualTo(downhillNormal.Y).Within(ValueTolerance));
+            });
         }
 
         [Test]
