@@ -2,6 +2,10 @@ using System;
 using System.IO;
 using System.Linq;
 
+using Moq;
+
+using NuciLog.Core;
+
 using NUnit.Framework;
 
 using OpenSpeed.Classic.Assets;
@@ -24,7 +28,9 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 $"openspeed-nfs2-{Guid.NewGuid():N}");
             Directory.CreateDirectory(testDirectory);
             NeedForSpeed2TrackFixture.Write(testDirectory);
-            trackLoader = new NeedForSpeed2TrackLoader(new FilePathResolver());
+            Mock<ILogger> logger = new();
+            trackLoader = new NeedForSpeed2TrackLoader(
+                new FilePathResolver(logger.Object));
         }
 
         [TearDown]
@@ -138,6 +144,48 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                     Is.EqualTo(Path.Combine(
                         testDirectory,
                         NeedForSpeed2TrackFixture.PcTextureRelativePath)));
+            });
+        }
+
+        [Test]
+        public void GivenAPartialOverride_WhenLoadingOutback_ThenOverrideAndRootAssetsAreCombined()
+        {
+            string overridesDirectory = Path.Combine(testDirectory, "Overrides");
+            string geometryRelativePath = NeedForSpeed2TrackFixture.GeometryRelativePath;
+            string textureRelativePath = NeedForSpeed2TrackFixture.TextureRelativePath;
+            string overrideGeometryPath = Path.Combine(
+                overridesDirectory,
+                geometryRelativePath);
+            string? overrideGeometryDirectory = Path.GetDirectoryName(overrideGeometryPath);
+            Directory.CreateDirectory(overrideGeometryDirectory!);
+            Mock<ILogger> logger = new();
+            IFilePathResolver filePathResolver = new FilePathResolver(logger.Object);
+            string rootGeometryPath = filePathResolver.ResolveFile(
+                testDirectory,
+                geometryRelativePath)!;
+            string rootTexturePath = filePathResolver.ResolveFile(
+                testDirectory,
+                textureRelativePath)!;
+            File.Copy(
+                rootGeometryPath,
+                overrideGeometryPath);
+
+            LoadedTrack track = trackLoader.Load(
+                testDirectory,
+                overridesDirectory,
+                "Outback",
+                TrackTextureVariant.SE);
+            TrackAssetFile geometrySource = track.SourceFiles.Single(
+                sourceFile => Equals(sourceFile.Role, TrackAssetRole.Geometry));
+            TrackAssetFile textureSource = track.SourceFiles.Single(
+                sourceFile => Equals(sourceFile.Role, TrackAssetRole.Textures));
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(geometrySource.Path, Is.EqualTo(overrideGeometryPath));
+                Assert.That(
+                    textureSource.Path,
+                    Is.EqualTo(rootTexturePath));
             });
         }
 

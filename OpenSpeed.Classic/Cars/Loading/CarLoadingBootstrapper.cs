@@ -1,6 +1,9 @@
 using System;
 using System.Linq;
 
+using NuciLog;
+using NuciLog.Core;
+
 using OpenSpeed.Classic.Assets;
 using OpenSpeed.Classic.Cars.NeedForSpeed2;
 using OpenSpeed.Classic.Configuration;
@@ -13,6 +16,18 @@ namespace OpenSpeed.Classic.Cars.Loading
         {
             ArgumentNullException.ThrowIfNull(settings);
 
+            ILogger logger = new NuciLogger(settings.NuciLoggerSettings);
+
+            return LoadConfiguredCar(settings, logger);
+        }
+
+        public static LoadedCar LoadConfiguredCar(
+            ApplicationSettings settings,
+            ILogger logger)
+        {
+            ArgumentNullException.ThrowIfNull(settings);
+            ArgumentNullException.ThrowIfNull(logger);
+
             GameVersion gameVersion = ParseGameVersion(settings.StartupCar.Game);
             AssetSourceSettings? assetSource = settings.Assets.Sources.SingleOrDefault(
                 source => IsConfiguredFor(source, gameVersion));
@@ -23,7 +38,7 @@ namespace OpenSpeed.Classic.Cars.Loading
                     $"No asset source is configured for '{gameVersion}'.");
             }
 
-            IFilePathResolver filePathResolver = new FilePathResolver();
+            IFilePathResolver filePathResolver = new FilePathResolver(logger);
             ICarFormatLoader[] formatLoaders =
             [
                 new NeedForSpeed2CarLoader(filePathResolver)
@@ -39,6 +54,7 @@ namespace OpenSpeed.Classic.Cars.Loading
 
             return formatLoader.Load(
                 assetSource.RootDirectory,
+                assetSource.OverridesDirectory,
                 settings.StartupCar.Identifier);
         }
 

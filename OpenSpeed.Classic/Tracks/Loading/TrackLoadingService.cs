@@ -49,6 +49,7 @@ namespace OpenSpeed.Classic.Tracks.Loading
 
             return trackFormatLoader.Load(
                 assetSource.RootDirectory,
+                assetSource.OverridesDirectory,
                 request.Identifier,
                 textureVariant);
         }

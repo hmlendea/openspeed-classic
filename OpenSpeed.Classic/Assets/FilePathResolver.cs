@@ -1,15 +1,73 @@
 using System;
 using System.IO;
 
+using NuciLog.Core;
+
+using OpenSpeed.Classic.Logging;
+
 namespace OpenSpeed.Classic.Assets
 {
-    public sealed class FilePathResolver : IFilePathResolver
+    public sealed class FilePathResolver(ILogger logger) : IFilePathResolver
     {
         public string? ResolveFile(string rootDirectory, string relativePath)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(rootDirectory);
             ArgumentException.ThrowIfNullOrWhiteSpace(relativePath);
 
+            return ResolveFileAndLog(rootDirectory, relativePath);
+        }
+
+        public string? ResolveFile(
+            string overridesDirectory,
+            string rootDirectory,
+            string relativePath)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(overridesDirectory);
+            ArgumentException.ThrowIfNullOrWhiteSpace(rootDirectory);
+            ArgumentException.ThrowIfNullOrWhiteSpace(relativePath);
+
+            string? resolvedPath = ResolveFileAndLog(
+                overridesDirectory,
+                relativePath);
+
+            if (resolvedPath is not null)
+            {
+                return resolvedPath;
+            }
+
+            return ResolveFileAndLog(rootDirectory, relativePath);
+        }
+
+        private string? ResolveFileAndLog(
+            string rootDirectory,
+            string relativePath)
+        {
+            string? resolvedPath = ResolveFileWithinRoot(rootDirectory, relativePath);
+
+            if (resolvedPath is not null)
+            {
+                logger.Info(
+                    OpenSpeedOperation.ResolveAssetFile,
+                    OperationStatus.Success,
+                    new LogInfo(OpenSpeedLogInfoKey.FilePath, resolvedPath));
+
+                return resolvedPath;
+            }
+
+            logger.Warn(
+                OpenSpeedOperation.ResolveAssetFile,
+                OperationStatus.Failure,
+                new LogInfo(
+                    OpenSpeedLogInfoKey.FilePath,
+                    Path.Combine(rootDirectory, relativePath)));
+
+            return null;
+        }
+
+        private static string? ResolveFileWithinRoot(
+            string rootDirectory,
+            string relativePath)
+        {
             if (!Directory.Exists(rootDirectory) || Path.IsPathRooted(relativePath))
             {
                 return null;

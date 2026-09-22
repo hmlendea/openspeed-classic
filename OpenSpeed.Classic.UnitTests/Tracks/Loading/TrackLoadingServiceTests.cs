@@ -16,6 +16,8 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
     {
         private static string AssetRootDirectory => "/test-assets";
 
+        private static string AssetOverridesDirectory => "/test-overrides";
+
         private Mock<ITrackFormatLoader> formatLoader = null!;
         private ITrackLoadingService trackLoadingService = null!;
 
@@ -31,6 +33,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
                         new AssetSourceSettings
                         {
                             Game = nameof(GameVersion.NeedForSpeed2SpecialEdition),
+                            OverridesDirectory = AssetOverridesDirectory,
                             RootDirectory = AssetRootDirectory,
                             TextureVariant = TrackTextureVariant.PC
                         }
@@ -54,6 +57,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
             formatLoader
                 .Setup(loader => loader.Load(
                     AssetRootDirectory,
+                    AssetOverridesDirectory,
                     "Outback",
                     TrackTextureVariant.PC))
                 .Returns(expectedTrack);
@@ -69,6 +73,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
             formatLoader.Verify(
                 loader => loader.Load(
                     AssetRootDirectory,
+                    AssetOverridesDirectory,
                     "Outback",
                     TrackTextureVariant.PC),
                 Times.Once);
@@ -86,6 +91,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
                         new AssetSourceSettings
                         {
                             Game = nameof(GameVersion.NeedForSpeed2SpecialEdition),
+                            OverridesDirectory = AssetOverridesDirectory,
                             RootDirectory = AssetRootDirectory,
                             TextureVariant = TrackTextureVariant.PC
                         }
@@ -100,6 +106,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
             formatLoader
                 .Setup(loader => loader.Load(
                     AssetRootDirectory,
+                    AssetOverridesDirectory,
                     "Outback",
                     TrackTextureVariant.SE))
                 .Returns(expectedTrack);
@@ -118,6 +125,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
             formatLoader.Verify(
                 loader => loader.Load(
                     AssetRootDirectory,
+                    AssetOverridesDirectory,
                     "Outback",
                     TrackTextureVariant.SE),
                 Times.Once);
@@ -135,6 +143,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
                         new AssetSourceSettings
                         {
                             Game = nameof(GameVersion.NeedForSpeed2SpecialEdition),
+                            OverridesDirectory = AssetOverridesDirectory,
                             RootDirectory = AssetRootDirectory,
                             TextureVariant = TrackTextureVariant.SE
                         }
@@ -149,6 +158,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
             formatLoader
                 .Setup(loader => loader.Load(
                     AssetRootDirectory,
+                    AssetOverridesDirectory,
                     "Outback",
                     TrackTextureVariant.PC))
                 .Returns(expectedTrack);
@@ -167,6 +177,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.Loading
             formatLoader.Verify(
                 loader => loader.Load(
                     AssetRootDirectory,
+                    AssetOverridesDirectory,
                     "Outback",
                     TrackTextureVariant.PC),
                 Times.Once);

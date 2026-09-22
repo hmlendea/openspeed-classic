@@ -48,6 +48,7 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                       {
                         "Game": "NeedForSpeed2SpecialEdition",
                         "RootDirectory": "/test-assets",
+                        "OverridesDirectory": "/test-overrides",
                         "TextureVariant": "PC"
                       }
                     ]
@@ -63,6 +64,10 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                   "Rendering": {
                     "AreShadowsEnabled": false,
                     "Is3DfxEnabled": true
+                  },
+                  "NuciLoggerSettings": {
+                    "LogFilePath": "test.log",
+                    "IsFileOutputEnabled": false
                   },
                   "Controls": {
                     "Accelerate": {
@@ -92,6 +97,7 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
             {
                 Assert.That(assetSource.Game, Is.EqualTo("NeedForSpeed2SpecialEdition"));
                 Assert.That(assetSource.RootDirectory, Is.EqualTo("/test-assets"));
+                Assert.That(assetSource.OverridesDirectory, Is.EqualTo("/test-overrides"));
                 Assert.That(assetSource.TextureVariant, Is.EqualTo(TrackTextureVariant.PC));
                 Assert.That(
                     settings.StartupTrack.Game,
@@ -103,6 +109,8 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                 Assert.That(settings.StartupCar.Identifier, Is.EqualTo("FerrariF50"));
                 Assert.That(settings.Rendering.AreShadowsEnabled, Is.False);
                 Assert.That(settings.Rendering.Is3DfxEnabled, Is.True);
+                Assert.That(settings.NuciLoggerSettings.LogFilePath, Is.EqualTo("test.log"));
+                Assert.That(settings.NuciLoggerSettings.IsFileOutputEnabled, Is.False);
                 Assert.That(settings.Controls.Accelerate.Primary, Is.EqualTo(Keys.Space));
                 Assert.That(settings.Controls.Accelerate.Secondary, Is.EqualTo(Keys.Enter));
             });
@@ -126,6 +134,9 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
             Assert.That(settings.Rendering.AreShadowsEnabled);
             Assert.That(settings.Rendering.Is3DfxEnabled, Is.Null);
             Assert.That(settings.StartupCar.Identifier, Is.EqualTo("McLarenF1"));
+            Assert.That(
+              settings.Assets.Sources.Single().OverridesDirectory,
+              Is.EqualTo("/test-assets"));
             Assert.That(settings.Controls.Accelerate.Primary, Is.EqualTo(Keys.Up));
             Assert.That(settings.Controls.Accelerate.Secondary, Is.EqualTo(Keys.W));
         }

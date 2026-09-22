@@ -16,11 +16,17 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
 
         private static int TrackVertexSize => 6;
 
+        internal static string GeometryRelativePath
+            => Path.Combine("gAmEdAtA", "tRaCkS", "sE", "TR02.TRK");
+
         internal static string MaterialRelativePath
             => Path.Combine("gAmEdAtA", "tRaCkS", "sE", "TR02.COL");
 
         internal static string PcTextureRelativePath
             => Path.Combine("gAmEdAtA", "tRaCkS", "pC", "TR020.QFS");
+
+        internal static string TextureRelativePath
+            => Path.Combine("gAmEdAtA", "tRaCkS", "sE", "TR020.QFS");
 
         internal static void Write(string rootDirectory)
         {
@@ -37,13 +43,13 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             Directory.CreateDirectory(specialEditionTrackDirectory);
             Directory.CreateDirectory(pcTrackDirectory);
             File.WriteAllBytes(
-                Path.Combine(specialEditionTrackDirectory, "TR02.TRK"),
+                Path.Combine(rootDirectory, GeometryRelativePath),
                 BuildTrackArchive(BuildTrackGeometry()));
             File.WriteAllBytes(
                 Path.Combine(specialEditionTrackDirectory, "TR02.COL"),
                 BuildMaterials());
             File.WriteAllBytes(
-                Path.Combine(specialEditionTrackDirectory, "TR020.QFS"),
+                Path.Combine(rootDirectory, TextureRelativePath),
                 CompressWithLiteralCommands(BuildTextureArchive("TEST", 8)));
             File.WriteAllBytes(
                 Path.Combine(pcTrackDirectory, "TR020.QFS"),

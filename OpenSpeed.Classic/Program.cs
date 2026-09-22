@@ -1,6 +1,9 @@
 ﻿using System;
 using System.IO;
 
+using NuciLog;
+using NuciLog.Core;
+
 using OpenSpeed.Classic.Cars;
 using OpenSpeed.Classic.Cars.Loading;
 using OpenSpeed.Classic.Configuration;
@@ -20,8 +23,13 @@ namespace OpenSpeed.Classic
             string settingsFilePath = Path.Combine(AppContext.BaseDirectory, SettingsFileName);
             IApplicationSettingsLoader settingsLoader = new ApplicationSettingsLoader();
             ApplicationSettings settings = settingsLoader.Load(settingsFilePath);
-            LoadedTrack loadedTrack = TrackLoadingBootstrapper.LoadConfiguredTrack(settings);
-            LoadedCar loadedCar = CarLoadingBootstrapper.LoadConfiguredCar(settings);
+            ILogger logger = new NuciLogger(settings.NuciLoggerSettings);
+            LoadedTrack loadedTrack = TrackLoadingBootstrapper.LoadConfiguredTrack(
+                settings,
+                logger);
+            LoadedCar loadedCar = CarLoadingBootstrapper.LoadConfiguredCar(
+                settings,
+                logger);
             using OpenSpeedClassicGame game = new(
                 loadedTrack,
                 loadedCar,

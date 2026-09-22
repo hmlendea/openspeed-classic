@@ -177,6 +177,11 @@ namespace OpenSpeed.Classic.Configuration
                         $"The asset root for '{assetSource.Game}' in '{filePath}' is empty.");
                 }
 
+                if (string.IsNullOrWhiteSpace(assetSource.OverridesDirectory))
+                {
+                    assetSource.OverridesDirectory = assetSource.RootDirectory;
+                }
+
                 if (!configuredGames.Add(gameVersion))
                 {
                     throw new InvalidDataException(

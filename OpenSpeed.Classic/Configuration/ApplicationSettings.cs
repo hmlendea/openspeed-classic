@@ -1,3 +1,5 @@
+using NuciLog.Configuration;
+
 namespace OpenSpeed.Classic.Configuration
 {
     public sealed class ApplicationSettings
@@ -5,6 +7,8 @@ namespace OpenSpeed.Classic.Configuration
         public AssetsSettings Assets { get; set; } = new();
 
         public DrivingControlsSettings Controls { get; set; } = new();
+
+        public NuciLoggerSettings NuciLoggerSettings { get; set; } = new();
 
         public RenderingSettings Rendering { get; set; } = new();
 

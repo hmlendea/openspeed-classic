@@ -13,5 +13,12 @@ namespace OpenSpeed.Classic.Tracks.Loading
             string trackIdentifier,
             TrackTextureVariant textureVariant)
             => Load(rootDirectory, trackIdentifier);
+
+        public LoadedTrack Load(
+            string rootDirectory,
+            string overridesDirectory,
+            string trackIdentifier,
+            TrackTextureVariant textureVariant)
+            => Load(rootDirectory, trackIdentifier, textureVariant);
     }
 }

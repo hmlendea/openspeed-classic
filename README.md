@@ -25,7 +25,8 @@ Original game assets are not distributed with this project. Configure an install
     "Sources": [
       {
         "Game": "NeedForSpeed2SpecialEdition",
-        "RootDirectory": "/path/to/NFS2 SE"
+        "RootDirectory": "/path/to/NFS2 SE",
+        "OverridesDirectory": "/path/to/NFS2 SE"
       }
     ]
   },
@@ -51,6 +52,10 @@ Original game assets are not distributed with this project. Configure an install
     "AreShadowsEnabled": true,
     "Is3DfxEnabled": false
   },
+  "NuciLoggerSettings": {
+    "LogFilePath": "logfile.log",
+    "IsFileOutputEnabled": true
+  },
   "StartupCar": {
     "Game": "NeedForSpeed2SpecialEdition",
     "Identifier": "McLarenF1"
@@ -62,7 +67,7 @@ Original game assets are not distributed with this project. Configure an install
 }
 ```
 
-Relative asset roots are resolved from the process working directory. Paths within an original Windows installation are resolved case-insensitively on every platform.
+Relative asset roots are resolved from the process working directory. Paths within an original Windows installation are resolved case-insensitively on every platform. Each asset is loaded from `OverridesDirectory` when present there, otherwise it is loaded from `RootDirectory`. Omitting `OverridesDirectory` uses the configured `RootDirectory`.
 
 `AreShadowsEnabled` controls the track's baked per-vertex shadow lighting. `Is3DfxEnabled` selects the `SE` 3dfx texture archive when enabled and the `PC` software-renderer archive when disabled.
 
@@ -118,6 +123,8 @@ env -u DISPLAY SDL_VIDEODRIVER=wayland \
 - `Escape`: Exit.
 
 Every driving action has a `Primary` and `Secondary` key in the `Controls` section of [OpenSpeed.Classic/appsettings.json](OpenSpeed.Classic/appsettings.json). Both bindings must be valid, distinct MonoGame key names.
+
+Asset file hits and misses are written by NuciLog to the console and, when `IsFileOutputEnabled` is enabled, to the configured `LogFilePath`.
 
 ## Licence
 

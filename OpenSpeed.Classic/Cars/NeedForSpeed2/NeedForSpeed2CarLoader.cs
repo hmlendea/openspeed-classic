@@ -15,8 +15,15 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
         public GameVersion Game => GameVersion.NeedForSpeed2SpecialEdition;
 
         public LoadedCar Load(string rootDirectory, string carIdentifier)
+            => Load(rootDirectory, rootDirectory, carIdentifier);
+
+        public LoadedCar Load(
+            string rootDirectory,
+            string overridesDirectory,
+            string carIdentifier)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(rootDirectory);
+            ArgumentException.ThrowIfNullOrWhiteSpace(overridesDirectory);
             ArgumentException.ThrowIfNullOrWhiteSpace(carIdentifier);
 
             if (!Directory.Exists(rootDirectory))
@@ -28,9 +35,11 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
             CarIdentifier parsedIdentifier = NeedForSpeed2CarCatalogue.ParseIdentifier(
                 carIdentifier);
             string archivePath = ResolveRequiredFile(
+                overridesDirectory,
                 rootDirectory,
                 NeedForSpeed2CarCatalogue.GetArchiveRelativePath());
             string texturePath = ResolveRequiredFile(
+                overridesDirectory,
                 rootDirectory,
                 NeedForSpeed2CarCatalogue.GetTextureRelativePath(parsedIdentifier));
             byte[] geometryData = NeedForSpeed2CarArchiveReader.Read(
@@ -64,15 +73,21 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
                 Pixels = trackTexture.Pixels
             };
 
-        private string ResolveRequiredFile(string rootDirectory, string relativePath)
+        private string ResolveRequiredFile(
+            string overridesDirectory,
+            string rootDirectory,
+            string relativePath)
         {
-            string? filePath = filePathResolver.ResolveFile(rootDirectory, relativePath);
+            string? filePath = filePathResolver.ResolveFile(
+                overridesDirectory,
+                rootDirectory,
+                relativePath);
 
             if (filePath is null)
             {
                 throw new FileNotFoundException(
                     $"The required Need for Speed II car asset '{relativePath}' was not located " +
-                    $"under '{rootDirectory}'.",
+                    $"under '{overridesDirectory}' or '{rootDirectory}'.",
                     Path.Combine(rootDirectory, relativePath));
             }
 
