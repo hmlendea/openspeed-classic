@@ -80,6 +80,61 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
             Assert.That(updatedWorld.Translation.X, Is.EqualTo(7.0f));
         }
 
+        [Test]
+        public void GivenMovementAlongAnAscendingRoad_WhenUpdating_ThenTheCarAscendsTheSlope()
+        {
+            Vector3 slopeNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, 1.0f));
+            Vector3 slopeForward = Vector3.Normalize(new Vector3(0.0f, 1.0f, -2.0f));
+            Matrix world = Matrix.CreateWorld(Vector3.Zero, slopeForward, slopeNormal);
+            TrackRoutePoint start = BuildSlopeRoutePoint(0.0, 0.0, slopeForward, slopeNormal);
+            TrackRoutePoint end = BuildSlopeRoutePoint(8.0, -16.0, slopeForward, slopeNormal);
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [start, end],
+                new CarPhysicsState(),
+                0.4f,
+                1.0f,
+                0.0f);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(updatedWorld.Translation.Y, Is.GreaterThan(0.0f));
+                Assert.That(updatedWorld.Translation.Z, Is.LessThan(0.0f));
+                Assert.That(updatedWorld.Up.Y, Is.EqualTo(slopeNormal.Y).Within(ValueTolerance));
+                Assert.That(updatedWorld.Up.Z, Is.EqualTo(slopeNormal.Z).Within(ValueTolerance));
+            });
+        }
+
+        [Test]
+        public void GivenMovementAlongADescendingRoad_WhenUpdating_ThenTheCarDescendsTheSlope()
+        {
+            Vector3 slopeNormal = Vector3.Normalize(new Vector3(0.0f, 2.0f, -1.0f));
+            Vector3 slopeForward = Vector3.Normalize(new Vector3(0.0f, -1.0f, -2.0f));
+            Matrix world = Matrix.CreateWorld(
+                new Vector3(0.0f, 8.0f, 0.0f),
+                slopeForward,
+                slopeNormal);
+            TrackRoutePoint start = BuildSlopeRoutePoint(8.0, 0.0, slopeForward, slopeNormal);
+            TrackRoutePoint end = BuildSlopeRoutePoint(0.0, -16.0, slopeForward, slopeNormal);
+
+            Matrix updatedWorld = CarWorldTransformUpdater.Update(
+                world,
+                [start, end],
+                new CarPhysicsState(),
+                0.4f,
+                1.0f,
+                0.0f);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(updatedWorld.Translation.Y, Is.LessThan(8.0f));
+                Assert.That(updatedWorld.Translation.Z, Is.LessThan(0.0f));
+                Assert.That(updatedWorld.Up.Y, Is.EqualTo(slopeNormal.Y).Within(ValueTolerance));
+                Assert.That(updatedWorld.Up.Z, Is.EqualTo(slopeNormal.Z).Within(ValueTolerance));
+            });
+        }
+
         [TestCase(float.NaN)]
         [TestCase(float.NegativeInfinity)]
         [TestCase(-1.0f)]
@@ -92,5 +147,37 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
                     0.0f,
                     0.0f),
                 Throws.TypeOf<ArgumentOutOfRangeException>());
+
+        private static TrackRoutePoint BuildSlopeRoutePoint(
+            double positionY,
+            double positionZ,
+            Vector3 forward,
+            Vector3 normal)
+            => new()
+            {
+                Forward = new TrackVector
+                {
+                    X = forward.X,
+                    Y = forward.Y,
+                    Z = forward.Z
+                },
+                LeftBorderDistance = 8.0,
+                Normal = new TrackVector
+                {
+                    X = normal.X,
+                    Y = normal.Y,
+                    Z = normal.Z
+                },
+                Position = new TrackPoint
+                {
+                    Y = positionY,
+                    Z = positionZ
+                },
+                Right = new TrackVector
+                {
+                    X = 1.0
+                },
+                RightBorderDistance = 8.0
+            };
     }
 }

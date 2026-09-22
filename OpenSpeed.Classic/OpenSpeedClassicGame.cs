@@ -20,6 +20,7 @@ namespace OpenSpeed.Classic
         private readonly GraphicsDeviceManager graphicsDeviceManager;
         private readonly bool areShadowsEnabled = true;
         private readonly string? captureFramePath;
+        private readonly CarPhysicsState carPhysicsState = new();
         private readonly DrivingControlsSettings drivingControls = new();
         private ICarRenderer? carRenderer;
         private Matrix? carWorld;
@@ -266,6 +267,7 @@ namespace OpenSpeed.Classic
             carWorld = CarWorldTransformUpdater.Update(
                 carWorld.Value,
                 CurrentTrack.RoutePoints,
+                carPhysicsState,
                 elapsedSeconds,
                 drivingInput.MovementInput,
                 drivingInput.TurningInput);

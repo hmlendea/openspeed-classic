@@ -52,13 +52,42 @@ namespace OpenSpeed.Classic.Rendering.Cars
             float elapsedSeconds,
             float movementInput,
             float turningInput)
-            => CarTrackCollisionResolver.Resolve(
-                Update(
-                    world,
-                    elapsedSeconds,
-                    movementInput,
-                    turningInput),
+            => Update(
+                world,
+                routePoints,
+                new CarPhysicsState(),
+                elapsedSeconds,
+                movementInput,
+                turningInput);
+
+        public static Matrix Update(
+            Matrix world,
+            IEnumerable<TrackRoutePoint> routePoints,
+            CarPhysicsState physicsState,
+            float elapsedSeconds,
+            float movementInput,
+            float turningInput)
+        {
+            ArgumentNullException.ThrowIfNull(physicsState);
+
+            Matrix movedWorld = Update(
+                world,
+                elapsedSeconds,
+                movementInput,
+                turningInput);
+            TrackRouteProjection? routeProjection = TrackRouteProjector.Project(
+                movedWorld.Translation,
                 routePoints);
+            Matrix collisionResolvedWorld = CarTrackCollisionResolver.Resolve(
+                movedWorld,
+                routeProjection);
+
+            return CarGravityResolver.Resolve(
+                collisionResolvedWorld,
+                routeProjection,
+                physicsState,
+                elapsedSeconds);
+        }
 
         private static Vector3 NormaliseOrFallback(
             Vector3 direction,
