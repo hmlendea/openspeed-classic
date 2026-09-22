@@ -19,6 +19,7 @@ namespace OpenSpeed.Classic.Input
 
             return new TrackCameraInput
             {
+                CameraView = ReadCameraView(keyboardState),
                 IsHandbrakeApplied = IsControlPressed(
                     keyboardState,
                     controls.Handbrake),
@@ -29,7 +30,36 @@ namespace OpenSpeed.Classic.Input
                     IsControlPressed(keyboardState, controls.SteerRight),
                     IsControlPressed(keyboardState, controls.SteerLeft))
             };
-                }
+        }
+
+        private static TrackCameraView ReadCameraView(KeyboardState keyboardState)
+        {
+            if (keyboardState.IsKeyDown(Keys.F1) ||
+                keyboardState.IsKeyDown(Keys.D1))
+            {
+                return TrackCameraView.Right;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.F2) ||
+                keyboardState.IsKeyDown(Keys.D2))
+            {
+                return TrackCameraView.Left;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.F3) ||
+                keyboardState.IsKeyDown(Keys.D3))
+            {
+                return TrackCameraView.Centre;
+            }
+
+            if (keyboardState.IsKeyDown(Keys.F4) ||
+                keyboardState.IsKeyDown(Keys.D4))
+            {
+                return TrackCameraView.Rear;
+            }
+
+            return TrackCameraView.Centre;
+        }
 
         private static bool IsControlPressed(
             KeyboardState keyboardState,

@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 
 using NUnit.Framework;
 
+using OpenSpeed.Classic.Input;
 using OpenSpeed.Classic.Rendering.Tracks;
 using OpenSpeed.Classic.Tracks;
 
@@ -154,102 +155,123 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
                 Vector3.Up);
 
             trackCamera.Follow(carWorld);
+            Vector3 horizontalOffset = trackCamera.Position - carWorld.Translation;
+            horizontalOffset.Y = 0.0f;
+            Vector3 expectedLookDirection = carWorld.Translation - trackCamera.Position;
+            expectedLookDirection.Normalize();
 
             Assert.Multiple(() =>
             {
-                Assert.That(
-                    trackCamera.Position,
-                    Is.EqualTo(new Vector3(36.0f, 11.0f, 16.0f)));
-                Assert.That(trackCamera.Direction.X, Is.GreaterThan(0.0f));
-                Assert.That(trackCamera.Direction.Y, Is.LessThan(0.0f));
-                Assert.That(trackCamera.Direction.Z, Is.Zero.Within(PositionTolerance));
+                Assert.That(horizontalOffset.Length(), Is.EqualTo(6.0f).Within(PositionTolerance));
+                Assert.That(trackCamera.Position.Y, Is.EqualTo(11.0f).Within(PositionTolerance));
+                Assert.That(trackCamera.Direction.X, Is.EqualTo(expectedLookDirection.X).Within(PositionTolerance));
+                Assert.That(trackCamera.Direction.Y, Is.EqualTo(expectedLookDirection.Y).Within(PositionTolerance));
+                Assert.That(trackCamera.Direction.Z, Is.EqualTo(expectedLookDirection.Z).Within(PositionTolerance));
                 Assert.That(trackCamera.Up, Is.EqualTo(Vector3.Up));
             });
         }
 
         [Test]
-        public void GivenASteeringCar_WhenFollowingWithElapsedTime_ThenTheCameraCatchesUpGradually()
+        public void GivenACarInsideTheCameraRadius_WhenFollowing_ThenTheCameraKeepsItsHorizontalPosition()
         {
             Matrix carWorld = Matrix.CreateWorld(
-                new Vector3(42.0f, 8.0f, 16.0f),
+                new Vector3(0.0f, 8.0f, 2.0f),
                 Vector3.Right,
                 Vector3.Up);
+            Vector3 initialPosition = trackCamera.Position;
 
-            trackCamera.Follow(carWorld, 0.1f);
-            Vector3 displacement = carWorld.Translation - trackCamera.Position;
-            Vector3 cameraHorizontalDirection = trackCamera.Direction;
-            cameraHorizontalDirection.Y = 0.0f;
-            cameraHorizontalDirection.Normalize();
-            float headingDifference = MathF.Acos(MathHelper.Clamp(
-                Vector3.Dot(cameraHorizontalDirection, carWorld.Forward),
-                -1.0f,
-                1.0f));
+            trackCamera.Follow(carWorld);
 
             Assert.Multiple(() =>
             {
-                Assert.That(trackCamera.Position.X, Is.GreaterThan(36.0f));
-                Assert.That(trackCamera.Position.Z, Is.GreaterThan(16.0f));
-                Assert.That(trackCamera.Direction.X, Is.GreaterThan(0.0f));
-                Assert.That(Vector3.Dot(displacement, carWorld.Forward), Is.LessThanOrEqualTo(6.0f));
-                Assert.That(
-                    headingDifference,
-                    Is.LessThanOrEqualTo(MathHelper.ToRadians(3.5f) + PositionTolerance));
+                Assert.That(trackCamera.Position.X, Is.EqualTo(initialPosition.X).Within(PositionTolerance));
+                Assert.That(trackCamera.Position.Z, Is.EqualTo(initialPosition.Z).Within(PositionTolerance));
+                Assert.That(trackCamera.Position.Y, Is.EqualTo(11.0f).Within(PositionTolerance));
             });
         }
 
         [Test]
-        public void GivenASmallSteeringChange_WhenFollowingWithElapsedTime_ThenTheCameraLagsContinuously()
+        public void GivenAChangingCarHeading_WhenFollowing_ThenTheCameraUsesWorldSpacePositionAndWorldUp()
         {
-            Vector3 carForward = Vector3.Normalize(new Vector3(0.1f, 0.0f, -1.0f));
+            Matrix carWorld = Matrix.CreateWorld(
+                new Vector3(0.0f, 8.0f, -4.0f),
+                Vector3.Right,
+                Vector3.Normalize(new Vector3(0.0f, 1.0f, 1.0f)));
+
+            trackCamera.Follow(carWorld);
+            Vector3 expectedLookDirection = carWorld.Translation - trackCamera.Position;
+            expectedLookDirection.Normalize();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(trackCamera.Direction.X, Is.EqualTo(expectedLookDirection.X).Within(PositionTolerance));
+                Assert.That(trackCamera.Direction.Y, Is.EqualTo(expectedLookDirection.Y).Within(PositionTolerance));
+                Assert.That(trackCamera.Direction.Z, Is.EqualTo(expectedLookDirection.Z).Within(PositionTolerance));
+                Assert.That(trackCamera.Up, Is.EqualTo(Vector3.Up));
+                Assert.That(trackCamera.Position.Y, Is.EqualTo(11.0f).Within(PositionTolerance));
+            });
+        }
+
+        [Test]
+        public void GivenDifferentLongitudinalSpeeds_WhenCreatingProjection_ThenTheFieldOfViewNarrows()
+        {
             Matrix carWorld = Matrix.CreateWorld(
                 new Vector3(42.0f, 8.0f, 16.0f),
-                carForward,
+                Vector3.Forward,
                 Vector3.Up);
 
-            trackCamera.Follow(carWorld, 0.1f);
-            Vector3 cameraHorizontalDirection = trackCamera.Direction;
-            cameraHorizontalDirection.Y = 0.0f;
-            cameraHorizontalDirection.Normalize();
+            trackCamera.Follow(carWorld, 0.0f, 0.0f);
+            float lowSpeedProjectionScale = trackCamera.CreateProjection(1280, 720).M11;
+            trackCamera.Follow(carWorld, 0.0f, 120.0f / 3.6f);
+            float highSpeedProjectionScale = trackCamera.CreateProjection(1280, 720).M11;
+
+            Assert.That(highSpeedProjectionScale, Is.GreaterThan(lowSpeedProjectionScale));
+        }
+
+        [Test]
+        public void GivenMaximumCameraSpeed_WhenCreatingProjection_ThenTheFovIncludesTheConfiguredOffset()
+        {
+            Matrix carWorld = Matrix.CreateWorld(
+                new Vector3(42.0f, 8.0f, 16.0f),
+                Vector3.Forward,
+                Vector3.Up);
+            trackCamera.Follow(carWorld, 0.0f, 120.0f / 3.6f);
+            Matrix projection = trackCamera.CreateProjection(1280, 720);
+            float aspectRatio = 1280.0f / 720.0f;
+            float fieldOfViewRadians = 2.0f * MathF.Atan(
+                1.0f / (projection.M11 * aspectRatio));
 
             Assert.That(
-                Vector3.Dot(cameraHorizontalDirection, carForward),
-                Is.LessThan(1.0f - PositionTolerance));
+                fieldOfViewRadians,
+                Is.EqualTo(MathHelper.ToRadians(50.0f)).Within(PositionTolerance));
         }
 
-        [Test]
-        public void GivenASharpSteeringChange_WhenFollowingAcrossFrames_ThenTheCameraCatchesUpOverTime()
+        [TestCase(TrackCameraView.Right, 60.0f)]
+        [TestCase(TrackCameraView.Left, -60.0f)]
+        [TestCase(TrackCameraView.Centre, 0.0f)]
+        [TestCase(TrackCameraView.Rear, 180.0f)]
+        public void GivenACameraViewPreset_WhenFollowing_ThenTheCameraOrbitsByThePresetYaw(
+            TrackCameraView cameraView,
+            float expectedYawDegrees)
         {
             Matrix carWorld = Matrix.CreateWorld(
                 new Vector3(42.0f, 8.0f, 16.0f),
-                Vector3.Right,
+                Vector3.Forward,
                 Vector3.Up);
+            trackCamera.Follow(carWorld, 0.0f, 0.0f, TrackCameraView.Centre);
+            Vector3 centreOffset = trackCamera.Position - carWorld.Translation;
+            centreOffset.Y = 0.0f;
+            centreOffset.Normalize();
+            trackCamera.Follow(carWorld, 0.0f, 0.0f, cameraView);
+            Vector3 offset = trackCamera.Position - carWorld.Translation;
+            offset.Y = 0.0f;
+            offset.Normalize();
+            Vector3 expectedOffset = Vector3.Transform(
+                centreOffset,
+                Matrix.CreateRotationY(MathHelper.ToRadians(expectedYawDegrees)));
 
-            trackCamera.Follow(carWorld, 0.1f);
-            Vector3 firstCameraDirection = trackCamera.Direction;
-            firstCameraDirection.Y = 0.0f;
-            firstCameraDirection.Normalize();
-            float firstHeadingDifference = MathF.Acos(MathHelper.Clamp(
-                Vector3.Dot(firstCameraDirection, carWorld.Forward),
-                -1.0f,
-                1.0f));
-
-            trackCamera.Follow(carWorld, 0.1f);
-            Vector3 secondCameraDirection = trackCamera.Direction;
-            secondCameraDirection.Y = 0.0f;
-            secondCameraDirection.Normalize();
-            float secondHeadingDifference = MathF.Acos(MathHelper.Clamp(
-                Vector3.Dot(secondCameraDirection, carWorld.Forward),
-                -1.0f,
-                1.0f));
-
-            Assert.Multiple(() =>
-            {
-                Assert.That(firstHeadingDifference, Is.GreaterThan(secondHeadingDifference));
-                Assert.That(secondHeadingDifference, Is.GreaterThan(0.0f));
-                Assert.That(
-                    firstHeadingDifference,
-                    Is.LessThanOrEqualTo(MathHelper.ToRadians(10.0f) + PositionTolerance));
-            });
+            Assert.That(offset.X, Is.EqualTo(expectedOffset.X).Within(PositionTolerance));
+            Assert.That(offset.Z, Is.EqualTo(expectedOffset.Z).Within(PositionTolerance));
         }
 
         [TestCase(0, 720)]

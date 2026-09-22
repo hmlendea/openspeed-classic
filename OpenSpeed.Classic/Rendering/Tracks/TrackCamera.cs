@@ -4,6 +4,7 @@ using System.Linq;
 
 using Microsoft.Xna.Framework;
 
+using OpenSpeed.Classic.Input;
 using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.Rendering.Tracks
@@ -18,23 +19,27 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         public Vector3 Up { get; private set; }
 
-        private static float CameraHeight => 3.0f;
+        private static float CameraHeightOffset => 3.0f;
 
-        private static float CameraTurnVelocity => MathHelper.ToRadians(15.0f);
+        private static float CameraDistance => 6.0f;
 
-        private static float MaximumCameraLagAngle => MathHelper.ToRadians(3.5f);
+        private static float HighSpeedKilometresPerHour => 120.0f;
 
-        private static float ChaseDistance => 6.0f;
+        private static float HighSpeedFieldOfViewRadians => MathHelper.ToRadians(40.0f);
 
-        private static float FieldOfViewRadians => MathHelper.ToRadians(90.0f);
+        private static float FieldOfViewOffsetRadians => MathHelper.ToRadians(15.0f);
 
-        private static float LookAheadDistance => 14.0f;
+        private static float LowSpeedFieldOfViewRadians => MathHelper.ToRadians(60.0f);
+
+        private static float TargetHeightOffset => 0.0f;
 
         private static float MinimumFarPlane => 1024.0f;
 
         private static float MovementVelocity => 20.0f;
 
         private static float NearPlane => 0.1f;
+
+        private float currentLongitudinalVelocity;
 
         private static float TurnVelocity => MathHelper.ToRadians(90.0f);
 
@@ -82,7 +87,10 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 }
             }
 
-            Follow(Matrix.CreateWorld(targetPosition, trackDirection, up));
+            Position = targetPosition -
+                trackDirection * CameraDistance +
+                Vector3.Up * CameraHeightOffset;
+            UpdateFollow(Matrix.CreateWorld(targetPosition, trackDirection, up));
             FarPlane = CalculateFarPlane(centres, Position);
         }
 
@@ -107,7 +115,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             float aspectRatio = (float)viewportWidth / viewportHeight;
 
             return Matrix.CreatePerspectiveFieldOfView(
-                FieldOfViewRadians,
+                CalculateFieldOfViewRadians(),
                 aspectRatio,
                 NearPlane,
                 FarPlane);
@@ -118,24 +126,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         public void Follow(Matrix targetWorld)
         {
-            Vector3 targetPosition = targetWorld.Translation;
-            Vector3 targetDirection = NormaliseOrFallback(
-                targetWorld.Forward,
-                Vector3.Forward);
-            Vector3 targetUp = NormaliseOrFallback(targetWorld.Up, Vector3.Up);
-
-            if (Vector3.Cross(targetDirection, targetUp).LengthSquared() == 0.0f)
-            {
-                targetUp = Vector3.Up;
-            }
-
-            Position = targetPosition -
-                targetDirection * ChaseDistance +
-                targetUp * CameraHeight;
-            Vector3 lookAtPosition = targetPosition +
-                targetDirection * LookAheadDistance;
-            Direction = Vector3.Normalize(lookAtPosition - Position);
-            Up = targetUp;
+            UpdateFollow(targetWorld);
         }
 
         public void Follow(Matrix targetWorld, float elapsedSeconds)
@@ -148,62 +139,44 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     "The camera elapsed time must be finite and non-negative.");
             }
 
-            Vector3 targetPosition = targetWorld.Translation;
-            Vector3 targetDirection = NormaliseOrFallback(
-                targetWorld.Forward,
-                Vector3.Forward);
-            Vector3 targetUp = NormaliseOrFallback(targetWorld.Up, Vector3.Up);
-
-            if (Vector3.Cross(targetDirection, targetUp).LengthSquared() == 0.0f)
-            {
-                targetUp = Vector3.Up;
-            }
-
-            Vector3 currentHorizontalDirection = ProjectOntoPlane(
-                Direction,
-                targetUp);
-            Vector3 targetHorizontalDirection = ProjectOntoPlane(
-                targetDirection,
-                targetUp);
-            Vector3 followDirection = RotateTowards(
-                currentHorizontalDirection,
-                targetHorizontalDirection,
-                CameraTurnVelocity * elapsedSeconds,
-                targetUp);
-
-            float followedHeadingDifference = MathF.Acos(MathHelper.Clamp(
-                Vector3.Dot(followDirection, targetHorizontalDirection),
-                -1.0f,
-                1.0f));
-
-            if (followedHeadingDifference > MaximumCameraLagAngle)
-            {
-                followDirection = RotateTowards(
-                    targetHorizontalDirection,
-                    currentHorizontalDirection,
-                    MaximumCameraLagAngle,
-                    targetUp);
-            }
-
-            Vector3 cameraOffset = -followDirection * ChaseDistance;
-            float backwardDistance = Vector3.Dot(
-                -cameraOffset,
-                targetHorizontalDirection);
-
-            if (backwardDistance > ChaseDistance)
-            {
-                cameraOffset += targetHorizontalDirection *
-                    (backwardDistance - ChaseDistance);
-            }
-
-            Position = targetPosition +
-                cameraOffset +
-                targetUp * CameraHeight;
-            Vector3 lookAtPosition = targetPosition +
-                followDirection * LookAheadDistance;
-            Direction = Vector3.Normalize(lookAtPosition - Position);
-            Up = targetUp;
+            UpdateFollow(targetWorld);
         }
+
+        public void Follow(
+            Matrix targetWorld,
+            float elapsedSeconds,
+            float longitudinalVelocity,
+            TrackCameraView cameraView)
+        {
+            if (!float.IsFinite(elapsedSeconds) || elapsedSeconds < 0.0f)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(elapsedSeconds),
+                    elapsedSeconds,
+                    "The camera elapsed time must be finite and non-negative.");
+            }
+
+            if (!float.IsFinite(longitudinalVelocity))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(longitudinalVelocity),
+                    longitudinalVelocity,
+                    "The camera longitudinal velocity must be finite.");
+            }
+
+            currentLongitudinalVelocity = longitudinalVelocity;
+            UpdateFollow(targetWorld, cameraView);
+        }
+
+        public void Follow(
+            Matrix targetWorld,
+            float elapsedSeconds,
+            float longitudinalVelocity)
+            => Follow(
+                targetWorld,
+                elapsedSeconds,
+                longitudinalVelocity,
+                TrackCameraView.Centre);
 
         public void Update(
             float elapsedSeconds,
@@ -289,43 +262,81 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             return Vector3.Normalize(direction);
         }
 
-        private static Vector3 ProjectOntoPlane(
-            Vector3 direction,
-            Vector3 planeNormal)
+        private float CalculateFieldOfViewRadians()
         {
-            Vector3 projectedDirection = direction -
-                planeNormal * Vector3.Dot(direction, planeNormal);
+            float speedKilometresPerHour = MathF.Abs(currentLongitudinalVelocity) * 3.6f;
+            float speedRatio = MathHelper.Clamp(
+                speedKilometresPerHour / HighSpeedKilometresPerHour,
+                0.0f,
+                1.0f);
 
-            return NormaliseOrFallback(projectedDirection, Vector3.Forward);
+            return MathHelper.Lerp(
+                LowSpeedFieldOfViewRadians,
+                HighSpeedFieldOfViewRadians,
+                speedRatio) +
+                FieldOfViewOffsetRadians;
         }
 
-        private static Vector3 RotateTowards(
-            Vector3 currentDirection,
-            Vector3 targetDirection,
-            float maximumRadians,
-            Vector3 rotationAxis)
-        {
-            float dotProduct = MathHelper.Clamp(
-                Vector3.Dot(currentDirection, targetDirection),
-                -1.0f,
-                1.0f);
-            float angle = MathF.Acos(dotProduct);
+        private void UpdateFollow(Matrix targetWorld)
+            => UpdateFollow(targetWorld, TrackCameraView.Centre);
 
-            if (angle <= maximumRadians)
+        private void UpdateFollow(
+            Matrix targetWorld,
+            TrackCameraView cameraView)
+        {
+            Vector3 targetPosition = targetWorld.Translation;
+            Vector3 targetPositionOnGround = targetPosition;
+            targetPositionOnGround.Y = 0.0f;
+            Vector3 cameraPositionOnGround = Position;
+            cameraPositionOnGround.Y = 0.0f;
+            Vector3 direction = cameraPositionOnGround - targetPositionOnGround;
+            float distance = direction.Length();
+
+            if (distance > CameraDistance)
             {
-                return targetDirection;
+                direction /= distance;
+                cameraPositionOnGround = targetPositionOnGround +
+                    direction * CameraDistance;
             }
 
-            float turnDirection = MathF.Sign(
-                Vector3.Dot(
-                    Vector3.Cross(currentDirection, targetDirection),
-                    rotationAxis));
+            cameraPositionOnGround.Y = targetPosition.Y + CameraHeightOffset;
+            Position = cameraPositionOnGround;
+            Vector3 targetPoint = targetPosition;
+            targetPoint.Y += TargetHeightOffset;
+            float yaw = CalculateYaw(cameraView);
 
-            return Vector3.Normalize(Vector3.TransformNormal(
-                currentDirection,
-                Matrix.CreateFromAxisAngle(
-                    rotationAxis,
-                    turnDirection * maximumRadians)));
+            if (yaw != 0.0f)
+            {
+                Position = targetPoint +
+                    Vector3.Transform(
+                        Position - targetPoint,
+                        Matrix.CreateFromAxisAngle(Vector3.Up, yaw));
+            }
+
+            Direction = NormaliseOrFallback(
+                targetPoint - Position,
+                Vector3.Forward);
+            Up = Vector3.Up;
+        }
+
+        private static float CalculateYaw(TrackCameraView cameraView)
+        {
+            if (cameraView == TrackCameraView.Right)
+            {
+                return MathHelper.ToRadians(60.0f);
+            }
+
+            if (cameraView == TrackCameraView.Left)
+            {
+                return MathHelper.ToRadians(-60.0f);
+            }
+
+            if (cameraView == TrackCameraView.Rear)
+            {
+                return MathHelper.Pi;
+            }
+
+            return 0.0f;
         }
 
         private static Vector3 ToVector3(TrackPoint point)

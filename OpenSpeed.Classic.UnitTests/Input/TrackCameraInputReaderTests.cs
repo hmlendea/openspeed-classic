@@ -75,6 +75,23 @@ namespace OpenSpeed.Classic.UnitTests.Input
             Assert.That(input.IsHandbrakeApplied);
         }
 
+        [TestCase(Keys.F1, TrackCameraView.Right)]
+        [TestCase(Keys.D1, TrackCameraView.Right)]
+        [TestCase(Keys.F2, TrackCameraView.Left)]
+        [TestCase(Keys.D2, TrackCameraView.Left)]
+        [TestCase(Keys.F3, TrackCameraView.Centre)]
+        [TestCase(Keys.D3, TrackCameraView.Centre)]
+        [TestCase(Keys.F4, TrackCameraView.Rear)]
+        [TestCase(Keys.D4, TrackCameraView.Rear)]
+        public void GivenACameraViewKey_WhenReadingInput_ThenTheExpectedViewIsReturned(
+            Keys key,
+            TrackCameraView expectedView)
+        {
+            TrackCameraInput input = TrackCameraInputReader.Read(new KeyboardState(key));
+
+            Assert.That(input.CameraView, Is.EqualTo(expectedView));
+        }
+
         [Test]
         public void GivenNullControls_WhenReadingInput_ThenAnArgumentNullExceptionIsThrown()
             => Assert.That(
