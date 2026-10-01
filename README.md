@@ -55,6 +55,7 @@ Original game assets are not distributed with this project. Configure an install
   "Rendering": {
     "AreShadowsEnabled": true,
     "Is3DfxEnabled": false,
+    "IsVignetteEnabled": true,
     "MotionBlurMinimumSpeedKilometresPerHour": 80.0
   },
   "NuciLoggerSettings": {
@@ -74,7 +75,7 @@ Original game assets are not distributed with this project. Configure an install
 
 Relative asset roots are resolved from the process working directory. Paths within an original Windows installation are resolved case-insensitively on every platform. Each asset is loaded from `OverridesDirectory` when present there, otherwise it is loaded from `RootDirectory`. Omitting `OverridesDirectory` uses the configured `RootDirectory`.
 
-`AreShadowsEnabled` controls the track's baked per-vertex shadow lighting. `Is3DfxEnabled` selects the `SE` 3dfx texture archive when enabled and the `PC` software-renderer archive when disabled. `MotionBlurMinimumSpeedKilometresPerHour` sets the speed above which temporal motion blur becomes active. A central oval remains free of motion blur, which intensifies gradually from its boundary towards every screen edge.
+`AreShadowsEnabled` controls the track's baked per-vertex shadow lighting. `Is3DfxEnabled` selects the `SE` 3dfx texture archive when enabled and the `PC` software-renderer archive when disabled. `MotionBlurMinimumSpeedKilometresPerHour` sets the speed above which temporal motion blur becomes active. A central oval remains free of motion blur, which intensifies gradually from its boundary towards every screen edge. `IsVignetteEnabled` toggles an independent oval vignette that reaches 15% darkness only at the screen boundary.
 
 Track, horizon, and car textures receive complete mipmap chains and anisotropic filtering to reduce distant aliasing and shimmer.
 

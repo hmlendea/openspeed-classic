@@ -6,6 +6,8 @@ namespace OpenSpeed.Classic.Configuration
 
         public bool? Is3DfxEnabled { get; set; }
 
+        public bool IsVignetteEnabled { get; set; } = true;
+
         public float MotionBlurMinimumSpeedKilometresPerHour { get; set; } = 80.0f;
     }
 }

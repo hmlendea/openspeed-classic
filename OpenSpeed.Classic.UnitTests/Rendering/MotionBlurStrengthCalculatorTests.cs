@@ -11,10 +11,10 @@ namespace OpenSpeed.Classic.UnitTests.Rendering
     {
         [TestCase(79.0f, 0.0f)]
         [TestCase(80.0f, 0.0f)]
-        [TestCase(100.0f, 0.165f)]
-        [TestCase(120.0f, 0.33f)]
-        [TestCase(121.0f, 0.33f)]
-        [TestCase(-100.0f, 0.165f)]
+        [TestCase(100.0f, 0.225f)]
+        [TestCase(120.0f, 0.45f)]
+        [TestCase(121.0f, 0.45f)]
+        [TestCase(-100.0f, 0.225f)]
         public void GivenASpeed_WhenCalculating_ThenTheBlurStrengthIsBounded(
             float speedKilometresPerHour,
             float expectedStrength)

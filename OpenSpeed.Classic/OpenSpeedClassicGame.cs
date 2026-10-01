@@ -26,12 +26,14 @@ namespace OpenSpeed.Classic
         private ICarRenderer? carRenderer;
         private Matrix? carWorld;
         private bool hasCapturedDiagnosticFrame;
+        private bool isVignetteEnabled;
         private float motionBlurMinimumSpeedKilometresPerHour;
         private IMotionBlurRenderer? motionBlurRenderer;
         private bool wasCameraModeTogglePressed;
         private TrackCameraMode cameraMode;
         private TrackCamera? trackCamera;
         private ITrackRenderer? trackRenderer;
+        private IVignetteRenderer? vignetteRenderer;
 
         public LoadedCar? CurrentCar { get; }
 
@@ -110,6 +112,7 @@ namespace OpenSpeed.Classic
             }
 
             areShadowsEnabled = renderingSettings.AreShadowsEnabled;
+            isVignetteEnabled = renderingSettings.IsVignetteEnabled;
             motionBlurMinimumSpeedKilometresPerHour =
                 renderingSettings.MotionBlurMinimumSpeedKilometresPerHour;
             this.drivingControls = drivingControls;
@@ -138,6 +141,12 @@ namespace OpenSpeed.Classic
             motionBlurRenderer = new MotionBlurRenderer(
                 GraphicsDevice,
                 motionBlurMinimumSpeedKilometresPerHour);
+
+            if (isVignetteEnabled)
+            {
+                vignetteRenderer = new VignetteRenderer(GraphicsDevice);
+            }
+
             trackRenderer = new TrackRenderer(GraphicsDevice, areShadowsEnabled);
             trackRenderer.Load(CurrentTrack);
             LoadedCar? currentCar = CurrentCar;
@@ -195,6 +204,7 @@ namespace OpenSpeed.Classic
                 motionBlurRenderer.Draw(
                     carPhysicsState.LongitudinalVelocity,
                     DrawScene);
+                vignetteRenderer?.Draw();
                 CaptureDiagnosticFrame();
             }
             else
@@ -319,6 +329,8 @@ namespace OpenSpeed.Classic
 
         protected override void UnloadContent()
         {
+            vignetteRenderer?.Dispose();
+            vignetteRenderer = null;
             motionBlurRenderer?.Dispose();
             motionBlurRenderer = null;
             carRenderer?.Dispose();

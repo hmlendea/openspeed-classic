@@ -63,7 +63,8 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                   },
                   "Rendering": {
                     "AreShadowsEnabled": false,
-                    "Is3DfxEnabled": true
+                    "Is3DfxEnabled": true,
+                    "IsVignetteEnabled": false
                   },
                   "NuciLoggerSettings": {
                     "LogFilePath": "test.log",
@@ -113,6 +114,7 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                 Assert.That(settings.StartupCar.Identifier, Is.EqualTo("FerrariF50"));
                 Assert.That(settings.Rendering.AreShadowsEnabled, Is.False);
                 Assert.That(settings.Rendering.Is3DfxEnabled, Is.True);
+                Assert.That(settings.Rendering.IsVignetteEnabled, Is.False);
                 Assert.That(settings.NuciLoggerSettings.LogFilePath, Is.EqualTo("test.log"));
                 Assert.That(settings.NuciLoggerSettings.IsFileOutputEnabled, Is.False);
                 Assert.That(settings.Controls.Accelerate.Primary, Is.EqualTo(Keys.Space));
@@ -141,6 +143,7 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                 Is.EqualTo(TrackTextureVariant.SE));
             Assert.That(settings.Rendering.AreShadowsEnabled);
             Assert.That(settings.Rendering.Is3DfxEnabled, Is.Null);
+            Assert.That(settings.Rendering.IsVignetteEnabled);
             Assert.That(settings.StartupCar.Identifier, Is.EqualTo("McLarenF1"));
             Assert.That(
               settings.Assets.Sources.Single().OverridesDirectory,
