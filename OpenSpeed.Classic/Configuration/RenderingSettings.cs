@@ -5,5 +5,7 @@ namespace OpenSpeed.Classic.Configuration
         public bool AreShadowsEnabled { get; set; } = true;
 
         public bool? Is3DfxEnabled { get; set; }
+
+        public float MotionBlurMinimumSpeedKilometresPerHour { get; set; } = 80.0f;
     }
 }

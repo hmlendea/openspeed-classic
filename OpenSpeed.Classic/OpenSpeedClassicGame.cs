@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Input;
 using OpenSpeed.Classic.Cars;
 using OpenSpeed.Classic.Configuration;
 using OpenSpeed.Classic.Input;
+using OpenSpeed.Classic.Rendering;
 using OpenSpeed.Classic.Rendering.Cars;
 using OpenSpeed.Classic.Rendering.Tracks;
 using OpenSpeed.Classic.Tracks;
@@ -25,6 +26,8 @@ namespace OpenSpeed.Classic
         private ICarRenderer? carRenderer;
         private Matrix? carWorld;
         private bool hasCapturedDiagnosticFrame;
+        private float motionBlurMinimumSpeedKilometresPerHour;
+        private IMotionBlurRenderer? motionBlurRenderer;
         private bool wasCameraModeTogglePressed;
         private TrackCameraMode cameraMode;
         private TrackCamera? trackCamera;
@@ -107,6 +110,8 @@ namespace OpenSpeed.Classic
             }
 
             areShadowsEnabled = renderingSettings.AreShadowsEnabled;
+            motionBlurMinimumSpeedKilometresPerHour =
+                renderingSettings.MotionBlurMinimumSpeedKilometresPerHour;
             this.drivingControls = drivingControls;
             CurrentCar = loadedCar;
             CurrentTrack = loadedTrack;
@@ -130,6 +135,9 @@ namespace OpenSpeed.Classic
             trackCamera = new TrackCamera(
                 CurrentTrack.Blocks,
                 CurrentTrack.RoutePoints);
+            motionBlurRenderer = new MotionBlurRenderer(
+                GraphicsDevice,
+                motionBlurMinimumSpeedKilometresPerHour);
             trackRenderer = new TrackRenderer(GraphicsDevice, areShadowsEnabled);
             trackRenderer.Load(CurrentTrack);
             LoadedCar? currentCar = CurrentCar;
@@ -180,21 +188,36 @@ namespace OpenSpeed.Classic
 
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(BackgroundColour);
-
-            if (trackCamera is not null && trackRenderer is not null)
+            if (trackCamera is not null &&
+                trackRenderer is not null &&
+                motionBlurRenderer is not null)
             {
-                trackRenderer.Draw(
-                    trackCamera,
-                    GraphicsDevice.Viewport.Width,
-                    GraphicsDevice.Viewport.Height);
-                DrawCar(
-                    GraphicsDevice.Viewport.Width,
-                    GraphicsDevice.Viewport.Height);
+                motionBlurRenderer.Draw(
+                    carPhysicsState.LongitudinalVelocity,
+                    DrawScene);
                 CaptureDiagnosticFrame();
+            }
+            else
+            {
+                GraphicsDevice.Clear(BackgroundColour);
             }
 
             base.Draw(gameTime);
+        }
+
+        private void DrawScene()
+        {
+            GraphicsDevice.Clear(BackgroundColour);
+
+            if (trackCamera is null || trackRenderer is null)
+            {
+                return;
+            }
+
+            int width = GraphicsDevice.Viewport.Width;
+            int height = GraphicsDevice.Viewport.Height;
+            trackRenderer.Draw(trackCamera, width, height);
+            DrawCar(width, height);
         }
 
         private void CaptureDiagnosticFrame()
@@ -220,9 +243,7 @@ namespace OpenSpeed.Classic
 
             try
             {
-                GraphicsDevice.Clear(BackgroundColour);
-                trackRenderer.Draw(trackCamera, width, height);
-                DrawCar(width, height);
+                DrawScene();
             }
             finally
             {
@@ -298,6 +319,8 @@ namespace OpenSpeed.Classic
 
         protected override void UnloadContent()
         {
+            motionBlurRenderer?.Dispose();
+            motionBlurRenderer = null;
             carRenderer?.Dispose();
             carRenderer = null;
             trackRenderer?.Dispose();
