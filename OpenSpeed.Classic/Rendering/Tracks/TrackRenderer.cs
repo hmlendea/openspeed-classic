@@ -543,17 +543,17 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             BoundingFrustum viewFrustum,
             HashSet<int>? visibleBlockIdentifiers)
         {
-            if (detailLevel == TrackGeometryDetailLevel.Unrestricted)
-            {
-                return true;
-            }
-
             if (!TrackBlockVisibilitySelector.IsVisible(
                     blockIdentifier,
                     visibleBlockIdentifiers) ||
                 viewFrustum.Contains(bounds) == ContainmentType.Disjoint)
             {
                 return false;
+            }
+
+            if (detailLevel == TrackGeometryDetailLevel.Unrestricted)
+            {
+                return true;
             }
 
             float distanceX = cameraPosition.X - resolutionCentre.X;
