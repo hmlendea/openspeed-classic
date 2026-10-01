@@ -10,6 +10,7 @@ OpenSpeed Classic is a .NET 10 arcade racing game built on MonoGame via the Nuci
 - [OpenSpeed.Classic/OpenSpeedClassicGame.cs](OpenSpeed.Classic/OpenSpeedClassicGame.cs) owns the MonoGame lifecycle, driving input, and track rendering.
 - [OpenSpeed.Classic/Cars](OpenSpeed.Classic/Cars) contains renderer-neutral car models, NFS II car asset decoding, and loading orchestration.
 - [OpenSpeed.Classic/Input](OpenSpeed.Classic/Input) contains keyboard-to-driving input mapping.
+- [OpenSpeed.Classic/Physics](OpenSpeed.Classic/Physics) contains the inactive, assembly-derived physics port described under [Physics Port Checkpoint](#physics-port-checkpoint).
 - [OpenSpeed.Classic/Rendering/Cars](OpenSpeed.Classic/Rendering/Cars) contains car vertex conversion, GPU resources, world placement, and rendering.
 - [OpenSpeed.Classic/Rendering/Tracks](OpenSpeed.Classic/Rendering/Tracks) contains the track camera, horizon, vertex conversion, neighbour visibility, dynamic LOD, GPU batches, and renderer.
 - [OpenSpeed.Classic/Tracks](OpenSpeed.Classic/Tracks) contains renderer-neutral track models and loading contracts.
@@ -109,6 +110,27 @@ Run the unit tests with:
 ```sh
 dotnet test OpenSpeed.Classic.UnitTests/OpenSpeed.Classic.UnitTests.csproj
 ```
+
+### Physics Port Checkpoint
+
+Checkpoint: 2026-10-01. The assembly-derived physics replacement is **incomplete and inactive**. The game still uses [CarWorldTransformUpdater](OpenSpeed.Classic/Rendering/Cars/CarWorldTransformUpdater.cs) and the existing driving model. The previous [FixedPointCarSolver](OpenSpeed.Classic/Rendering/Cars/FixedPointCarSolver.cs) is a separate partial implementation, not the replacement simulation.
+
+The [physics components](OpenSpeed.Classic/Physics) retain x86 arithmetic, executable lookup tables, overlapping native car-state fields, descriptor finalisation, integer vectors/matrices, controls, drivetrain, two-channel contact response, the main force-solver candidate, pair-collision impulses, and ordered 32/64 Hz scheduling. The [physics tests](OpenSpeed.Classic.UnitTests/Physics) cover 91 selected fixtures and regression cases; this is not complete branch coverage or original-execution parity.
+
+Asset loading now retains `p<car resource>.dat` and `SimTune.dat` from the original car archive and unconverted XBID 15 track records. Descriptor finalisation and simulation callbacks are not invoked by gameplay. The three executable angle-table counts and SHA-256 hashes correspond exactly to the supplied specification. Missing physics archive members are reported as loading errors rather than replaced with invented values.
+
+Remaining integration requires the alternate contact/tyre state machine, original track-surface queries and body correction, OBB contact generation and iterative resolution, world-contact impulses, collision-event consumption, launch/recovery, runtime car-type initialisation, role-specific AI/replay/special-car callbacks, and a one-way rendering adapter. The dispatcher accepts explicit callbacks for unfinished paths; no surrogate solver is installed. Original full-tick trace fixtures have not been provided, so native parity remains unverified. Preserve the current driving path until these dependencies are completed and validated.
+
+Run the checkpoint fixtures with:
+
+```sh
+dotnet test OpenSpeed.Classic.UnitTests/OpenSpeed.Classic.UnitTests.csproj \
+  --filter FullyQualifiedName~UnitTests.Physics
+```
+
+The corresponding checkpoint and source discrepancies are recorded in section 27 of the supplied external `CAR_PHYSICS_ASM_SPEC.md`. That external reference and its assembly remain outside this repository; they are not runtime dependencies.
+
+### Running And Capturing
 
 Run the game project with:
 

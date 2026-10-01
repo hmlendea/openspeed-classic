@@ -115,6 +115,7 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 Horizon = horizon,
                 Materials = materials,
                 RoutePoints = routePoints,
+                PhysicsRoute = NeedForSpeed2TrackRouteDecoder.DecodePhysics(collectionExtraBlocks),
                 ScenerySurfaces = globalScenerySurfaces,
                 Textures = textures,
                 SourceFiles = BuildSourceFiles(

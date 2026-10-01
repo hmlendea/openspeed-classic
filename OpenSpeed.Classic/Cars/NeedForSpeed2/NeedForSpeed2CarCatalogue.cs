@@ -50,6 +50,9 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
         public static string GetGeometryMemberName(CarIdentifier identifier)
             => $"{GetResourceName(identifier)}.geo";
 
+        public static string GetPhysicsMemberName(CarIdentifier identifier)
+            => $"p{GetResourceName(identifier)}.dat";
+
         public static string GetTextureRelativePath(CarIdentifier identifier)
             => Path.Combine(CarModelDirectory, $"{GetResourceName(identifier)}a.qfs");
 

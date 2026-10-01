@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 
 using OpenSpeed.Classic.Assets;
+using OpenSpeed.Classic.Physics;
 
 namespace OpenSpeed.Classic.Tracks
 {
@@ -19,6 +20,8 @@ namespace OpenSpeed.Classic.Tracks
         public IEnumerable<TrackMaterial> Materials { get; set; } = [];
 
         public IEnumerable<TrackRoutePoint> RoutePoints { get; set; } = [];
+
+        public PhysicsRoute? PhysicsRoute { get; set; }
 
         public IEnumerable<TrackSurface> ScenerySurfaces { get; set; } = [];
 

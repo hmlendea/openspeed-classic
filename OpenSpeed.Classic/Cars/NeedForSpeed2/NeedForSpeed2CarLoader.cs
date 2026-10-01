@@ -4,6 +4,7 @@ using System.Linq;
 
 using OpenSpeed.Classic.Assets;
 using OpenSpeed.Classic.Cars.Loading;
+using OpenSpeed.Classic.Physics;
 using OpenSpeed.Classic.Tracks;
 using OpenSpeed.Classic.Tracks.NeedForSpeed2;
 
@@ -12,6 +13,8 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
     public sealed class NeedForSpeed2CarLoader(IFilePathResolver filePathResolver)
         : ICarFormatLoader
     {
+        private static string SimulationTuningMemberName => "SimTune.dat";
+
         public GameVersion Game => GameVersion.NeedForSpeed2SpecialEdition;
 
         public LoadedCar Load(string rootDirectory, string carIdentifier)
@@ -49,9 +52,14 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
                 overridesDirectory,
                 rootDirectory,
                 NeedForSpeed2CarCatalogue.GetTextureRelativePath(parsedIdentifier));
+            byte[] archiveData = File.ReadAllBytes(archivePath);
             byte[] geometryData = NeedForSpeed2CarArchiveReader.Read(
-                File.ReadAllBytes(archivePath),
+                archiveData,
                 NeedForSpeed2CarCatalogue.GetGeometryMemberName(parsedIdentifier));
+            CarSpecifications physicsSpecifications = CarSpecifications.Decode(
+                NeedForSpeed2CarArchiveReader.Read(archiveData, NeedForSpeed2CarCatalogue.GetPhysicsMemberName(parsedIdentifier)));
+            SimulationTuning simulationTuning = SimulationTuning.Decode(
+                NeedForSpeed2CarArchiveReader.Read(archiveData, SimulationTuningMemberName));
             TrackTexture[] decodedTextures = [.. NeedForSpeed2TextureArchiveDecoder.Decode(File.ReadAllBytes(texturePath))];
             CarTexture[] textures = [.. decodedTextures.Select(ToCarTexture)];
             TrackColour paintColour;
@@ -73,6 +81,8 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
                 DisplayName = NeedForSpeed2CarCatalogue.GetDisplayName(parsedIdentifier),
                 Game = Game,
                 PaintColour = paintColour,
+                PhysicsSpecifications = physicsSpecifications,
+                SimulationTuning = simulationTuning,
                 Geometry = NeedForSpeed2CarGeometryDecoder
                     .Decode(geometryData, parsedIdentifier)
                     .ToArray(),

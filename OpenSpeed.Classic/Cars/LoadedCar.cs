@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 
 using OpenSpeed.Classic.Assets;
+using OpenSpeed.Classic.Physics;
 using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.Cars
@@ -24,5 +25,9 @@ namespace OpenSpeed.Classic.Cars
         };
 
         public IEnumerable<CarTexture> Textures { get; set; } = [];
+
+        public CarSpecifications? PhysicsSpecifications { get; set; }
+
+        public SimulationTuning? SimulationTuning { get; set; }
     }
 }

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using OpenSpeed.Classic.Physics;
+
 namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
 {
     internal static class NeedForSpeed2TrackRouteDecoder
@@ -73,6 +75,29 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
             }
 
             return routePoints;
+        }
+
+        internal static PhysicsRoute? DecodePhysics(IEnumerable<NeedForSpeed2TrackExtraBlock> extraBlocks)
+        {
+            ArgumentNullException.ThrowIfNull(extraBlocks);
+            NeedForSpeed2TrackExtraBlock? routeBlock = extraBlocks.FirstOrDefault(
+                extraBlock => extraBlock.TypeIdentifier == RoutePointType);
+
+            if (routeBlock is null || routeBlock.RecordCount == 0)
+            {
+                return null;
+            }
+
+            int requiredSize = routeBlock.RecordCount * RoutePointSize;
+            int paddingSize = routeBlock.Payload.Length - requiredSize;
+
+            if (paddingSize != 0 && paddingSize != OptionalPaddingSize)
+            {
+                throw new InvalidDataException(
+                    $"The route block declares {routeBlock.RecordCount} records, but contains {routeBlock.Payload.Length} payload bytes.");
+            }
+
+            return new PhysicsRoute(routeBlock.Payload.Span[..requiredSize]);
         }
 
         private static TrackPoint ReadPoint(ReadOnlySpan<byte> payload, int offset)
