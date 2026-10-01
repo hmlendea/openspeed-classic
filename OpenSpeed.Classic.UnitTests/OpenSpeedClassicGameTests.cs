@@ -58,5 +58,28 @@ namespace OpenSpeed.Classic.UnitTests
                     null),
                 Throws.TypeOf<ArgumentNullException>());
         }
+
+        [TestCase(0, 720)]
+        [TestCase(1280, 0)]
+        [TestCase(-1, 720)]
+        [TestCase(1280, -1)]
+        public void GivenAnInvalidScreenDimension_WhenConstructing_ThenTheSettingsAreRejected(
+            int screenWidth,
+            int screenHeight)
+        {
+            LoadedTrack loadedTrack = new() { Identifier = "Outback" };
+            RenderingSettings renderingSettings = new()
+            {
+                ScreenHeight = screenHeight,
+                ScreenWidth = screenWidth
+            };
+
+            Assert.That(
+                () => new OpenSpeedClassicGame(
+                    loadedTrack,
+                    renderingSettings,
+                    null),
+                Throws.TypeOf<ArgumentOutOfRangeException>());
+        }
     }
 }

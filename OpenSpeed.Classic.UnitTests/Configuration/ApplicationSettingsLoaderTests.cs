@@ -64,7 +64,9 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                   "Rendering": {
                     "AreShadowsEnabled": false,
                     "Is3DfxEnabled": true,
-                    "IsVignetteEnabled": false
+                    "IsVignetteEnabled": false,
+                    "ScreenHeight": 613,
+                    "ScreenWidth": 873
                   },
                   "NuciLoggerSettings": {
                     "LogFilePath": "test.log",
@@ -115,6 +117,8 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
                 Assert.That(settings.Rendering.AreShadowsEnabled, Is.False);
                 Assert.That(settings.Rendering.Is3DfxEnabled, Is.True);
                 Assert.That(settings.Rendering.IsVignetteEnabled, Is.False);
+                Assert.That(settings.Rendering.ScreenHeight, Is.EqualTo(613));
+                Assert.That(settings.Rendering.ScreenWidth, Is.EqualTo(873));
                 Assert.That(settings.NuciLoggerSettings.LogFilePath, Is.EqualTo("test.log"));
                 Assert.That(settings.NuciLoggerSettings.IsFileOutputEnabled, Is.False);
                 Assert.That(settings.Controls.Accelerate.Primary, Is.EqualTo(Keys.Space));
@@ -144,6 +148,8 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
             Assert.That(settings.Rendering.AreShadowsEnabled);
             Assert.That(settings.Rendering.Is3DfxEnabled, Is.Null);
             Assert.That(settings.Rendering.IsVignetteEnabled);
+            Assert.That(settings.Rendering.ScreenHeight, Is.EqualTo(968));
+            Assert.That(settings.Rendering.ScreenWidth, Is.EqualTo(1720));
             Assert.That(settings.StartupCar.Identifier, Is.EqualTo("McLarenF1"));
             Assert.That(
               settings.Assets.Sources.Single().OverridesDirectory,

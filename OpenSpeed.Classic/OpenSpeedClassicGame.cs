@@ -43,16 +43,13 @@ namespace OpenSpeed.Classic
 
         private static string WindowTitle => "OpenSpeed Classic";
 
-        private static int InitialBackBufferWidth => 1280;
-
-        private static int InitialBackBufferHeight => 720;
-
         public OpenSpeedClassicGame()
         {
+            RenderingSettings renderingSettings = new();
             graphicsDeviceManager = new(this)
             {
-                PreferredBackBufferWidth = InitialBackBufferWidth,
-                PreferredBackBufferHeight = InitialBackBufferHeight
+                PreferredBackBufferWidth = renderingSettings.ScreenWidth,
+                PreferredBackBufferHeight = renderingSettings.ScreenHeight
             };
 
             Content.RootDirectory = "Content";
@@ -105,6 +102,7 @@ namespace OpenSpeed.Classic
             ArgumentNullException.ThrowIfNull(loadedTrack);
             ArgumentNullException.ThrowIfNull(renderingSettings);
             ArgumentNullException.ThrowIfNull(drivingControls);
+            ValidateScreenDimensions(renderingSettings);
 
             if (!string.IsNullOrWhiteSpace(captureFramePath))
             {
@@ -112,6 +110,8 @@ namespace OpenSpeed.Classic
             }
 
             areShadowsEnabled = renderingSettings.AreShadowsEnabled;
+            graphicsDeviceManager.PreferredBackBufferHeight = renderingSettings.ScreenHeight;
+            graphicsDeviceManager.PreferredBackBufferWidth = renderingSettings.ScreenWidth;
             isVignetteEnabled = renderingSettings.IsVignetteEnabled;
             motionBlurMinimumSpeedKilometresPerHour =
                 renderingSettings.MotionBlurMinimumSpeedKilometresPerHour;
@@ -339,6 +339,25 @@ namespace OpenSpeed.Classic
             trackRenderer = null;
 
             base.UnloadContent();
+        }
+
+        private static void ValidateScreenDimensions(RenderingSettings renderingSettings)
+        {
+            if (renderingSettings.ScreenWidth <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(renderingSettings),
+                    renderingSettings.ScreenWidth,
+                    "The configured screen width must be positive.");
+            }
+
+            if (renderingSettings.ScreenHeight <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(renderingSettings),
+                    renderingSettings.ScreenHeight,
+                    "The configured screen height must be positive.");
+            }
         }
     }
 }

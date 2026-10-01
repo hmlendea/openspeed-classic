@@ -9,5 +9,9 @@ namespace OpenSpeed.Classic.Configuration
         public bool IsVignetteEnabled { get; set; } = true;
 
         public float MotionBlurMinimumSpeedKilometresPerHour { get; set; } = 80.0f;
+
+        public int ScreenHeight { get; set; } = 968;
+
+        public int ScreenWidth { get; set; } = 1720;
     }
 }
