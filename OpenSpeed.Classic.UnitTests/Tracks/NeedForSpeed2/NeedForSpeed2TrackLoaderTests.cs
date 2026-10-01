@@ -148,6 +148,27 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
         }
 
         [Test]
+        public void GivenLargePcTextures_WhenLoadingOutback_ThenTheWrappedRefPackSizeIsDecoded()
+        {
+            NeedForSpeed2TrackFixture.WriteLargePcTextureArchive(testDirectory);
+
+            LoadedTrack track = trackLoader.Load(
+                testDirectory,
+                "Outback",
+                TrackTextureVariant.PC);
+            TrackTexture texture = track.Textures.Single();
+            TrackColour pixel = texture.Pixels.Single();
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(texture.Name, Is.EqualTo("HDTX"));
+                Assert.That(pixel.Red, Is.EqualTo(48));
+                Assert.That(pixel.Green, Is.EqualTo(32));
+                Assert.That(pixel.Blue, Is.EqualTo(16));
+            });
+        }
+
+        [Test]
         public void GivenAPartialOverride_WhenLoadingOutback_ThenOverrideAndRootAssetsAreCombined()
         {
             string overridesDirectory = Path.Combine(testDirectory, "Overrides");

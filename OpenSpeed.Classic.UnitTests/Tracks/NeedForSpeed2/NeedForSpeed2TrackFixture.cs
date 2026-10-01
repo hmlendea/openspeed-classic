@@ -62,6 +62,11 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 BuildLegacyHorizon());
         }
 
+        internal static void WriteLargePcTextureArchive(string rootDirectory)
+            => File.WriteAllBytes(
+                Path.Combine(rootDirectory, PcTextureRelativePath),
+                BuildLargeCompressedTextureArchive());
+
         private static byte[] BuildTrackGeometry()
         {
             int vertexCount = 4;
@@ -415,6 +420,70 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
             compressedData.Add((byte)(0xFC + finalLiteralCount));
             compressedData.AddRange(
                 data.AsSpan(sourcePosition, finalLiteralCount).ToArray());
+
+            return [.. compressedData];
+        }
+
+        private static byte[] BuildLargeCompressedTextureArchive()
+        {
+            int prefixSize = 44;
+            int decompressedSize = (1 << 24) + prefixSize;
+            byte[] prefix = new byte[prefixSize];
+            Encoding.ASCII.GetBytes("SHPI").CopyTo(prefix, 0);
+            WriteInt32LittleEndian(prefix, 4, decompressedSize);
+            WriteInt32LittleEndian(prefix, 8, 1);
+            Encoding.ASCII.GetBytes("HDTX").CopyTo(prefix, 16);
+            WriteInt32LittleEndian(prefix, 20, 24);
+            WriteInt32LittleEndian(prefix, 24, 0x7F);
+            WriteInt16LittleEndian(prefix, 28, 1);
+            WriteInt16LittleEndian(prefix, 30, 1);
+            prefix[40] = 16;
+            prefix[41] = 32;
+            prefix[42] = 48;
+            List<byte> compressedData =
+            [
+                0x10,
+                0xFB,
+                0x00,
+                0x00,
+                (byte)prefixSize,
+                0xEA,
+                .. prefix
+            ];
+            int remainingCount = decompressedSize - prefixSize;
+
+            while (remainingCount > 1028)
+            {
+                compressedData.AddRange([0xCC, 0x00, 0x00, 0xFF]);
+                remainingCount -= 1028;
+            }
+
+            if (remainingCount >= 5)
+            {
+                int encodedCount = remainingCount - 5;
+                byte controlByte = (byte)(0xC0 | (encodedCount >> 8) << 2);
+                compressedData.AddRange(
+                [
+                    controlByte,
+                    0x00,
+                    0x00,
+                    (byte)encodedCount
+                ]);
+                remainingCount = 0;
+            }
+
+            if (remainingCount == 4)
+            {
+                compressedData.AddRange([0xE0, 0x00, 0x00, 0x00, 0x00]);
+                remainingCount = 0;
+            }
+
+            compressedData.Add((byte)(0xFC + remainingCount));
+
+            for (int literalIndex = 0; literalIndex < remainingCount; literalIndex += 1)
+            {
+                compressedData.Add(0);
+            }
 
             return [.. compressedData];
         }

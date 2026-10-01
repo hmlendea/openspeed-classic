@@ -9,6 +9,8 @@ namespace OpenSpeed.Classic.Assets.Compression
 
         private static int LongHeaderSize => 8;
 
+        private static int DecompressedSizeMask => 0xFFFFFF;
+
         private static byte LongHeaderFlag => 0x01;
 
         private static byte EndOfStreamThreshold => 0xFC;
@@ -28,13 +30,7 @@ namespace OpenSpeed.Classic.Assets.Compression
                 throw new InvalidDataException("The RefPack header is truncated.");
             }
 
-            int decompressedSize = ReadBigEndian24(source, 2);
-
-            if (decompressedSize <= 0)
-            {
-                throw new InvalidDataException(
-                    $"The RefPack decompressed size {decompressedSize} is invalid.");
-            }
+            int declaredDecompressedSize = ReadBigEndian24(source, 2);
 
             int sourcePosition = ShortHeaderSize;
 
@@ -48,10 +44,19 @@ namespace OpenSpeed.Classic.Assets.Compression
                 sourcePosition = LongHeaderSize;
             }
 
+            int decompressedSize = MeasureDecodedSize(source, sourcePosition);
+
+            if ((decompressedSize & DecompressedSizeMask) != declaredDecompressedSize)
+            {
+                throw new InvalidDataException(
+                    $"The RefPack stream produces {decompressedSize} bytes, which does not match " +
+                    $"the declared 24-bit size {declaredDecompressedSize}.");
+            }
+
             byte[] output = new byte[decompressedSize];
             int outputPosition = 0;
 
-            while (outputPosition < output.Length)
+            while (true)
             {
                 EnsureSourceAvailable(source, sourcePosition, 1);
                 byte controlByte = source[sourcePosition];
@@ -155,7 +160,102 @@ namespace OpenSpeed.Classic.Assets.Compression
                 }
             }
 
-            return output;
+        }
+
+        private static int MeasureDecodedSize(byte[] source, int sourcePosition)
+        {
+            int outputPosition = 0;
+
+            while (true)
+            {
+                EnsureSourceAvailable(source, sourcePosition, 1);
+                byte controlByte = source[sourcePosition];
+                sourcePosition += 1;
+
+                if (controlByte >= EndOfStreamThreshold)
+                {
+                    int literalCount = controlByte & 0x03;
+                    EnsureSourceAvailable(source, sourcePosition, literalCount);
+
+                    return AddDecodedCount(outputPosition, literalCount);
+                }
+
+                if (controlByte < TwoByteCommandThreshold)
+                {
+                    EnsureSourceAvailable(source, sourcePosition, 1);
+                    byte secondByte = source[sourcePosition];
+                    sourcePosition += 1;
+                    int literalCount = controlByte & 0x03;
+                    int copyCount = ((controlByte & 0x1C) >> 2) + 3;
+                    int copyOffset = ((controlByte & 0x60) << 3) + secondByte + 1;
+                    EnsureSourceAvailable(source, sourcePosition, literalCount);
+                    sourcePosition += literalCount;
+                    outputPosition = AddDecodedCount(outputPosition, literalCount);
+                    ValidateMeasuredBackReference(outputPosition, copyOffset);
+                    outputPosition = AddDecodedCount(outputPosition, copyCount);
+                }
+                else if (controlByte < ThreeByteCommandThreshold)
+                {
+                    EnsureSourceAvailable(source, sourcePosition, 2);
+                    byte secondByte = source[sourcePosition];
+                    byte thirdByte = source[sourcePosition + 1];
+                    sourcePosition += 2;
+                    int literalCount = (secondByte >> 6) & 0x03;
+                    int copyCount = (controlByte & 0x3F) + 4;
+                    int copyOffset = ((secondByte & 0x3F) << 8) + thirdByte + 1;
+                    EnsureSourceAvailable(source, sourcePosition, literalCount);
+                    sourcePosition += literalCount;
+                    outputPosition = AddDecodedCount(outputPosition, literalCount);
+                    ValidateMeasuredBackReference(outputPosition, copyOffset);
+                    outputPosition = AddDecodedCount(outputPosition, copyCount);
+                }
+                else if (controlByte < FourByteCommandThreshold)
+                {
+                    EnsureSourceAvailable(source, sourcePosition, 3);
+                    byte secondByte = source[sourcePosition];
+                    byte thirdByte = source[sourcePosition + 1];
+                    byte fourthByte = source[sourcePosition + 2];
+                    sourcePosition += 3;
+                    int literalCount = controlByte & 0x03;
+                    int copyCount = ((controlByte >> 2) & 0x03) * 256 + fourthByte + 5;
+                    int copyOffset =
+                        ((controlByte & 0x10) << 12) +
+                        (secondByte << 8) +
+                        thirdByte +
+                        1;
+                    EnsureSourceAvailable(source, sourcePosition, literalCount);
+                    sourcePosition += literalCount;
+                    outputPosition = AddDecodedCount(outputPosition, literalCount);
+                    ValidateMeasuredBackReference(outputPosition, copyOffset);
+                    outputPosition = AddDecodedCount(outputPosition, copyCount);
+                }
+                else
+                {
+                    int literalCount = (controlByte & 0x1F) * 4 + 4;
+                    EnsureSourceAvailable(source, sourcePosition, literalCount);
+                    sourcePosition += literalCount;
+                    outputPosition = AddDecodedCount(outputPosition, literalCount);
+                }
+            }
+        }
+
+        private static int AddDecodedCount(int outputPosition, int count)
+        {
+            if (count > int.MaxValue - outputPosition)
+            {
+                throw new InvalidDataException("The RefPack decoded size exceeds the supported limit.");
+            }
+
+            return outputPosition + count;
+        }
+
+        private static void ValidateMeasuredBackReference(int outputPosition, int offset)
+        {
+            if (offset <= 0 || offset > outputPosition)
+            {
+                throw new InvalidDataException(
+                    "A RefPack back-reference exceeds the decoded output bounds.");
+            }
         }
 
         private static void CopyLiterals(
