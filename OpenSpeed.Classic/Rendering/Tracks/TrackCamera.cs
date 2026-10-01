@@ -25,13 +25,17 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         private static float FarCameraDistance => 12.0f;
 
-        private static float HighSpeedKilometresPerHour => 120.0f;
-
         private static float HighSpeedFieldOfViewRadians => MathHelper.ToRadians(40.0f);
 
         private static float FieldOfViewOffsetRadians => MathHelper.ToRadians(15.0f);
 
         private static float LowSpeedFieldOfViewRadians => MathHelper.ToRadians(60.0f);
+
+        private static float MaximumCameraDistanceOffset => 0.33f;
+
+        private static float MaximumCameraDistanceOffsetSpeedKilometresPerHour => 120.0f;
+
+        private static float MaximumFieldOfViewSpeedKilometresPerHour => 120.0f;
 
         private static float TargetHeightOffset => 1.5f;
 
@@ -40,6 +44,8 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         private static float MovementVelocity => 20.0f;
 
         private static float NearPlane => 0.1f;
+
+        private float currentCameraDistanceOffset;
 
         private float currentLongitudinalVelocity;
 
@@ -177,7 +183,9 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     "The camera longitudinal velocity must be finite.");
             }
 
-            currentLongitudinalVelocity = longitudinalVelocity;
+            UpdateCameraDistanceOffset(
+                elapsedSeconds,
+                longitudinalVelocity);
             UpdateFollow(targetWorld, cameraView, cameraMode);
         }
 
@@ -278,17 +286,48 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         private float CalculateFieldOfViewRadians()
         {
-            float speedKilometresPerHour = MathF.Abs(currentLongitudinalVelocity) * 3.6f;
-            float speedRatio = MathHelper.Clamp(
-                speedKilometresPerHour / HighSpeedKilometresPerHour,
-                0.0f,
-                1.0f);
+            float speedRatio = CalculateFieldOfViewSpeedRatio();
 
             return MathHelper.Lerp(
-                LowSpeedFieldOfViewRadians,
                 HighSpeedFieldOfViewRadians,
+                LowSpeedFieldOfViewRadians,
                 speedRatio) +
                 FieldOfViewOffsetRadians;
+        }
+
+        private float CalculateFieldOfViewSpeedRatio()
+        {
+            float speedKilometresPerHour = MathF.Abs(currentLongitudinalVelocity) * 3.6f;
+
+            return MathHelper.Clamp(
+            speedKilometresPerHour / MaximumFieldOfViewSpeedKilometresPerHour,
+                0.0f,
+                1.0f);
+        }
+
+        private void UpdateCameraDistanceOffset(
+            float elapsedSeconds,
+            float longitudinalVelocity)
+        {
+            if (elapsedSeconds == 0.0f)
+            {
+                currentLongitudinalVelocity = longitudinalVelocity;
+
+                return;
+            }
+
+            float currentSpeed = MathF.Abs(currentLongitudinalVelocity);
+            float nextSpeed = MathF.Abs(longitudinalVelocity);
+            float acceleration = (nextSpeed - currentSpeed) / elapsedSeconds;
+            float maximumOffsetSpeed =
+                MaximumCameraDistanceOffsetSpeedKilometresPerHour / 3.6f;
+            float cameraDistanceVelocity =
+                acceleration * MaximumCameraDistanceOffset / maximumOffsetSpeed;
+            currentCameraDistanceOffset = MathHelper.Clamp(
+                currentCameraDistanceOffset + cameraDistanceVelocity * elapsedSeconds,
+                0.0f,
+                MaximumCameraDistanceOffset);
+            currentLongitudinalVelocity = longitudinalVelocity;
         }
 
         private void UpdateFollow(Matrix targetWorld)
@@ -309,9 +348,10 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             cameraPositionOnGround.Y = 0.0f;
             Vector3 direction = cameraPositionOnGround - targetPositionOnGround;
             float distance = direction.Length();
-            float desiredDistance = CalculateCameraDistance(cameraMode);
+            float desiredDistance = CalculateCameraDistance(cameraMode) + currentCameraDistanceOffset;
 
             if (distance > desiredDistance ||
+                currentCameraDistanceOffset > 0.0f && distance > 0.0f ||
                 cameraMode == TrackCameraMode.Far && distance > 0.0f)
             {
                 direction /= distance;

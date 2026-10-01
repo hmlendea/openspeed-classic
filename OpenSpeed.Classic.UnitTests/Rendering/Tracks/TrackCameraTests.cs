@@ -215,7 +215,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
         }
 
         [Test]
-        public void GivenDifferentLongitudinalSpeeds_WhenCreatingProjection_ThenTheFieldOfViewNarrows()
+        public void GivenDifferentLongitudinalSpeeds_WhenCreatingProjection_ThenTheFieldOfViewWidens()
         {
             Matrix carWorld = Matrix.CreateWorld(
                 new Vector3(42.0f, 8.0f, 16.0f),
@@ -227,17 +227,22 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             trackCamera.Follow(carWorld, 0.0f, 120.0f / 3.6f);
             float highSpeedProjectionScale = trackCamera.CreateProjection(1280, 720).M11;
 
-            Assert.That(highSpeedProjectionScale, Is.GreaterThan(lowSpeedProjectionScale));
+            Assert.That(highSpeedProjectionScale, Is.LessThan(lowSpeedProjectionScale));
         }
 
-        [Test]
-        public void GivenMaximumCameraSpeed_WhenCreatingProjection_ThenTheFovIncludesTheConfiguredOffset()
+        [TestCase(120.0f)]
+        [TestCase(121.0f)]
+        public void GivenSpeedAtOrAboveTheMaximum_WhenCreatingProjection_ThenTheFovIsCapped(
+            float speedKilometresPerHour)
         {
             Matrix carWorld = Matrix.CreateWorld(
                 new Vector3(42.0f, 8.0f, 16.0f),
                 Vector3.Forward,
                 Vector3.Up);
-            trackCamera.Follow(carWorld, 0.0f, 120.0f / 3.6f);
+            trackCamera.Follow(
+                carWorld,
+                0.0f,
+                speedKilometresPerHour / 3.6f);
             Matrix projection = trackCamera.CreateProjection(1280, 720);
             float aspectRatio = 1280.0f / 720.0f;
             float fieldOfViewRadians = 2.0f * MathF.Atan(
@@ -245,7 +250,83 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
 
             Assert.That(
                 fieldOfViewRadians,
-                Is.EqualTo(MathHelper.ToRadians(55.0f)).Within(PositionTolerance));
+                Is.EqualTo(MathHelper.ToRadians(75.0f)).Within(PositionTolerance));
+        }
+
+        [TestCase(0.0f, 6.0f)]
+        [TestCase(119.0f, 6.32725f)]
+        [TestCase(120.0f, 6.33f)]
+        [TestCase(121.0f, 6.33f)]
+        public void GivenAForwardSpeed_WhenFollowing_ThenTheCameraDistanceHasAMaximumOffset(
+            float speedKilometresPerHour,
+            float expectedDistance)
+        {
+            Matrix carWorld = Matrix.CreateWorld(
+                Vector3.Zero,
+                Vector3.Forward,
+                Vector3.Up);
+
+            trackCamera.Follow(
+                carWorld,
+                1.0f,
+                speedKilometresPerHour / 3.6f);
+            Vector3 offset = trackCamera.Position - carWorld.Translation;
+            offset.Y = 0.0f;
+
+            Assert.That(
+                offset.Length(),
+                Is.EqualTo(expectedDistance).Within(PositionTolerance));
+        }
+
+        [Test]
+        public void GivenBrakingFromMaximumSpeed_WhenFollowing_ThenTheCameraReturnsToTheNormalDistance()
+        {
+            Matrix carWorld = Matrix.CreateWorld(
+                Vector3.Zero,
+                Vector3.Forward,
+                Vector3.Up);
+            trackCamera.Follow(carWorld, 1.0f, 120.0f / 3.6f);
+
+            trackCamera.Follow(carWorld, 1.0f, 0.0f);
+            Vector3 offset = trackCamera.Position - carWorld.Translation;
+            offset.Y = 0.0f;
+
+            Assert.That(
+                offset.Length(),
+                Is.EqualTo(6.0f).Within(PositionTolerance));
+        }
+
+        [Test]
+        public void GivenConstantAcceleration_WhenFollowing_ThenTheCameraDistanceChangesAtAConstantRate()
+        {
+            Matrix carWorld = Matrix.CreateWorld(
+                Vector3.Zero,
+                Vector3.Forward,
+                Vector3.Up);
+            trackCamera.Follow(carWorld, 0.5f, 6.0f);
+            float firstDistance = CalculateHorizontalCameraDistance(carWorld);
+
+            trackCamera.Follow(carWorld, 0.5f, 12.0f);
+            float secondDistance = CalculateHorizontalCameraDistance(carWorld);
+
+            Assert.That(
+                secondDistance - firstDistance,
+                Is.EqualTo(firstDistance - 6.0f).Within(PositionTolerance));
+        }
+
+        [Test]
+        public void GivenNoElapsedTime_WhenVelocityChanges_ThenTheCameraDistanceDoesNotChange()
+        {
+            Matrix carWorld = Matrix.CreateWorld(
+                Vector3.Zero,
+                Vector3.Forward,
+                Vector3.Up);
+
+            trackCamera.Follow(carWorld, 0.0f, 120.0f / 3.6f);
+
+            Assert.That(
+                CalculateHorizontalCameraDistance(carWorld),
+                Is.EqualTo(6.0f).Within(PositionTolerance));
         }
 
         [TestCase(TrackCameraView.Right, 60.0f)]
@@ -330,5 +411,13 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
                     Z = positionZ
                 }
             };
+
+        private float CalculateHorizontalCameraDistance(Matrix carWorld)
+        {
+            Vector3 offset = trackCamera.Position - carWorld.Translation;
+            offset.Y = 0.0f;
+
+            return offset.Length();
+        }
     }
 }
