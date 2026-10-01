@@ -20,9 +20,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             TrackSurface surface = BuildSurface();
             TrackMaterial material = new();
 
-            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
-                .BuildTextured(surface, material)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. TrackSurfaceVertexBuilder.BuildTextured(surface, material)];
 
             Assert.Multiple(() =>
             {
@@ -46,9 +44,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             TrackSurface surface = BuildSurface();
             surface.LightingLevels = 0x6880;
 
-            VertexPositionColor[] vertices = TrackSurfaceVertexBuilder
-                .BuildColoured(surface)
-                .ToArray();
+            VertexPositionColor[] vertices = [.. TrackSurfaceVertexBuilder.BuildColoured(surface)];
 
             Assert.Multiple(() =>
             {
@@ -65,9 +61,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             TrackSurface surface = BuildSurface();
             surface.LightingLevels = 0;
 
-            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
-                .BuildTextured(surface, new TrackMaterial(), false)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. TrackSurfaceVertexBuilder.BuildTextured(surface, new TrackMaterial(), false)];
 
             Assert.That(vertices.Select(vertex => vertex.Color), Is.All.EqualTo(Color.White));
         }
@@ -78,9 +72,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             TrackSurface surface = BuildSurface();
             surface.LightingLevels = 0;
 
-            VertexPositionColor[] vertices = TrackSurfaceVertexBuilder
-                .BuildColoured(surface, false)
-                .ToArray();
+            VertexPositionColor[] vertices = [.. TrackSurfaceVertexBuilder.BuildColoured(surface, false)];
 
             Assert.That(
                 vertices.Select(vertex => vertex.Color),
@@ -100,9 +92,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             ];
             TrackMaterial material = new();
 
-            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
-                .BuildTextured(surface, material)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. TrackSurfaceVertexBuilder.BuildTextured(surface, material)];
 
             Assert.Multiple(() =>
             {
@@ -126,9 +116,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             ];
             TrackMaterial material = new();
 
-            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
-                .BuildTextured(surface, material)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. TrackSurfaceVertexBuilder.BuildTextured(surface, material)];
 
             Assert.Multiple(() =>
             {
@@ -152,9 +140,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             ];
             TrackMaterial material = new();
 
-            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
-                .BuildTextured(surface, material)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. TrackSurfaceVertexBuilder.BuildTextured(surface, material)];
 
             Assert.Multiple(() =>
             {
@@ -179,9 +165,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             ];
             TrackMaterial material = new();
 
-            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
-                .BuildTextured(surface, material)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. TrackSurfaceVertexBuilder.BuildTextured(surface, material)];
 
             Assert.Multiple(() =>
             {
@@ -199,9 +183,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             surface.Side = TrackSurfaceSide.Right;
             TrackMaterial material = new() { Alignment = 0x0900 };
 
-            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
-                .BuildTextured(surface, material)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. TrackSurfaceVertexBuilder.BuildTextured(surface, material)];
 
             Assert.Multiple(() =>
             {
@@ -219,9 +201,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             surface.Side = TrackSurfaceSide.Left;
             TrackMaterial material = new();
 
-            VertexPositionColorTexture[] vertices = TrackSurfaceVertexBuilder
-                .BuildTextured(surface, material)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. TrackSurfaceVertexBuilder.BuildTextured(surface, material)];
 
             Assert.Multiple(() =>
             {

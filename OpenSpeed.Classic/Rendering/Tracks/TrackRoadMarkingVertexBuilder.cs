@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -23,7 +22,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         {
             ArgumentNullException.ThrowIfNull(roadMarking);
 
-            TrackPoint[] points = roadMarking.Points.ToArray();
+            TrackPoint[] points = [.. roadMarking.Points];
             List<VertexPositionColor> vertices = [];
 
             for (int pointIndex = 0; pointIndex < points.Length - 1; pointIndex += 1)

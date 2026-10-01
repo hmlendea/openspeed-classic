@@ -16,7 +16,7 @@ namespace OpenSpeed.Classic.Rendering.Cars
         {
             ArgumentNullException.ThrowIfNull(routePoints);
 
-            TrackRoutePoint[] routePointArray = routePoints.ToArray();
+            TrackRoutePoint[] routePointArray = [.. routePoints];
 
             if (routePointArray.Length == 0)
             {

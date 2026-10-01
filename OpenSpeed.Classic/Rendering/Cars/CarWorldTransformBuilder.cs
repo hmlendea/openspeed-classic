@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 using Microsoft.Xna.Framework;
 
@@ -19,7 +18,7 @@ namespace OpenSpeed.Classic.Rendering.Cars
         {
             ArgumentNullException.ThrowIfNull(routePoints);
 
-            TrackRoutePoint[] routePointArray = routePoints.ToArray();
+            TrackRoutePoint[] routePointArray = [.. routePoints];
 
             if (routePointArray.Length == 0)
             {

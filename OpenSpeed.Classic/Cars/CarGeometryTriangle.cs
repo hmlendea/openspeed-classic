@@ -10,7 +10,9 @@ namespace OpenSpeed.Classic.Cars
         CarGeometryVertex third,
         int firstTextureCorner,
         int secondTextureCorner,
-        int thirdTextureCorner)
+        int thirdTextureCorner,
+        uint textureMappingFlags = 0,
+        int textureRegistrationMode = 3)
     {
         public CarGeometryVertex First { get; } = first;
 
@@ -29,6 +31,10 @@ namespace OpenSpeed.Classic.Cars
         public CarGeometryVertex Third { get; } = third;
 
         public int ThirdTextureCorner { get; } = thirdTextureCorner;
+
+        public int TextureRegistrationMode { get; } = textureRegistrationMode;
+
+        public uint TextureMappingFlags { get; } = textureMappingFlags;
 
         public string TextureName { get; } = textureName;
     }

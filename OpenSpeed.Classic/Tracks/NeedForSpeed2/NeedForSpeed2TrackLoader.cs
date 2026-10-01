@@ -74,31 +74,20 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                     textureVariant));
             byte[] geometryData = NeedForSpeed2TrackArchiveReader.Read(
                 File.ReadAllBytes(geometryPath));
-            TrackBlock[] blocks = NeedForSpeed2TrackGeometryDecoder
-                .Decode(geometryData)
-                .ToArray();
+            TrackBlock[] blocks = [.. NeedForSpeed2TrackGeometryDecoder.Decode(geometryData)];
             byte[] collectionData = File.ReadAllBytes(materialPath);
             NeedForSpeed2TrackExtraBlock[] collectionExtraBlocks =
             [
                 .. NeedForSpeed2TrackExtraBlockReader.ReadCollection(collectionData)
             ];
-            TrackMaterial[] materials = NeedForSpeed2TrackMaterialDecoder
-                .Decode(collectionExtraBlocks)
-                .ToArray();
-            TrackRoutePoint[] routePoints = NeedForSpeed2TrackRouteDecoder
-                .Decode(collectionExtraBlocks)
-                .ToArray();
+            TrackMaterial[] materials = [.. NeedForSpeed2TrackMaterialDecoder.Decode(collectionExtraBlocks)];
+            TrackRoutePoint[] routePoints = [.. NeedForSpeed2TrackRouteDecoder.Decode(collectionExtraBlocks)];
             ClassifyRoadShoulders(blocks, routePoints);
-            TrackSurface[] globalScenerySurfaces = NeedForSpeed2TrackSceneryDecoder
-                .Decode(collectionExtraBlocks)
-                .ToArray();
-            TrackTexture[] textures = NeedForSpeed2TextureArchiveDecoder
-                .Decode(File.ReadAllBytes(texturePath))
-                .ToArray();
-            TrackTexture[] panoramaSourceTextures = textures
+            TrackSurface[] globalScenerySurfaces = [.. NeedForSpeed2TrackSceneryDecoder.Decode(collectionExtraBlocks)];
+            TrackTexture[] textures = [.. NeedForSpeed2TextureArchiveDecoder.Decode(File.ReadAllBytes(texturePath))];
+            TrackTexture[] panoramaSourceTextures = [.. textures
                 .Where(texture => texture.Identifier < PanoramaTextureCount)
-                .OrderBy(texture => texture.Identifier)
-                .ToArray();
+                .OrderBy(texture => texture.Identifier)];
             TrackTexture? panoramaTexture = null;
 
             if (panoramaSourceTextures.Length == PanoramaTextureCount &&
@@ -162,13 +151,11 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
             IEnumerable<TrackBlock> blocks,
             IEnumerable<TrackRoutePoint> routePoints)
         {
-            TrackRoutePoint[] routePointArray = routePoints.ToArray();
+            TrackRoutePoint[] routePointArray = [.. routePoints];
 
             foreach (TrackBlock block in blocks)
             {
-                TrackRoutePoint[] blockRoutePoints = routePointArray
-                    .Where(routePoint => routePoint.BlockIdentifier == block.Identifier)
-                    .ToArray();
+                TrackRoutePoint[] blockRoutePoints = [.. routePointArray.Where(routePoint => routePoint.BlockIdentifier == block.Identifier)];
 
                 foreach (TrackSurface surface in block.Surfaces)
                 {

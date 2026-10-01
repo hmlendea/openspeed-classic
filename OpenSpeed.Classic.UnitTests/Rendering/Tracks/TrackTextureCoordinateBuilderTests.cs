@@ -1,5 +1,3 @@
-using System.Linq;
-
 using Microsoft.Xna.Framework;
 
 using NUnit.Framework;
@@ -39,9 +37,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
                 Alignment = (ushort)alignment
             };
 
-            Vector2[] textureCoordinates = TrackTextureCoordinateBuilder
-                .Build(material)
-                .ToArray();
+            Vector2[] textureCoordinates = [.. TrackTextureCoordinateBuilder.Build(material)];
 
             Assert.That(
                 textureCoordinates,

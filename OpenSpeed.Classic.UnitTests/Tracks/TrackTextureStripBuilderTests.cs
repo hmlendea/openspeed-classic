@@ -1,5 +1,3 @@
-using System.Linq;
-
 using NUnit.Framework;
 
 using OpenSpeed.Classic.Tracks;
@@ -36,7 +34,7 @@ namespace OpenSpeed.Classic.UnitTests.Tracks
                 16,
                 "HorizonPanorama",
                 sourceTextures);
-            TrackColour[] pixels = texture.Pixels.ToArray();
+            TrackColour[] pixels = [.. texture.Pixels];
 
             Assert.Multiple(() =>
             {

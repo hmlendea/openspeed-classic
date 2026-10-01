@@ -3,8 +3,6 @@ using System;
 using Microsoft.Xna.Framework;
 
 using NUnit.Framework;
-
-using OpenSpeed.Classic;
 using OpenSpeed.Classic.Configuration;
 using OpenSpeed.Classic.Tracks;
 

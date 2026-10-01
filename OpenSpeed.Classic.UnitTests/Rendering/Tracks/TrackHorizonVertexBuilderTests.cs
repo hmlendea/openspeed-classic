@@ -1,5 +1,3 @@
-using System.Linq;
-
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -20,9 +18,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
         {
             TrackHorizon horizon = BuildHorizon();
 
-            VertexPositionColor[] vertices = TrackHorizonVertexBuilder
-                .BuildRing(horizon)
-                .ToArray();
+            VertexPositionColor[] vertices = [.. TrackHorizonVertexBuilder.BuildRing(horizon)];
 
             Assert.Multiple(() =>
             {
@@ -42,9 +38,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
         {
             TrackHorizon horizon = BuildHorizon();
 
-            VertexPositionColorTexture[] vertices = TrackHorizonVertexBuilder
-                .BuildDome(horizon)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. TrackHorizonVertexBuilder.BuildDome(horizon)];
 
             Assert.Multiple(() =>
             {
@@ -64,9 +58,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
         {
             TrackHorizon horizon = BuildHorizon();
 
-            VertexPositionColorTexture[] vertices = TrackHorizonVertexBuilder
-                .BuildPanorama(horizon)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. TrackHorizonVertexBuilder.BuildPanorama(horizon)];
 
             Assert.Multiple(() =>
             {

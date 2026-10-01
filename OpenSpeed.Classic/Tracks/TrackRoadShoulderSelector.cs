@@ -21,8 +21,8 @@ namespace OpenSpeed.Classic.Tracks
             ArgumentNullException.ThrowIfNull(surface);
             ArgumentNullException.ThrowIfNull(routePoints);
 
-            TrackPoint[] points = surface.Points.ToArray();
-            TrackRoutePoint[] routePointArray = routePoints.ToArray();
+            TrackPoint[] points = [.. surface.Points];
+            TrackRoutePoint[] routePointArray = [.. routePoints];
 
             if (points.Length != 4 || routePointArray.Length == 0)
             {
@@ -61,11 +61,10 @@ namespace OpenSpeed.Classic.Tracks
                 return TrackSurfaceSide.Centre;
             }
 
-            double[] lateralPositions = points
+            double[] lateralPositions = [.. points
                 .Select(point => (double)Vector3.Dot(
                     ToVector3(point) - ToVector3(routePoint.Position),
-                    routeRight))
-                .ToArray();
+                    routeRight))];
             double minimumLateralPosition = lateralPositions.Min();
             double maximumLateralPosition = lateralPositions.Max();
             double leftBoundary = -routePoint.LeftBorderDistance;

@@ -45,12 +45,8 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
             byte[] geometryData = NeedForSpeed2CarArchiveReader.Read(
                 File.ReadAllBytes(archivePath),
                 NeedForSpeed2CarCatalogue.GetGeometryMemberName(parsedIdentifier));
-            TrackTexture[] decodedTextures = NeedForSpeed2TextureArchiveDecoder
-                .Decode(File.ReadAllBytes(texturePath))
-                .ToArray();
-            CarTexture[] textures = decodedTextures
-                .Select(ToCarTexture)
-                .ToArray();
+            TrackTexture[] decodedTextures = [.. NeedForSpeed2TextureArchiveDecoder.Decode(File.ReadAllBytes(texturePath))];
+            CarTexture[] textures = [.. decodedTextures.Select(ToCarTexture)];
             CarTextureColourRemapper.Apply(textures, parsedIdentifier);
 
             return new LoadedCar
@@ -58,7 +54,9 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
                 Identifier = parsedIdentifier.ToString(),
                 DisplayName = NeedForSpeed2CarCatalogue.GetDisplayName(parsedIdentifier),
                 Game = Game,
-                Geometry = NeedForSpeed2CarGeometryDecoder.Decode(geometryData).ToArray(),
+                Geometry = NeedForSpeed2CarGeometryDecoder
+                    .Decode(geometryData, parsedIdentifier)
+                    .ToArray(),
                 Textures = textures
             };
         }

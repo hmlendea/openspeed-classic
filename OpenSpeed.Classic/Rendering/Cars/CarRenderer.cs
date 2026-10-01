@@ -72,7 +72,7 @@ namespace OpenSpeed.Classic.Rendering.Cars
             graphicsDevice.DepthStencilState = DepthStencilState.Default;
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.RasterizerState = rasterizerState;
-            graphicsDevice.SamplerStates[0] = SamplerState.AnisotropicClamp;
+            graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
             ConfigureEffect(colourEffect, world, view, projection);
             ConfigureEffect(textureEffect, world, view, projection);
             DrawColouredGeometry();
@@ -92,8 +92,8 @@ namespace OpenSpeed.Classic.Rendering.Cars
             }
 
             List<VertexPositionColor> colouredVertices = [];
-            Dictionary<string, List<VertexPositionColorTexture>> texturedVertices =
-                new(StringComparer.Ordinal);
+            List<string> textureBatchNames = [];
+            List<List<VertexPositionColorTexture>> textureBatchVertices = [];
 
             foreach (CarGeometryTriangle triangle in car.Geometry)
             {
@@ -107,23 +107,38 @@ namespace OpenSpeed.Classic.Rendering.Cars
                     continue;
                 }
 
-                if (!texturedVertices.ContainsKey(triangle.TextureName))
+                int textureBatchIndex = textureBatchNames.Count - 1;
+
+                if (textureBatchIndex < 0 ||
+                    !string.Equals(
+                        textureBatchNames[textureBatchIndex],
+                        triangle.TextureName,
+                        StringComparison.Ordinal))
                 {
-                    texturedVertices.Add(triangle.TextureName, []);
+                    textureBatchNames.Add(triangle.TextureName);
+                    textureBatchVertices.Add([]);
+                    textureBatchIndex += 1;
                 }
 
-                texturedVertices[triangle.TextureName].AddRange(
+                textureBatchVertices[textureBatchIndex].AddRange(
                     CarGeometryVertexBuilder.BuildTextured(triangle, Color.White));
             }
 
             CreateColourBuffer(colouredVertices);
-            textureBatches = texturedVertices
-                .OrderBy(pair => pair.Key, StringComparer.Ordinal)
-                .Select(pair => new CarTextureBatch(
+            List<CarTextureBatch> createdTextureBatches = [];
+
+            for (
+                int textureBatchIndex = 0;
+                textureBatchIndex < textureBatchNames.Count;
+                textureBatchIndex += 1)
+            {
+                createdTextureBatches.Add(new CarTextureBatch(
                     graphicsDevice,
-                    pair.Key,
-                    pair.Value.ToArray()))
-                .ToArray();
+                    textureBatchNames[textureBatchIndex],
+                    [.. textureBatchVertices[textureBatchIndex]]));
+            }
+
+            textureBatches = [.. createdTextureBatches];
         }
 
         private static void ConfigureEffect(
@@ -150,7 +165,7 @@ namespace OpenSpeed.Classic.Rendering.Cars
 
         private void CreateColourBuffer(IEnumerable<VertexPositionColor> vertices)
         {
-            VertexPositionColor[] vertexArray = vertices.ToArray();
+            VertexPositionColor[] vertexArray = [.. vertices];
 
             if (vertexArray.Length == 0)
             {

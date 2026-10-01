@@ -16,11 +16,9 @@ namespace OpenSpeed.Classic.UnitTests.Rendering
         [Test]
         public void GivenAFourByFourTexture_WhenGenerating_ThenEveryMipmapLevelIsReturned()
         {
-            Color[] pixels = Enumerable.Repeat(Color.Red, 16).ToArray();
+            Color[] pixels = [.. Enumerable.Repeat(Color.Red, 16)];
 
-            TextureMipmapLevel[] levels = TextureMipmapGenerator
-                .Generate(pixels, 4, 4)
-                .ToArray();
+            TextureMipmapLevel[] levels = [.. TextureMipmapGenerator.Generate(pixels, 4, 4)];
 
             Assert.Multiple(() =>
             {
@@ -41,9 +39,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering
                 new Color(192, 208, 224, 240)
             ];
 
-            TextureMipmapLevel[] levels = TextureMipmapGenerator
-                .Generate(pixels, 2, 2)
-                .ToArray();
+            TextureMipmapLevel[] levels = [.. TextureMipmapGenerator.Generate(pixels, 2, 2)];
             Color averagedColour = levels[1].Pixels.Single();
 
             Assert.That(averagedColour, Is.EqualTo(new Color(96, 112, 128, 144)));
@@ -52,11 +48,9 @@ namespace OpenSpeed.Classic.UnitTests.Rendering
         [Test]
         public void GivenANonSquareTexture_WhenGenerating_ThenBothDimensionsReachOne()
         {
-            Color[] pixels = Enumerable.Repeat(Color.Red, 8).ToArray();
+            Color[] pixels = [.. Enumerable.Repeat(Color.Red, 8)];
 
-            TextureMipmapLevel[] levels = TextureMipmapGenerator
-                .Generate(pixels, 4, 2)
-                .ToArray();
+            TextureMipmapLevel[] levels = [.. TextureMipmapGenerator.Generate(pixels, 4, 2)];
 
             Assert.Multiple(() =>
             {
@@ -73,7 +67,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering
             int height,
             int pixelCount)
         {
-            Color[] pixels = Enumerable.Repeat(Color.Red, pixelCount).ToArray();
+            Color[] pixels = [.. Enumerable.Repeat(Color.Red, pixelCount)];
 
             Assert.That(
                 () => TextureMipmapGenerator.Generate(pixels, width, height),

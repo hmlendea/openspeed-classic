@@ -135,7 +135,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             DisposeTrackResources();
             LoadHorizon(track.Horizon);
 
-            TrackBlock[] trackBlocks = track.Blocks.ToArray();
+            TrackBlock[] trackBlocks = [.. track.Blocks];
             blockCentres = trackBlocks.ToDictionary(
                 trackBlock => trackBlock.Identifier,
                 trackBlock => ToVector3(trackBlock.Centre));
@@ -221,7 +221,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             foreach (TrackRoadMarking roadMarking in roadMarkings)
             {
                 VertexPositionColor[] markingVertices =
-                    TrackRoadMarkingVertexBuilder.Build(roadMarking).ToArray();
+                    [.. TrackRoadMarkingVertexBuilder.Build(roadMarking)];
 
                 if (markingVertices.Length == 0)
                 {
@@ -573,9 +573,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 return;
             }
 
-            VertexPositionColor[] ringVertices = TrackHorizonVertexBuilder
-                .BuildRing(horizon)
-                .ToArray();
+            VertexPositionColor[] ringVertices = [.. TrackHorizonVertexBuilder.BuildRing(horizon)];
 
             if (ringVertices.Length > 0)
             {
@@ -589,19 +587,16 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 sourceSkyColour.Red,
                 sourceSkyColour.Green,
                 sourceSkyColour.Blue);
-            VertexPositionColorTexture[] domeVertices = TrackHorizonVertexBuilder
-                .BuildDome(horizon)
-                .ToArray();
+            VertexPositionColorTexture[] domeVertices = [.. TrackHorizonVertexBuilder.BuildDome(horizon)];
 
             if (domeVertices.Length > 0)
             {
                 horizonDomeBatch = new TrackColourBatch(
                     graphicsDevice,
-                    domeVertices
+                    [.. domeVertices
                         .Select(vertex => new VertexPositionColor(
                             vertex.Position,
-                            skyColour))
-                        .ToArray());
+                            skyColour))]);
             }
 
             if (horizon.PanoramaTexture is null)
@@ -612,9 +607,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             horizonTextureResource = new TrackTextureResource(
                 graphicsDevice,
                 horizon.PanoramaTexture);
-            VertexPositionColorTexture[] panoramaVertices = TrackHorizonVertexBuilder
-                .BuildPanorama(horizon)
-                .ToArray();
+            VertexPositionColorTexture[] panoramaVertices = [.. TrackHorizonVertexBuilder.BuildPanorama(horizon)];
 
             if (panoramaVertices.Length > 0)
             {

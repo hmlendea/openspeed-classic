@@ -14,7 +14,7 @@ namespace OpenSpeed.Classic.Tracks
             ArgumentException.ThrowIfNullOrWhiteSpace(name);
             ArgumentNullException.ThrowIfNull(sourceTextures);
 
-            TrackTexture[] textures = sourceTextures.ToArray();
+            TrackTexture[] textures = [.. sourceTextures];
 
             if (textures.Length == 0)
             {
@@ -38,7 +38,7 @@ namespace OpenSpeed.Classic.Tracks
 
             foreach (TrackTexture texture in textures)
             {
-                TrackColour[] sourcePixels = texture.Pixels.ToArray();
+                TrackColour[] sourcePixels = [.. texture.Pixels];
 
                 if (texture.Width <= 0 || sourcePixels.Length != texture.Width * height)
                 {
@@ -76,7 +76,7 @@ namespace OpenSpeed.Classic.Tracks
             IEnumerable<TrackTexture> sourceTextures)
         {
             TrackTexture sourceStrip = Build(identifier, name, sourceTextures);
-            TrackColour[] sourcePixels = sourceStrip.Pixels.ToArray();
+            TrackColour[] sourcePixels = [.. sourceStrip.Pixels];
             int width = sourceStrip.Width * 2;
             TrackColour[] pixels = new TrackColour[width * sourceStrip.Height];
 

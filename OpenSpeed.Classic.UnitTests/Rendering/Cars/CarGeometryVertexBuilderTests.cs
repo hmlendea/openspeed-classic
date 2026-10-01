@@ -1,5 +1,3 @@
-using System.Linq;
-
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -20,9 +18,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
         {
             CarGeometryTriangle triangle = BuildTriangle();
 
-            VertexPositionColor[] vertices = CarGeometryVertexBuilder
-                .BuildColoured(triangle, Color.White)
-                .ToArray();
+            VertexPositionColor[] vertices = [.. CarGeometryVertexBuilder.BuildColoured(triangle, Color.White)];
 
             Assert.Multiple(() =>
             {
@@ -36,15 +32,13 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
         [Test]
         public void GivenTextureCorners_WhenBuildingTexturedVertices_ThenCoordinatesAreMapped()
         {
-            VertexPositionColorTexture[] vertices = CarGeometryVertexBuilder
-                .BuildTextured(BuildTriangle(), Color.White)
-                .ToArray();
+            VertexPositionColorTexture[] vertices = [.. CarGeometryVertexBuilder.BuildTextured(BuildTriangle(), Color.White)];
 
             Assert.Multiple(() =>
             {
-                Assert.That(vertices[0].TextureCoordinate, Is.EqualTo(new Vector2(0.0f, 0.0f)));
-                Assert.That(vertices[1].TextureCoordinate, Is.EqualTo(new Vector2(1.0f, 0.0f)));
-                Assert.That(vertices[2].TextureCoordinate, Is.EqualTo(new Vector2(1.0f, 1.0f)));
+                Assert.That(vertices[0].TextureCoordinate, Is.EqualTo(new Vector2(0.0f, 1.0f)));
+                Assert.That(vertices[1].TextureCoordinate, Is.EqualTo(new Vector2(1.0f, 1.0f)));
+                Assert.That(vertices[2].TextureCoordinate, Is.EqualTo(new Vector2(1.0f, 0.0f)));
             });
         }
 
@@ -57,8 +51,8 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Cars
                 new CarGeometryVertex(8, 16, 32),
                 new CarGeometryVertex(16, 32, 48),
                 new CarGeometryVertex(32, 48, 64),
-                0,
-                1,
-                2);
+                3,
+                2,
+                1);
     }
 }

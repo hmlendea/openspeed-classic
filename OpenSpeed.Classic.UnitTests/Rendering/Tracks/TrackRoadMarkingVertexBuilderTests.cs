@@ -1,5 +1,3 @@
-using System.Linq;
-
 using Microsoft.Xna.Framework.Graphics;
 
 using NUnit.Framework;
@@ -24,9 +22,7 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
                 ]
             };
 
-            VertexPositionColor[] vertices = TrackRoadMarkingVertexBuilder
-                .Build(roadMarking)
-                .ToArray();
+            VertexPositionColor[] vertices = [.. TrackRoadMarkingVertexBuilder.Build(roadMarking)];
 
             Assert.Multiple(() =>
             {

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -62,9 +61,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             Color[] lightingColours = BuildLightingColours(
                 surface.LightingLevels,
                 areShadowsEnabled);
-            Vector2[] textureCoordinates = TrackTextureCoordinateBuilder
-                .Build(material)
-                .ToArray();
+            Vector2[] textureCoordinates = [.. TrackTextureCoordinateBuilder.Build(material)];
 
             if (surface.Side == TrackSurfaceSide.Right)
             {
@@ -125,12 +122,12 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                 return [Color.White, Color.White, Color.White, Color.White];
             }
 
-            return TrackSurfaceLighting.Build(lightingLevels).ToArray();
+            return [.. TrackSurfaceLighting.Build(lightingLevels)];
         }
 
         private static TrackPoint[] GetPoints(TrackSurface surface)
         {
-            TrackPoint[] points = surface.Points.ToArray();
+            TrackPoint[] points = [.. surface.Points];
 
             if (points.Length != SurfacePointCount)
             {

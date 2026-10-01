@@ -11,7 +11,7 @@ namespace OpenSpeed.Classic.Tracks.Loading
         ApplicationSettings applicationSettings,
         IEnumerable<ITrackFormatLoader> trackFormatLoaders) : ITrackLoadingService
     {
-        private readonly ITrackFormatLoader[] trackFormatLoaders = trackFormatLoaders.ToArray();
+        private readonly ITrackFormatLoader[] trackFormatLoaders = [.. trackFormatLoaders];
 
         public LoadedTrack Load(TrackLoadRequest request)
         {

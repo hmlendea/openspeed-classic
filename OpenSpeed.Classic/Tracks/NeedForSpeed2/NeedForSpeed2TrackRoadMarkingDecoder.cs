@@ -28,7 +28,7 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
                 return [];
             }
 
-            TrackPoint[] vertexArray = vertices.ToArray();
+            TrackPoint[] vertexArray = [.. vertices];
             ReadOnlySpan<byte> payload = laneBlock.Payload.Span;
             long requiredSize = (long)laneBlock.RecordCount * RoadLaneRecordSize;
 

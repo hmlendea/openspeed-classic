@@ -47,7 +47,7 @@ namespace OpenSpeed.Classic.Tracks.NeedForSpeed2
         {
             ArgumentNullException.ThrowIfNull(extraBlocks);
 
-            NeedForSpeed2TrackExtraBlock[] blocks = extraBlocks.ToArray();
+            NeedForSpeed2TrackExtraBlock[] blocks = [.. extraBlocks];
             NeedForSpeed2TrackExtraBlock? geometryBlock = blocks.FirstOrDefault(
                 block => block.TypeIdentifier == ObjectGeometryType);
 

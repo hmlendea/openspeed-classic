@@ -57,9 +57,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             ArgumentNullException.ThrowIfNull(trackBlocks);
             ArgumentNullException.ThrowIfNull(routePoints);
 
-            Vector3[] centres = trackBlocks
-                .Select(trackBlock => ToVector3(trackBlock.Centre))
-                .ToArray();
+            Vector3[] centres = [.. trackBlocks.Select(trackBlock => ToVector3(trackBlock.Centre))];
 
             if (centres.Length == 0)
             {

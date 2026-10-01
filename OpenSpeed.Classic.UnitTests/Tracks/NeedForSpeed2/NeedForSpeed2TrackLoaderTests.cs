@@ -51,12 +51,12 @@ namespace OpenSpeed.Classic.UnitTests.Tracks.NeedForSpeed2
                 TrackTextureVariant.SE);
             TrackBlock block = track.Blocks.Single();
             TrackSurface surface = block.Surfaces.Single();
-            TrackSurface[] blockScenery = block.ScenerySurfaces.ToArray();
+            TrackSurface[] blockScenery = [.. block.ScenerySurfaces];
             TrackSurface globalScenery = track.ScenerySurfaces.Single();
             TrackRoadMarking roadMarking = block.RoadMarkings.Single();
             TrackRoutePoint routePoint = track.RoutePoints.Single();
-            TrackPoint[] roadMarkingPoints = roadMarking.Points.ToArray();
-            TrackPoint[] points = surface.Points.ToArray();
+            TrackPoint[] roadMarkingPoints = [.. roadMarking.Points];
+            TrackPoint[] points = [.. surface.Points];
             TrackMaterial material = track.Materials.Single();
             TrackTexture texture = track.Textures.Single(
                 trackTexture => trackTexture.Identifier == 0);

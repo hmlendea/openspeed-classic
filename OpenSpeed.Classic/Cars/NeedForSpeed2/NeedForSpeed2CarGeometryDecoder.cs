@@ -8,13 +8,31 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
 {
     public static class NeedForSpeed2CarGeometryDecoder
     {
+        private static readonly int[] MirroredQuadVertexIndices = [0, 3, 2, 0, 2, 1];
+
+        private static readonly int[] MirroredTriangleVertexIndices = [2, 1, 0];
+
+        private static readonly int[] StandardQuadVertexIndices = [0, 1, 2, 0, 2, 3];
+
+        private static readonly int[] StandardTriangleVertexIndices = [0, 1, 2];
+
+        private static readonly int[] TextureCornerBySourceVertex = [3, 2, 1, 0];
+
         private static int DescriptorSize => 0x34;
+
+        private static CarIdentifier FordGt90Identifier => CarIdentifier.FordGT90;
 
         private static int HeaderSize => 0x8C;
 
-        private static int HighDetailSectionCount => 19;
+        private static int HighDetailSectionCount => 20;
+
+        private static uint MirroredFlag => 0x04;
 
         private static int PolygonSize => 12;
+
+        private static int PositiveVertexPositionXAdjustment => 5;
+
+        private static int NegativeVertexPositionXAdjustment => -PositiveVertexPositionXAdjustment;
 
         private static uint QuadFlag => 0x02;
 
@@ -27,6 +45,16 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
         private static int VertexSize => 6;
 
         public static IEnumerable<CarGeometryTriangle> Decode(byte[] data)
+            => Decode(data, null);
+
+        public static IEnumerable<CarGeometryTriangle> Decode(
+            byte[] data,
+            CarIdentifier carIdentifier)
+            => Decode(data, carIdentifier as CarIdentifier?);
+
+        private static IEnumerable<CarGeometryTriangle> Decode(
+            byte[] data,
+            CarIdentifier? carIdentifier)
         {
             ArgumentNullException.ThrowIfNull(data);
 
@@ -40,7 +68,12 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
 
             for (int sectionIndex = 0; sectionIndex < SectionCount; sectionIndex += 1)
             {
-                position = DecodeSection(data, position, sectionIndex, triangles);
+                position = DecodeSection(
+                    data,
+                    position,
+                    sectionIndex,
+                    carIdentifier,
+                    triangles);
             }
 
             return triangles;
@@ -50,6 +83,7 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
             byte[] data,
             int descriptorOffset,
             int sectionIndex,
+            CarIdentifier? carIdentifier,
             List<CarGeometryTriangle> triangles)
         {
             if (descriptorOffset > data.Length - DescriptorSize)
@@ -84,6 +118,8 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
                     vertexCount,
                     (int)polygonTableOffset,
                     polygonCount,
+                    sectionIndex,
+                    carIdentifier,
                     triangles);
             }
 
@@ -97,11 +133,21 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
             int vertexCount,
             int polygonTableOffset,
             int polygonCount,
+            int sectionIndex,
+            CarIdentifier? carIdentifier,
             List<CarGeometryTriangle> triangles)
         {
             int sectionPositionX = ReadInt32(data, descriptorOffset + 8);
             int sectionPositionY = ReadInt32(data, descriptorOffset + 16);
             int sectionPositionZ = ReadInt32(data, descriptorOffset + 12);
+            int vertexPositionXAdjustment = GetVertexPositionXAdjustment(
+                sectionIndex,
+                carIdentifier);
+            HashSet<byte> adjustedVertexIndices = GetAdjustedVertexIndices(
+                data,
+                polygonTableOffset,
+                polygonCount,
+                vertexPositionXAdjustment);
 
             for (int polygonIndex = 0; polygonIndex < polygonCount; polygonIndex += 1)
             {
@@ -122,56 +168,167 @@ namespace OpenSpeed.Classic.Cars.NeedForSpeed2
                 CarGeometryVertex first = DecodeVertex(
                     data,
                     vertexTableOffset,
-                    firstVertexIndex);
+                    firstVertexIndex,
+                    vertexPositionXAdjustment,
+                    adjustedVertexIndices);
                 CarGeometryVertex second = DecodeVertex(
                     data,
                     vertexTableOffset,
-                    secondVertexIndex);
+                    secondVertexIndex,
+                    vertexPositionXAdjustment,
+                    adjustedVertexIndices);
                 CarGeometryVertex third = DecodeVertex(
                     data,
                     vertexTableOffset,
-                    thirdVertexIndex);
-                triangles.Add(new CarGeometryTriangle(
-                    sectionPositionX,
-                    sectionPositionY,
-                    sectionPositionZ,
-                    textureName,
-                    first,
-                    second,
-                    third,
-                    0,
-                    1,
-                    2));
+                    thirdVertexIndex,
+                    vertexPositionXAdjustment,
+                    adjustedVertexIndices);
+                int textureRegistrationMode = GetTextureRegistrationMode(mappingFlags);
+                CarGeometryVertex[] polygonVertices = [first, second, third];
+                int[] triangleVertexIndices = StandardTriangleVertexIndices;
 
-                if ((mappingFlags & QuadFlag) == 0)
+                if ((mappingFlags & QuadFlag) != 0)
                 {
-                    continue;
+                    ValidateVertexIndex(fourthVertexIndex, vertexCount);
+                    polygonVertices =
+                    [
+                        first,
+                        second,
+                        third,
+                        DecodeVertex(
+                            data,
+                            vertexTableOffset,
+                            fourthVertexIndex,
+                            vertexPositionXAdjustment,
+                            adjustedVertexIndices)
+                    ];
+                    triangleVertexIndices = StandardQuadVertexIndices;
                 }
 
-                ValidateVertexIndex(fourthVertexIndex, vertexCount);
-                triangles.Add(new CarGeometryTriangle(
-                    sectionPositionX,
-                    sectionPositionY,
-                    sectionPositionZ,
-                    textureName,
-                    first,
-                    third,
-                    DecodeVertex(data, vertexTableOffset, fourthVertexIndex),
-                    0,
-                    2,
-                    3));
+                if ((mappingFlags & MirroredFlag) != 0)
+                {
+                    triangleVertexIndices = MirroredTriangleVertexIndices;
+
+                    if ((mappingFlags & QuadFlag) != 0)
+                    {
+                        triangleVertexIndices = MirroredQuadVertexIndices;
+                    }
+                }
+
+                for (
+                    int triangleVertexIndexOffset = 0;
+                    triangleVertexIndexOffset < triangleVertexIndices.Length;
+                    triangleVertexIndexOffset += 3)
+                {
+                    int firstSourceVertexIndex =
+                        triangleVertexIndices[triangleVertexIndexOffset];
+                    int secondSourceVertexIndex =
+                        triangleVertexIndices[triangleVertexIndexOffset + 1];
+                    int thirdSourceVertexIndex =
+                        triangleVertexIndices[triangleVertexIndexOffset + 2];
+                    triangles.Add(new CarGeometryTriangle(
+                        sectionPositionX,
+                        sectionPositionY,
+                        sectionPositionZ,
+                        textureName,
+                        polygonVertices[firstSourceVertexIndex],
+                        polygonVertices[secondSourceVertexIndex],
+                        polygonVertices[thirdSourceVertexIndex],
+                        TextureCornerBySourceVertex[firstSourceVertexIndex],
+                        TextureCornerBySourceVertex[secondSourceVertexIndex],
+                        TextureCornerBySourceVertex[thirdSourceVertexIndex],
+                        mappingFlags,
+                        textureRegistrationMode));
+                }
             }
+        }
+
+        private static HashSet<byte> GetAdjustedVertexIndices(
+            byte[] data,
+            int polygonTableOffset,
+            int polygonCount,
+            int vertexPositionXAdjustment)
+        {
+            if (polygonCount == 0 || vertexPositionXAdjustment == 0)
+            {
+                return [];
+            }
+
+            return
+            [
+                data[polygonTableOffset + 4],
+                data[polygonTableOffset + 5],
+                data[polygonTableOffset + 6],
+                data[polygonTableOffset + 7]
+            ];
+        }
+
+        private static int GetVertexPositionXAdjustment(
+            int sectionIndex,
+            CarIdentifier? carIdentifier)
+        {
+            if (carIdentifier == FordGt90Identifier)
+            {
+                if (sectionIndex == 12)
+                {
+                    return PositiveVertexPositionXAdjustment;
+                }
+
+                if (sectionIndex == 14)
+                {
+                    return NegativeVertexPositionXAdjustment;
+                }
+            }
+
+            if (carIdentifier is not null && carIdentifier < CarIdentifier.BonusCarFuture)
+            {
+                if (sectionIndex == 16)
+                {
+                    return PositiveVertexPositionXAdjustment;
+                }
+
+                if (sectionIndex == 18)
+                {
+                    return NegativeVertexPositionXAdjustment;
+                }
+            }
+
+            return 0;
+        }
+
+        private static int GetTextureRegistrationMode(uint mappingFlags)
+        {
+            if ((mappingFlags & MirroredFlag) == 0)
+            {
+                return 3;
+            }
+
+            if ((mappingFlags & 0x01) == 0)
+            {
+                return 2;
+            }
+
+            return 4;
         }
 
         private static CarGeometryVertex DecodeVertex(
             byte[] data,
             int vertexTableOffset,
-            int vertexIndex)
+            int vertexIndex,
+            int vertexPositionXAdjustment,
+            HashSet<byte> adjustedVertexIndices)
         {
             int vertexOffset = vertexTableOffset + vertexIndex * VertexSize;
+            short positionX = BinaryPrimitives.ReadInt16LittleEndian(
+                data.AsSpan(vertexOffset, sizeof(short)));
+
+            if (adjustedVertexIndices.Contains((byte)vertexIndex))
+            {
+                positionX = unchecked((short)(positionX + vertexPositionXAdjustment));
+            }
 
             return new CarGeometryVertex(
-                BinaryPrimitives.ReadInt16LittleEndian(data.AsSpan(vertexOffset, sizeof(short))),
+                positionX,
                 BinaryPrimitives.ReadInt16LittleEndian(
                     data.AsSpan(vertexOffset + sizeof(short) * 2, sizeof(short))),
                 BinaryPrimitives.ReadInt16LittleEndian(

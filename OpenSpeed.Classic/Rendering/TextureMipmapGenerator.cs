@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 using Microsoft.Xna.Framework;
 
@@ -16,7 +15,7 @@ namespace OpenSpeed.Classic.Rendering
         {
             ArgumentNullException.ThrowIfNull(sourcePixels);
 
-            Color[] pixels = sourcePixels.ToArray();
+            Color[] pixels = [.. sourcePixels];
             long expectedPixelCount = (long)width * height;
 
             if (width <= 0 || height <= 0 || expectedPixelCount != pixels.Length)

@@ -4,8 +4,6 @@ using System.Linq;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-
-using OpenSpeed.Classic.Rendering;
 using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.Rendering.Tracks
@@ -22,7 +20,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             ArgumentNullException.ThrowIfNull(trackTexture);
 
             long expectedPixelCount = (long)trackTexture.Width * trackTexture.Height;
-            TrackColour[] sourcePixels = trackTexture.Pixels.ToArray();
+            TrackColour[] sourcePixels = [.. trackTexture.Pixels];
 
             if (trackTexture.Width <= 0 ||
                 trackTexture.Height <= 0 ||
@@ -34,9 +32,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     $"{sourcePixels.Length} pixels.");
             }
 
-            Color[] pixels = sourcePixels
-                .Select(ConvertColour)
-                .ToArray();
+            Color[] pixels = [.. sourcePixels.Select(ConvertColour)];
             Identifier = trackTexture.Identifier;
             Texture = TextureMipmapResourceBuilder.Build(
                 graphicsDevice,
