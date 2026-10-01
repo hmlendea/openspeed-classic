@@ -29,6 +29,7 @@ namespace OpenSpeed.Classic
         private bool isVignetteEnabled;
         private float motionBlurMinimumSpeedKilometresPerHour;
         private IMotionBlurRenderer? motionBlurRenderer;
+        private SpeedometerRenderer? speedometerRenderer;
         private bool wasCameraModeTogglePressed;
         private TrackCameraMode cameraMode;
         private TrackCamera? trackCamera;
@@ -141,6 +142,12 @@ namespace OpenSpeed.Classic
             motionBlurRenderer = new MotionBlurRenderer(
                 GraphicsDevice,
                 motionBlurMinimumSpeedKilometresPerHour);
+            SpriteFont speedometerFont = Content.Load<SpriteFont>("Fonts/SpeedometerFont");
+            Texture2D speedometerTexture = Content.Load<Texture2D>("Speedometer");
+            speedometerRenderer = new SpeedometerRenderer(
+                GraphicsDevice,
+                speedometerFont,
+                speedometerTexture);
 
             if (isVignetteEnabled)
             {
@@ -205,6 +212,7 @@ namespace OpenSpeed.Classic
                     carPhysicsState.LongitudinalVelocity,
                     DrawScene);
                 vignetteRenderer?.Draw();
+                speedometerRenderer?.Draw(carPhysicsState.LongitudinalVelocity);
                 CaptureDiagnosticFrame();
             }
             else
@@ -333,6 +341,8 @@ namespace OpenSpeed.Classic
             vignetteRenderer = null;
             motionBlurRenderer?.Dispose();
             motionBlurRenderer = null;
+            speedometerRenderer?.Dispose();
+            speedometerRenderer = null;
             carRenderer?.Dispose();
             carRenderer = null;
             trackRenderer?.Dispose();

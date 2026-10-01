@@ -9,9 +9,15 @@
     <Nullable>enable</Nullable>
     <AssemblyName>OpenSpeed.Classic</AssemblyName>
     <RootNamespace>OpenSpeed.Classic</RootNamespace>
+    <MonoGamePlatform>DesktopGL</MonoGamePlatform>
   </PropertyGroup>
 
   <ItemGroup>
+    <MonoGameContentReference Include="Content\Content.mgcb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.4" />
     <PackageReference Include="NuciCLI.Arguments" Version="1.0.1" />
     <PackageReference Include="NuciLog" Version="1.2.1" />
     <PackageReference Include="NuciLog.Core" Version="3.1.0" />
