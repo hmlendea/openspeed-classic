@@ -24,6 +24,20 @@ namespace OpenSpeed.Classic.Physics
             car[0xA4] = unchecked(car[0xA4] + X86Math.TruncatePowerOfTwo(car[0xB0], 6));
         }
 
+        public static void IntegrateScaledPlayerPosition(CarMemory car)
+        {
+            if (car.ReadByte(ActiveOffset) == 0)
+            {
+                return;
+            }
+
+            int scale = car[0x218];
+            car[0x9C] = unchecked(car[0x9C] + X86Math.TruncatePowerOfTwo(X86Math.MultiplyQ16(car[0xA8], scale), 6));
+            car[0xA0] = unchecked(car[0xA0] + X86Math.TruncatePowerOfTwo(X86Math.MultiplyQ16(car[0xAC], scale), 6));
+            car[0xA4] = unchecked(car[0xA4] + X86Math.TruncatePowerOfTwo(X86Math.MultiplyQ16(car[0xB0], scale), 6));
+            car[0x94] = scale;
+        }
+
         public static void IntegratePlayerBasis(CarMemory car) => IntegrateBasis(car, 6, 0x10);
 
         public static void IntegrateAiBasis(CarMemory car) => IntegrateBasis(car, 5, 0x20);
@@ -64,7 +78,7 @@ namespace OpenSpeed.Classic.Physics
             byte countdown = unchecked((byte)(car.ReadByte(NormalisationCountdownOffset) - 1));
             car.WriteByte(NormalisationCountdownOffset, countdown);
 
-            if (countdown == 0 || car[AccumulatedAngleOffset] > 0x1000)
+            if (unchecked((sbyte)countdown) <= 0 || car[AccumulatedAngleOffset] > 0x1000)
             {
                 basis = FixedMatrices.Orthonormalise(basis);
                 car.WriteByte(NormalisationCountdownOffset, countdownReset);

@@ -11,6 +11,7 @@ using NuciXNA.DataAccess.Content;
 using OpenSpeed.Classic.Cars;
 using OpenSpeed.Classic.Configuration;
 using OpenSpeed.Classic.Input;
+using OpenSpeed.Classic.Physics;
 using OpenSpeed.Classic.Rendering;
 using OpenSpeed.Classic.Rendering.Cars;
 using OpenSpeed.Classic.Rendering.Tracks;
@@ -24,6 +25,7 @@ namespace OpenSpeed.Classic
         private readonly bool areShadowsEnabled = true;
         private readonly string? captureFramePath;
         private readonly CarPhysicsState carPhysicsState = new();
+        private IPlayerVehicleSimulation? playerSimulation;
         private readonly DrivingControlsSettings drivingControls = new();
         private ICarRenderer? carRenderer;
         private Matrix? carWorld;
@@ -164,7 +166,16 @@ namespace OpenSpeed.Classic
 
             if (currentCar is not null && CurrentTrack.RoutePoints.Any())
             {
-                carWorld = CarWorldTransformBuilder.Build(CurrentTrack.RoutePoints);
+                if (currentCar.PhysicsSpecifications is null || CurrentTrack.PhysicsRoute is null)
+                {
+                    throw new InvalidDataException("Native car specifications and track route data are required for driving.");
+                }
+
+                playerSimulation = new PlayerVehicleSimulation(
+                    currentCar.PhysicsSpecifications,
+                    CurrentTrack.PhysicsRoute,
+                    Enum.Parse<CarIdentifier>(currentCar.Identifier, true));
+                carWorld = PhysicsRenderAdapter.CreateWorld(playerSimulation.State);
                 carRenderer = new CarRenderer(GraphicsDevice);
                 carRenderer.Load(currentCar);
                 NuciContentManager.Instance.LoadContent(Content, GraphicsDevice);
@@ -207,7 +218,7 @@ namespace OpenSpeed.Classic
 
                 wasCameraModeTogglePressed = drivingInput.IsCameraModeTogglePressed;
                 UpdateCarAndCamera(
-                    (float)gameTime.ElapsedGameTime.TotalSeconds,
+                    gameTime.ElapsedGameTime,
                     drivingInput);
             }
 
@@ -324,9 +335,10 @@ namespace OpenSpeed.Classic
         }
 
         private void UpdateCarAndCamera(
-            float elapsedSeconds,
+            TimeSpan elapsed,
             TrackCameraInput drivingInput)
         {
+            float elapsedSeconds = (float)elapsed.TotalSeconds;
             if (trackCamera is null)
             {
                 return;
@@ -342,19 +354,19 @@ namespace OpenSpeed.Classic
                 return;
             }
 
-            if (CurrentTrack is null)
+            if (playerSimulation is null)
             {
                 return;
             }
 
-            carWorld = CarWorldTransformUpdater.Update(
-                carWorld.Value,
-                CurrentTrack.RoutePoints,
-                carPhysicsState,
-                elapsedSeconds,
+            playerSimulation.Advance(
+                elapsed,
                 drivingInput.MovementInput,
                 drivingInput.TurningInput,
                 drivingInput.IsHandbrakeApplied);
+            carWorld = PhysicsRenderAdapter.CreateWorld(playerSimulation.State);
+            carPhysicsState.LongitudinalVelocity = PhysicsRenderAdapter.GetLongitudinalVelocity(playerSimulation.State);
+            carPhysicsState.IsGrounded = playerSimulation.IsGrounded;
             trackCamera.Follow(
                 carWorld.Value,
                 elapsedSeconds,
@@ -365,6 +377,7 @@ namespace OpenSpeed.Classic
 
         protected override void UnloadContent()
         {
+            playerSimulation = null;
             vignetteRenderer?.Dispose();
             vignetteRenderer = null;
             motionBlurRenderer?.Dispose();

@@ -4,7 +4,13 @@ namespace OpenSpeed.Classic.Physics
 {
     public static class MainForceSolver
     {
-        public static void Update(CarMemory car, CarSpecifications descriptor, CarRuntimeType runtimeType, PhysicsContext context, PhysicsRoute route)
+        public static void Update(
+            CarMemory car,
+            CarSpecifications descriptor,
+            CarRuntimeType runtimeType,
+            PhysicsContext context,
+            PhysicsRoute route,
+            bool isAlternate = false)
         {
             car[0x2A4] = 0;
             car[0x2A8] = 0;
@@ -26,12 +32,7 @@ namespace OpenSpeed.Classic.Physics
                 car[0x310] = X86Math.DivideQ16(car[0x2B0], car[0x2B8]);
             }
 
-            car[0x304] = ContactResponse.Calculate(X86Math.Abs(car[0x2B0]), X86Math.Abs(car[0x2B8]));
-
-            if (car[0x2B8] < 0)
-            {
-                car[0x304] = unchecked(-car[0x304]);
-            }
+            car[0x304] = ContactResponse.Calculate(car[0x2B0], car[0x2B8]);
 
             ContactRecord front = CreateRecord(car, descriptor, true);
             ContactRecord rear = CreateRecord(car, descriptor, false);
@@ -78,7 +79,8 @@ namespace OpenSpeed.Classic.Physics
             int angularForce = X86Math.MultiplyQ16(unchecked(front[0x1C] - rear[0x1C]), descriptor[0x1D0]);
             angularForce = LimitAngularForce(car, descriptor, angularForce);
             int damping = CalculateAngularDamping(car, descriptor);
-            SurfaceResponse.ApplyGravityResponse(car, context, false);
+            SurfaceResponse.ApplyGravityResponse(car, context, isAlternate);
+            LateralResponse.Apply(car, context, isAlternate);
             IntegrateForces(car, basis, angularForce, damping);
             ApplyNeutralDamping(car, context);
             car[0x2A4] = X86Math.TruncatePowerOfTwo(car[0x2A4], 2);

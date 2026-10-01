@@ -10,7 +10,7 @@ OpenSpeed Classic is a .NET 10 arcade racing game built on MonoGame via the Nuci
 - [OpenSpeed.Classic/OpenSpeedClassicGame.cs](OpenSpeed.Classic/OpenSpeedClassicGame.cs) owns the MonoGame lifecycle, driving input, and track rendering.
 - [OpenSpeed.Classic/Cars](OpenSpeed.Classic/Cars) contains renderer-neutral car models, NFS II car asset decoding, and loading orchestration.
 - [OpenSpeed.Classic/Input](OpenSpeed.Classic/Input) contains keyboard-to-driving input mapping.
-- [OpenSpeed.Classic/Physics](OpenSpeed.Classic/Physics) contains the inactive, assembly-derived physics port described under [Physics Port Checkpoint](#physics-port-checkpoint).
+- [OpenSpeed.Classic/Physics](OpenSpeed.Classic/Physics) contains the active fixed-point player simulation and the partial assembly-derived port described under [Physics Port Checkpoint](#physics-port-checkpoint).
 - [OpenSpeed.Classic/Rendering/Cars](OpenSpeed.Classic/Rendering/Cars) contains car vertex conversion, GPU resources, world placement, and rendering.
 - [OpenSpeed.Classic/Rendering/Tracks](OpenSpeed.Classic/Rendering/Tracks) contains the track camera, horizon, vertex conversion, neighbour visibility, dynamic LOD, GPU batches, and renderer.
 - [OpenSpeed.Classic/Tracks](OpenSpeed.Classic/Tracks) contains renderer-neutral track models and loading contracts.
@@ -83,7 +83,7 @@ Relative asset roots are resolved from the process working directory. Paths with
 
 Track, horizon, and car textures receive complete mipmap chains and anisotropic filtering to reduce distant aliasing and shimmer.
 
-The player car is loaded from `gamedata/sim/cardata/cardata.viv` and `gamedata/carmodel/pc` beneath the configured asset root. Car geometry is enlarged uniformly while retaining matching physical wall clearance. The car is positioned at the first decoded route point, constrained by the decoded track walls, aligned to slopes, affected by gravity, controlled by the configured keyboard bindings, and followed by the camera. Uphill momentum is preserved at convex crests, permitting sufficiently rapid cars to become briefly airborne before gravity returns them to the road. Omitting `StartupCar` selects `McLarenF1`.
+The player car is loaded from `gamedata/sim/cardata/cardata.viv` and `gamedata/carmodel/pc` beneath the configured asset root. The car is positioned at the first native route point and driven by fixed-point controls, drivetrain, and force integration. Provisional route-plane support, corridor walls, and airborne gravity retain basic track interaction while the original collision and recovery paths remain incomplete. The camera follows the simulation output. Omitting `StartupCar` selects `McLarenF1`.
 
 `StartupCar.Colour` optionally specifies the car paint as six hexadecimal RGB digits, with or without a leading `#`, for example `"#7CB342"`. Letter casing is ignored. Omitting the property or setting it to `null` preserves the default car colour. Custom paint retains texture shading and non-paint details, and the minimap arrow uses the configured RGB colour. Invalid colour values are reported during configuration loading.
 
@@ -113,13 +113,25 @@ dotnet test OpenSpeed.Classic.UnitTests/OpenSpeed.Classic.UnitTests.csproj
 
 ### Physics Port Checkpoint
 
-Checkpoint: 2026-10-01. The assembly-derived physics replacement is **incomplete and inactive**. The game still uses [CarWorldTransformUpdater](OpenSpeed.Classic/Rendering/Cars/CarWorldTransformUpdater.cs) and the existing driving model. The previous [FixedPointCarSolver](OpenSpeed.Classic/Rendering/Cars/FixedPointCarSolver.cs) is a separate partial implementation, not the replacement simulation.
+Checkpoint: 2026-10-01. The assembly-derived physics replacement is **active by default, but incomplete**. [PlayerVehicleSimulation](OpenSpeed.Classic/Physics/PlayerVehicleSimulation.cs) replaces the old driving updater without a toggle. Keyboard sampling, control smoothing, automatic gearing, engine torque, front/rear contact forces, and motion integration now operate on persistent fixed-point state. Controls and forces run at 32 Hz; position and basis integration run at 64 Hz. The previous [CarWorldTransformUpdater](OpenSpeed.Classic/Rendering/Cars/CarWorldTransformUpdater.cs) and [FixedPointCarSolver](OpenSpeed.Classic/Rendering/Cars/FixedPointCarSolver.cs) remain available to existing callers/tests but no longer control gameplay.
 
-The [physics components](OpenSpeed.Classic/Physics) retain x86 arithmetic, executable lookup tables, overlapping native car-state fields, descriptor finalisation, integer vectors/matrices, controls, drivetrain, two-channel contact response, the main force-solver candidate, pair-collision impulses, and ordered 32/64 Hz scheduling. The [physics tests](OpenSpeed.Classic.UnitTests/Physics) cover 91 selected fixtures and regression cases; this is not complete branch coverage or original-execution parity.
+The [physics components](OpenSpeed.Classic/Physics) retain x86 arithmetic, executable lookup tables, overlapping native car-state fields, descriptor finalisation, integer vectors/matrices, controls, drivetrain, two-channel contact response, the main force solver, pair-collision impulses, and ordered 32/64 Hz scheduling. The [physics tests](OpenSpeed.Classic.UnitTests/Physics) include selected native fixtures, provisional-contact tests, and explicit driving integration tests using original car/track assets. This is not complete branch coverage or original-execution parity.
 
-Asset loading now retains `p<car resource>.dat` and `SimTune.dat` from the original car archive and unconverted XBID 15 track records. Descriptor finalisation and simulation callbacks are not invoked by gameplay. The three executable angle-table counts and SHA-256 hashes correspond exactly to the supplied specification. Missing physics archive members are reported as loading errors rather than replaced with invented values.
+The continuation implements these independently specified operations:
+- [ContactGeometry](OpenSpeed.Classic/Physics/ContactGeometry.cs): contact-plane height, query-relative height, and oriented support-plane correction, including native sentinel and divisor thresholds.
+- [RouteBasis](OpenSpeed.Classic/Physics/RouteBasis.cs): signed route-record loading without normalisation and primary/secondary basis copying with right/forward reflection. It does not implement extension-data queries or the complete placement callback.
+- [AiMotion](OpenSpeed.Classic/Physics/AiMotion.cs): lateral-target smoothing, lateral-velocity calculation, and world-velocity composition. The scalar-speed controller and complete AI callback graph remain separate unfinished dependencies.
+- [TyreResponseFinaliser](OpenSpeed.Classic/Physics/TyreResponseFinaliser.cs): response-state/surface scaling and final grip calculation with sign-preserving, direction-dependent clamps. The caller must supply the upstream requested force, wheel target, signed adjustment, and transition state; their missing calculation is not approximated.
 
-Remaining integration requires the alternate contact/tyre state machine, original track-surface queries and body correction, OBB contact generation and iterative resolution, world-contact impulses, collision-event consumption, launch/recovery, runtime car-type initialisation, role-specific AI/replay/special-car callbacks, and a one-way rendering adapter. The dispatcher accepts explicit callbacks for unfinished paths; no surrogate solver is installed. Original full-tick trace fixtures have not been provided, so native parity remains unverified. Preserve the current driving path until these dependencies are completed and validated.
+Asset loading retains `p<car resource>.dat` and `SimTune.dat` from the original car archive and unconverted XBID 15 track records. Gameplay finalises a private descriptor copy once and registers the player simulation callbacks. The three executable angle-table counts and SHA-256 hashes correspond exactly to the supplied specification. Missing physics archive members are reported as loading errors rather than replaced with invented values.
+
+[PhysicsRenderAdapter](OpenSpeed.Classic/Rendering/Cars/PhysicsRenderAdapter.cs) converts native position/basis to MonoGame coordinates and exposes longitudinal speed to the camera, speedometer, and post-processing. Rendering never writes simulation state. The minimap reads the resulting car transform.
+
+[RouteIndexSearch](OpenSpeed.Classic/Physics/RouteIndexSearch.cs) selects native route records with the original wrapped metrics, strict circular walk, and coarse fallback rather than scanning every segment. [PlayerStateInitialiser](OpenSpeed.Classic/Physics/PlayerStateInitialiser.cs) supplies recovered neutral startup, reset fields, and linear/angular coefficients. Forward/reverse input then selects the drive range.
+
+[ProvisionalRouteContact](OpenSpeed.Classic/Physics/ProvisionalRouteContact.cs) still supplies local segment interpolation, plane support, slope alignment, and corridor-wall detection. Wall response now uses [WorldContactImpulse](OpenSpeed.Classic/Physics/WorldContactImpulse.cs), including the assembly-derived coupled capacity calculation, tangential friction, and collision-event writes. Detection still assumes ordinary road material, a one-native-unit car half-width, and centre-applied wall contacts; this is not the original polygon/OBB collision solver. The player profile uses automatic transmission, profiled input smoothing, unit tuning scales, and the primary solver mode. These profile choices remain provisional. With no race countdown, automatic forward-range forcing during the original countdown window is bypassed so reverse remains usable immediately. Opposite-direction input brakes before changing range.
+
+Still deferred: alternate contact/tyre state machine, original surface-query/body correction, OBB contact generation and the complete world-contact caller, collision-event consumption, exact launch/recovery, original race-profile construction, and complete AI/replay/special-car callbacks. The complete simulation tuning data is retained but its original contact/recovery consumers are not active. Original full-tick trace fixtures have not been provided, so native parity remains unverified.
 
 Run the checkpoint fixtures with:
 
@@ -128,7 +140,17 @@ dotnet test OpenSpeed.Classic.UnitTests/OpenSpeed.Classic.UnitTests.csproj \
   --filter FullyQualifiedName~UnitTests.Physics
 ```
 
-The corresponding checkpoint and source discrepancies are recorded in section 27 of the supplied external `CAR_PHYSICS_ASM_SPEC.md`. That external reference and its assembly remain outside this repository; they are not runtime dependencies.
+Run the explicit original-asset driving tests separately:
+
+```sh
+OPENSPEED_TEST_ASSET_ROOT="/path/to/NFS2 SE" \
+  dotnet test OpenSpeed.Classic.UnitTests/OpenSpeed.Classic.UnitTests.csproj \
+  --filter FullyQualifiedName~PlayerVehicleSimulationTests
+```
+
+These tests exercise acceleration, steering direction, braking/reverse, coasting, handbrake response, airborne landing, frame-time independence, and sustained driving on original track data.
+
+The original checkpoint and source discrepancies are recorded in section 27 of the supplied external `CAR_PHYSICS_ASM_SPEC.md`; the continuation above adds to that historical inventory. That external reference and its assembly remain outside this repository; they are not runtime dependencies.
 
 ### Running And Capturing
 
@@ -162,7 +184,7 @@ env -u DISPLAY SDL_VIDEODRIVER=wayland \
 
 Every driving action has a `Primary` and `Secondary` key in the `Controls` section of [OpenSpeed.Classic/appsettings.json](OpenSpeed.Classic/appsettings.json). Both bindings must be valid, distinct MonoGame key names.
 
-The car accelerates progressively, retains momentum while coasting, decelerates under drag, and brakes to a stop before engaging the opposite direction. Steering while applying the handbrake initiates a speed-retaining arcade powerslide with increased yaw and rear slip. Counter-steering stabilises the slide, while releasing the handbrake progressively restores tyre grip. Normal steering uses a wheelbase-based vehicle model, remains responsive at low velocity, reduces steering angle at high velocity, and reverses while travelling backwards.
+The car uses original per-car drivetrain descriptors for acceleration, torque, gearing, and resistance. Steering acts through the front/rear contact forces rather than the old wheelbase-based yaw formula. The handbrake selects the ported rear-contact slip response. Opposite-direction input applies the service brake until the car is nearly stationary, then selects reverse or forward range. Track collision and recovery are subject to the provisional limitations documented above.
 
 Asset file hits and misses are written by NuciLog to the console and, when `IsFileOutputEnabled` is enabled, to the configured `LogFilePath`.
 

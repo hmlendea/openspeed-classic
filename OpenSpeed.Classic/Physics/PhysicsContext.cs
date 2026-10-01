@@ -18,6 +18,8 @@ namespace OpenSpeed.Classic.Physics
 
         public int BaseTick { get; set; }
 
+        public bool IsStartingDriveRangeForced { get; set; } = true;
+
         public int HeadingDifference { get; set; }
 
         public int Accelerator { get; set; }

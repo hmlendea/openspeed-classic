@@ -184,7 +184,7 @@ namespace OpenSpeed.Classic.Physics
                 return;
             }
 
-            if (runtimeType[0x08] == 1 && context.BaseTick < 0x23C)
+            if (runtimeType[0x08] == 1 && context.BaseTick < 0x23C && context.IsStartingDriveRangeForced)
             {
                 car.WriteByte(GearTargetOffset, 2);
             }

@@ -7,6 +7,26 @@ namespace OpenSpeed.Classic.UnitTests.Physics
     [TestFixture]
     public sealed class ControlPipelineTests
     {
+        [TestCase(true, 2)]
+        [TestCase(false, 0)]
+        public void GivenAStartupRangePolicy_WhenSmoothing_ThenReverseIsPreservedOutsideRaceCountdown(bool forceDrive, int expected)
+        {
+            CarMemory car = new();
+            CarSpecifications descriptor = new();
+            descriptor[0x04] = 3;
+            CarRuntimeType runtimeType = new();
+            runtimeType[0x08] = 1;
+            PhysicsContext context = new() { InputEnabled = 1, IsStartingDriveRangeForced = forceDrive };
+            ControlPipeline.Smooth(car, descriptor, runtimeType, context);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(car.ReadByte(0x2D6), Is.EqualTo(expected));
+                Assert.That(car.ReadByte(0x2DA), Is.EqualTo(expected));
+                Assert.That(context.BaseTick, Is.Zero);
+            });
+        }
+
         [Test]
         public void GivenTheRawControlFixture_WhenSampling_ThenTheExactBytesAreWritten()
         {
@@ -68,6 +88,26 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             ControlPipeline.Smooth(car, descriptor, runtimeType, new PhysicsContext());
 
             Assert.That(car[0x2E4], Is.EqualTo(expected));
+        }
+
+        [TestCase(0x100, 0x0F, 0x123, 0x123)]
+        [TestCase(0x101, 0x0F, 0x123, 0x123)]
+        [TestCase(0x200, 0x0F, 0x123, 0x123)]
+        [TestCase(0x201, 0x0F, 0x123, 0x123)]
+        public void GivenHeadingDifferenceBoundaries_WhenCalculating_ThenTheSourceBranchSelectsTheExpectedRouteIndex(
+            int previousHeading,
+            int routeIndex,
+            int selectedHeading,
+            int expected)
+        {
+            CarMemory car = new();
+            car[0x148] = 0x200;
+            car[0x204] = previousHeading;
+            car[0x14] = routeIndex;
+
+            int actual = HeadingDifference.Calculate(car, 0x400, index => index == routeIndex + 0x0F ? selectedHeading : 0);
+
+            Assert.That(actual, Is.EqualTo(expected - 0x200));
         }
     }
 }
