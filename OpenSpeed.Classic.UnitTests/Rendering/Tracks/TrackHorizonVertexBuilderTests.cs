@@ -64,7 +64,9 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
             {
                 Assert.That(vertices, Has.Length.EqualTo(192));
                 Assert.That(vertices[0].Position.Y, Is.EqualTo(24.0f));
-                Assert.That(vertices[1].Position.Y, Is.EqualTo(40.0f));
+                Assert.That(
+                    vertices[1].Position.Y,
+                    Is.EqualTo(46.4f).Within(PositionTolerance));
                 Assert.That(vertices[0].TextureCoordinate, Is.EqualTo(Vector2.One));
                 Assert.That(vertices[1].TextureCoordinate, Is.EqualTo(Vector2.UnitX));
                 Assert.That(vertices[^1].TextureCoordinate, Is.EqualTo(Vector2.UnitY));

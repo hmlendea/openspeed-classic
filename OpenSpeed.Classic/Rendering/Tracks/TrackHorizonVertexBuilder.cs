@@ -14,6 +14,8 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         private static int DomeLongitudePointCount => RingPointCount + 1;
 
+        private static float PanoramaHeightMultiplier => 1.4f;
+
         private static int RingPointCount => 32;
 
         public static IEnumerable<VertexPositionColorTexture> BuildDome(
@@ -57,9 +59,14 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             Vector3[] bottomPoints = BuildRingPoints(
                 horizon,
                 horizon.RingBaseHeight + horizon.HorizonTextureBottomHeight);
+            int panoramaHeight =
+                horizon.HorizonTextureTopHeight -
+                horizon.HorizonTextureBottomHeight;
             Vector3[] topPoints = BuildRingPoints(
                 horizon,
-                horizon.RingBaseHeight + horizon.HorizonTextureTopHeight);
+                horizon.RingBaseHeight +
+                    horizon.HorizonTextureBottomHeight +
+                    panoramaHeight * PanoramaHeightMultiplier);
             List<VertexPositionColorTexture> vertices = [];
 
             for (int pointIndex = 0; pointIndex < RingPointCount; pointIndex += 1)
@@ -194,7 +201,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             return points;
         }
 
-        private static Vector3[] BuildRingPoints(TrackHorizon horizon, int height)
+        private static Vector3[] BuildRingPoints(TrackHorizon horizon, float height)
         {
             Vector3[] points = new Vector3[RingPointCount];
             double rotationRadians = MathHelper.ToRadians(horizon.RingRotationDegrees);
