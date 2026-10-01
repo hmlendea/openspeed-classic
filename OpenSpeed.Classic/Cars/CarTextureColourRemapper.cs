@@ -17,6 +17,29 @@ namespace OpenSpeed.Classic.Cars
 
         private static float MinimumPaintValue => 0.12f;
 
+        public static TrackColour GetPaintColour(
+            IEnumerable<CarTexture> textures,
+            CarIdentifier carIdentifier)
+        {
+            ArgumentNullException.ThrowIfNull(textures);
+
+            TrackColour targetColour = CarColourCatalogue.GetTargetColour(carIdentifier);
+            Vector3 targetHsv = ConvertRgbToHsv(targetColour);
+            TrackColour? sourceColour = textures.SelectMany(texture => texture.Pixels)
+                .Where(colour => colour.Alpha > 0 && IsPaintColour(ConvertRgbToHsv(colour)))
+                .MaxBy(colour => ConvertRgbToHsv(colour).Z);
+
+            if (sourceColour is null)
+            {
+                return targetColour;
+            }
+
+            TrackColour paintColour = RemapColour(sourceColour, targetHsv, true);
+            paintColour.Alpha = byte.MaxValue;
+
+            return paintColour;
+        }
+
         public static void Apply(
             IEnumerable<CarTexture> textures,
             CarIdentifier carIdentifier)
@@ -26,15 +49,15 @@ namespace OpenSpeed.Classic.Cars
             TrackColour targetColour = CarColourCatalogue.GetTargetColour(carIdentifier);
             Vector3 targetHsv = ConvertRgbToHsv(targetColour);
 
-            foreach (CarTexture texture in textures)
-            {
-                texture.Pixels = texture.Pixels
-                    .Select(sourceColour => RemapColour(
-                        sourceColour,
-                        targetHsv.X,
-                        targetHsv.Z))
-                    .ToArray();
-            }
+            Apply(textures, targetHsv, true);
+        }
+
+        public static void Apply(IEnumerable<CarTexture> textures, TrackColour colour)
+        {
+            ArgumentNullException.ThrowIfNull(textures);
+            ArgumentNullException.ThrowIfNull(colour);
+
+            Apply(textures, ConvertRgbToHsv(colour), false);
         }
 
         internal static Vector3 ConvertHsvToRgb(
@@ -129,25 +152,42 @@ namespace OpenSpeed.Classic.Cars
             return new Vector3(hue, saturation, maximum);
         }
 
+        private static void Apply(
+            IEnumerable<CarTexture> textures,
+            Vector3 targetHsv,
+            bool preserveSourceSaturation)
+        {
+            foreach (CarTexture texture in textures)
+            {
+                texture.Pixels = texture.Pixels
+                    .Select(sourceColour => RemapColour(sourceColour, targetHsv, preserveSourceSaturation))
+                    .ToArray();
+            }
+        }
+
         private static TrackColour RemapColour(
             TrackColour sourceColour,
-            float targetHue,
-            float targetValue)
+            Vector3 targetHsv,
+            bool preserveSourceSaturation)
         {
             Vector3 sourceHsv = ConvertRgbToHsv(sourceColour);
 
-            if (sourceHsv.X < GreenHueMinimum ||
-                sourceHsv.X > GreenHueMaximum ||
-                sourceHsv.Y < MinimumPaintSaturation ||
-                sourceHsv.Z < MinimumPaintValue)
+            if (!IsPaintColour(sourceHsv))
             {
                 return sourceColour;
             }
 
+            float saturation = sourceHsv.Y;
+
+            if (!preserveSourceSaturation)
+            {
+                saturation = targetHsv.Y;
+            }
+
             Vector3 remappedColour = ConvertHsvToRgb(
-                targetHue,
-                sourceHsv.Y,
-                sourceHsv.Z * targetValue);
+                targetHsv.X,
+                saturation,
+                sourceHsv.Z * targetHsv.Z);
 
             return new TrackColour
             {
@@ -163,5 +203,11 @@ namespace OpenSpeed.Classic.Cars
                 (int)MathF.Round(value * byte.MaxValue),
                 byte.MinValue,
                 byte.MaxValue);
+
+        private static bool IsPaintColour(Vector3 colour) =>
+            colour.X >= GreenHueMinimum &&
+            colour.X <= GreenHueMaximum &&
+            colour.Y >= MinimumPaintSaturation &&
+            colour.Z >= MinimumPaintValue;
     }
 }

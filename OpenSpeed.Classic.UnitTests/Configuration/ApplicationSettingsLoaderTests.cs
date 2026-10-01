@@ -151,11 +151,90 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
             Assert.That(settings.Rendering.ScreenHeight, Is.EqualTo(968));
             Assert.That(settings.Rendering.ScreenWidth, Is.EqualTo(1720));
             Assert.That(settings.StartupCar.Identifier, Is.EqualTo("McLarenF1"));
+            Assert.That(settings.StartupCar.Colour, Is.Null);
             Assert.That(
               settings.Assets.Sources.Single().OverridesDirectory,
               Is.EqualTo("/test-assets"));
             Assert.That(settings.Controls.Accelerate.Primary, Is.EqualTo(Keys.Up));
             Assert.That(settings.Controls.Accelerate.Secondary, Is.EqualTo(Keys.W));
+        }
+
+        [TestCase("#12abEF", 18, 171, 239)]
+        [TestCase("12ABef", 18, 171, 239)]
+        [TestCase("#000000", 0, 0, 0)]
+        [TestCase("#FFFFFF", 255, 255, 255)]
+        public void GivenAHexadecimalCarColour_WhenLoading_ThenOpaqueRgbChannelsAreReturned(
+          string colour,
+          int red,
+          int green,
+          int blue)
+        {
+          string filePath = WriteSettings(
+            $$"""
+            {
+                  "StartupTrack": { "Game": "NeedForSpeed2SpecialEdition", "Identifier": "Outback" },
+              "StartupCar": { "Colour": "{{colour}}" }
+            }
+            """);
+          ApplicationSettings settings = settingsLoader.Load(filePath);
+
+          Assert.That(settings.StartupCar.Colour, Is.Not.Null);
+          Assert.Multiple(() =>
+          {
+            Assert.That(settings.StartupCar.Colour!.Red, Is.EqualTo(red));
+            Assert.That(settings.StartupCar.Colour.Green, Is.EqualTo(green));
+            Assert.That(settings.StartupCar.Colour.Blue, Is.EqualTo(blue));
+            Assert.That(settings.StartupCar.Colour.Alpha, Is.EqualTo(byte.MaxValue));
+          });
+        }
+
+        [TestCase("\"\"")]
+        [TestCase("\"#12345\"")]
+        [TestCase("\"#1234567\"")]
+        [TestCase("\"#12345678\"")]
+        [TestCase("\"#RGBRGB\"")]
+        [TestCase("\" #123456\"")]
+        [TestCase("\"#123456 \"")]
+        [TestCase("\"0x123456\"")]
+        [TestCase("42")]
+        [TestCase("true")]
+        [TestCase("{}")]
+        [TestCase("[]")]
+        public void GivenAnInvalidCarColour_WhenLoading_ThenAJsonExceptionIsThrown(string colourJson)
+        {
+          string filePath = WriteSettings(
+            $$"""
+            {
+                  "StartupTrack": { "Game": "NeedForSpeed2SpecialEdition", "Identifier": "Outback" },
+              "StartupCar": { "Colour": {{colourJson}} }
+            }
+            """);
+
+          Assert.That(() => settingsLoader.Load(filePath), Throws.TypeOf<JsonException>());
+        }
+
+        [Test]
+        public void GivenANullCarColour_WhenLoading_ThenTheDefaultColourRemainsSelected()
+        {
+          string filePath = WriteSettings(
+            """
+            {
+                  "StartupTrack": { "Game": "NeedForSpeed2SpecialEdition", "Identifier": "Outback" },
+              "StartupCar": { "Colour": null }
+            }
+            """);
+
+          Assert.That(settingsLoader.Load(filePath).StartupCar.Colour, Is.Null);
+        }
+
+        [Test]
+        public void GivenACarColour_WhenSerialising_ThenTheHexadecimalValueIsPreserved()
+        {
+          StartupCarSettings settings = JsonSerializer.Deserialize<StartupCarSettings>(
+            """{"Colour":"#12abEF"}""")!;
+          using JsonDocument serialised = JsonDocument.Parse(JsonSerializer.Serialize(settings));
+
+          Assert.That(serialised.RootElement.GetProperty("Colour").GetString(), Is.EqualTo("#12ABEF"));
         }
 
         [TestCase("None", "W")]

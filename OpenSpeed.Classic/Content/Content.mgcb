@@ -24,6 +24,17 @@
 /processorParam:TextureFormat=Color
 /build:Speedometer.png
 
+#begin Minimap.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyEnabled=False
+/processorParam:GenerateMipmaps=True
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Minimap.png
+
 #begin Fonts/SpeedometerFont.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor

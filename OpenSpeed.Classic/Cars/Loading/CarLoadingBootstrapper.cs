@@ -55,7 +55,8 @@ namespace OpenSpeed.Classic.Cars.Loading
             return formatLoader.Load(
                 assetSource.RootDirectory,
                 assetSource.OverridesDirectory,
-                settings.StartupCar.Identifier);
+                settings.StartupCar.Identifier,
+                settings.StartupCar.Colour);
         }
 
         private static bool IsConfiguredFor(

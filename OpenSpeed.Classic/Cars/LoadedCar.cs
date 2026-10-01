@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 
 using OpenSpeed.Classic.Assets;
+using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.Cars
 {
@@ -13,6 +14,14 @@ namespace OpenSpeed.Classic.Cars
         public GameVersion Game { get; set; }
 
         public IEnumerable<CarGeometryTriangle> Geometry { get; set; } = [];
+
+        public TrackColour PaintColour { get; set; } = new()
+        {
+            Red = byte.MaxValue,
+            Green = byte.MaxValue,
+            Blue = byte.MaxValue,
+            Alpha = byte.MaxValue
+        };
 
         public IEnumerable<CarTexture> Textures { get; set; } = [];
     }

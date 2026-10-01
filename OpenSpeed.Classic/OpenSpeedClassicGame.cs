@@ -6,6 +6,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
+using NuciXNA.DataAccess.Content;
+
 using OpenSpeed.Classic.Cars;
 using OpenSpeed.Classic.Configuration;
 using OpenSpeed.Classic.Input;
@@ -29,6 +31,7 @@ namespace OpenSpeed.Classic
         private bool isVignetteEnabled;
         private float motionBlurMinimumSpeedKilometresPerHour;
         private IMotionBlurRenderer? motionBlurRenderer;
+        private IMinimapRenderer? minimapRenderer;
         private SpeedometerRenderer? speedometerRenderer;
         private bool wasCameraModeTogglePressed;
         private TrackCameraMode cameraMode;
@@ -49,6 +52,7 @@ namespace OpenSpeed.Classic
             RenderingSettings renderingSettings = new();
             graphicsDeviceManager = new(this)
             {
+                PreferredDepthStencilFormat = DepthFormat.Depth24Stencil8,
                 PreferredBackBufferWidth = renderingSettings.ScreenWidth,
                 PreferredBackBufferHeight = renderingSettings.ScreenHeight
             };
@@ -163,6 +167,14 @@ namespace OpenSpeed.Classic
                 carWorld = CarWorldTransformBuilder.Build(CurrentTrack.RoutePoints);
                 carRenderer = new CarRenderer(GraphicsDevice);
                 carRenderer.Load(currentCar);
+                NuciContentManager.Instance.LoadContent(Content, GraphicsDevice);
+                minimapRenderer = new MinimapRenderer(
+                    GraphicsDevice,
+                    new Color(
+                        currentCar.PaintColour.Red,
+                        currentCar.PaintColour.Green,
+                        currentCar.PaintColour.Blue));
+                minimapRenderer.Load(CurrentTrack.RoutePoints);
             }
         }
 
@@ -208,11 +220,15 @@ namespace OpenSpeed.Classic
                 trackRenderer is not null &&
                 motionBlurRenderer is not null)
             {
+                if (carWorld is not null)
+                {
+                    minimapRenderer?.Prepare(carWorld.Value, gameTime);
+                }
+
                 motionBlurRenderer.Draw(
                     carPhysicsState.LongitudinalVelocity,
                     DrawScene);
-                vignetteRenderer?.Draw();
-                speedometerRenderer?.Draw(carPhysicsState.LongitudinalVelocity);
+                DrawHud();
                 CaptureDiagnosticFrame();
             }
             else
@@ -238,6 +254,17 @@ namespace OpenSpeed.Classic
             DrawCar(width, height);
         }
 
+        private void DrawHud()
+        {
+            vignetteRenderer?.Draw();
+            speedometerRenderer?.Draw(carPhysicsState.LongitudinalVelocity);
+
+            if (carWorld is not null)
+            {
+                minimapRenderer?.Draw();
+            }
+        }
+
         private void CaptureDiagnosticFrame()
         {
             if (captureFramePath is null ||
@@ -256,12 +283,13 @@ namespace OpenSpeed.Classic
                 height,
                 false,
                 SurfaceFormat.Color,
-                DepthFormat.Depth24);
+                DepthFormat.Depth24Stencil8);
             GraphicsDevice.SetRenderTarget(renderTarget);
 
             try
             {
                 DrawScene();
+                DrawHud();
             }
             finally
             {
@@ -343,6 +371,8 @@ namespace OpenSpeed.Classic
             motionBlurRenderer = null;
             speedometerRenderer?.Dispose();
             speedometerRenderer = null;
+            minimapRenderer?.Dispose();
+            minimapRenderer = null;
             carRenderer?.Dispose();
             carRenderer = null;
             trackRenderer?.Dispose();

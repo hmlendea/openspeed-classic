@@ -66,7 +66,8 @@ Original game assets are not distributed with this project. Configure an install
   },
   "StartupCar": {
     "Game": "NeedForSpeed2SpecialEdition",
-    "Identifier": "McLarenF1"
+    "Identifier": "McLarenF1",
+    "Colour": "#7CB342"
   },
   "StartupTrack": {
     "Game": "NeedForSpeed2SpecialEdition",
@@ -83,11 +84,15 @@ Track, horizon, and car textures receive complete mipmap chains and anisotropic 
 
 The player car is loaded from `gamedata/sim/cardata/cardata.viv` and `gamedata/carmodel/pc` beneath the configured asset root. Car geometry is enlarged uniformly while retaining matching physical wall clearance. The car is positioned at the first decoded route point, constrained by the decoded track walls, aligned to slopes, affected by gravity, controlled by the configured keyboard bindings, and followed by the camera. Uphill momentum is preserved at convex crests, permitting sufficiently rapid cars to become briefly airborne before gravity returns them to the road. Omitting `StartupCar` selects `McLarenF1`.
 
+`StartupCar.Colour` optionally specifies the car paint as six hexadecimal RGB digits, with or without a leading `#`, for example `"#7CB342"`. Letter casing is ignored. Omitting the property or setting it to `null` preserves the default car colour. Custom paint retains texture shading and non-paint details, and the minimap arrow uses the configured RGB colour. Invalid colour values are reported during configuration loading.
+
 For compatibility with existing configurations, omitting `Is3DfxEnabled` uses the asset source's `TextureVariant`. `TextureVariant` accepts `PC` or `SE` and defaults to `SE` when omitted.
 
 Supported track identifiers are `ProvingGrounds`, `Outback`, `LastResort`, `NorthCountry`, `PacificSpirit`, `Mediterraneo`, `MysticPeaks`, and `MonolithicStudios`.
 
 Supported car identifiers are `McLarenF1`, `FerrariF50`, `FerrariF355`, `FordGT90`, `FordIndigo`, `FordMustangMachIII`, `JaguarXJ220`, `LotusGT1`, `LotusEspritV8`, `ItaldesignNazcaC2`, `ItaldesignCala`, `IsderaCommendatore`, `BonusCarChevrolet`, `BonusCarDaytona`, and `BonusCarFuture`.
+
+The lower-left minimap displays the road centreline within 400 metres of the player, centred on a marker that uses the car's paint colour. It rotates with the car's heading, so forward remains upwards, independently of the camera. The route uses a uniform line width with rounded joins, independent of the driveable area's width, and is clipped to the circular [minimap background](OpenSpeed.Classic/Content/Minimap.png). Both the road lines and player arrow have narrow pure black outlines. The minimap is drawn at double resolution and downsampled with linear filtering to antialias its lines, player marker, and circular boundary.
 
 The generic loading service selects an `ITrackFormatLoader` by game version. Additional NFS1 or NFS3 implementations can provide their own catalogue and format decoders while returning the same renderer-neutral `LoadedTrack` model.
 
@@ -111,7 +116,7 @@ Run the game project with:
 dotnet run --project OpenSpeed.Classic/OpenSpeed.Classic.csproj
 ```
 
-Capture one rendered frame to a PNG file and exit with:
+Capture one rendered frame, including the HUD, to a PNG file and exit with:
 
 ```sh
 dotnet run --project OpenSpeed.Classic/OpenSpeed.Classic.csproj -- \
