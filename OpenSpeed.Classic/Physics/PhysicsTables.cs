@@ -128,6 +128,10 @@ namespace OpenSpeed.Classic.Physics
             [0x1999, 0x10000, 0x4CCC, 0x4CCC, 0x8000, 0, 0, 0x10000, 0x28000, 0x30000, 0x40000, 0x10000];
         private static readonly int[] orthonormalisationCoefficients = [0x4000, -0x2000, 0x1800, -0x1400];
 
+        public static int EngineTargetScalar => 0x10000;
+        public static int GravityThirdSign => 1;
+        public static ReadOnlySpan<byte> OpponentFlags => new byte[256];
+
         public static ReadOnlySpan<int> QuarterWave => quarterWave;
 
         public static ReadOnlySpan<byte> RatioAngle => ratioAngle;

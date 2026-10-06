@@ -47,15 +47,20 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             CarMemory car = new();
             car.WriteByte(0x2DA, 1);
             car[0x94] = X86Math.One;
+            car[0x14] = 0;
             FixedMatrices.Write(car, 0x188, FixedMatrices.Identity());
             CarSpecifications descriptor = new();
             descriptor[0xF0] = 0x3000;
             descriptor[0x138] = X86Math.One;
             descriptor[0x128] = 0x8000;
             descriptor[0x1D4] = X86Math.One;
-            byte[] routeBytes = new byte[PhysicsRoute.RecordSize];
-            routeBytes[0x0D] = 128;
-            routeBytes[0x11] = 127;
+            byte[] routeBytes = new byte[PhysicsRoute.RecordSize * 16];
+            for (int i = 0; i < 16; i++)
+            {
+                int baseOffset = i * PhysicsRoute.RecordSize;
+                routeBytes[baseOffset + 0x0D] = 128;
+                routeBytes[baseOffset + 0x11] = 127;
+            }
 
             AlternateForceSolver.Update(
                 car,
