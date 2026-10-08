@@ -153,5 +153,20 @@ namespace OpenSpeed.Classic.Physics
         public static ReadOnlySpan<int> ContactStateB => contactStateB;
 
         public static ReadOnlySpan<int> OrthonormalisationCoefficients => orthonormalisationCoefficients;
-    }
+
+        public static int GlobalMode { get; set; } = 0;
+
+        public static int RaceMode { get; set; } = 0;
+
+        public static int BaseTick { get; set; } = 0;
+
+        public static int GlobalCarIndex { get; set; } = 0;
+
+        public static int GlobalForce { get; set; } = 0;
+
+        public static int GlobalSteering { get; set; } = 0;
+
+        public static int RaceState { get; set; } = 0;
+
+        }
 }

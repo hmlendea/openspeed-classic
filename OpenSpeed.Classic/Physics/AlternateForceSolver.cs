@@ -66,7 +66,7 @@ namespace OpenSpeed.Classic.Physics
 
             car[GripOffset] = ContactResponse.Calculate(car[ProjectedVelocityOffset], car[ProjectedNormalOffset]);
 
-            ControlPipeline.Smooth(car, descriptor, runtimeType, context);
+            ControlPipeline.SmoothAlternate(car, descriptor, runtimeType, context);
             TyreStateMachine.Update(car, descriptor, runtimeType, context);
 
             int force = Drivetrain.CalculateForce(car, descriptor, runtimeType, context);
