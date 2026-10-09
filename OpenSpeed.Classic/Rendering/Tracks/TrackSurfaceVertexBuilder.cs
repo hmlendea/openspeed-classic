@@ -20,18 +20,21 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         private static float GroundNormalVerticalRatioMinimum => 0.8f;
 
         public static IEnumerable<VertexPositionColor> BuildColoured(TrackSurface surface)
-            => BuildColoured(surface, true);
+            => BuildColoured(surface, true, Vector3.Down);
 
         public static IEnumerable<VertexPositionColor> BuildColoured(
             TrackSurface surface,
-            bool areShadowsEnabled)
+            bool areShadowsEnabled,
+            Vector3 sunDirection)
         {
             ArgumentNullException.ThrowIfNull(surface);
 
             TrackPoint[] points = GetPoints(surface);
             Color[] lightingColours = BuildLightingColours(
                 surface.LightingLevels,
-                areShadowsEnabled);
+                areShadowsEnabled,
+                sunDirection,
+                points);
 
             return
             [
@@ -47,12 +50,13 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         public static IEnumerable<VertexPositionColorTexture> BuildTextured(
             TrackSurface surface,
             TrackMaterial material)
-            => BuildTextured(surface, material, true);
+            => BuildTextured(surface, material, true, Vector3.Down);
 
         public static IEnumerable<VertexPositionColorTexture> BuildTextured(
             TrackSurface surface,
             TrackMaterial material,
-            bool areShadowsEnabled)
+            bool areShadowsEnabled,
+            Vector3 sunDirection)
         {
             ArgumentNullException.ThrowIfNull(surface);
             ArgumentNullException.ThrowIfNull(material);
@@ -60,7 +64,9 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             TrackPoint[] points = GetPoints(surface);
             Color[] lightingColours = BuildLightingColours(
                 surface.LightingLevels,
-                areShadowsEnabled);
+                areShadowsEnabled,
+                sunDirection,
+                points);
             Vector2[] textureCoordinates = [.. TrackTextureCoordinateBuilder.Build(material)];
 
             if (surface.Side == TrackSurfaceSide.Right)
@@ -115,14 +121,16 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 
         private static Color[] BuildLightingColours(
             ushort lightingLevels,
-            bool areShadowsEnabled)
+            bool areShadowsEnabled,
+            Vector3 sunDirection,
+            TrackPoint[] points)
         {
             if (!areShadowsEnabled)
             {
                 return [Color.White, Color.White, Color.White, Color.White];
             }
 
-            return [.. TrackSurfaceLighting.Build(lightingLevels)];
+            return [.. TrackSurfaceLighting.Build(lightingLevels, sunDirection, points)];
         }
 
         private static TrackPoint[] GetPoints(TrackSurface surface)

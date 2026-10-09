@@ -10,22 +10,15 @@ using OpenSpeed.Classic.Rendering.Tracks;
 
 namespace OpenSpeed.Classic.Rendering.Cars
 {
-    public sealed class CarRenderer(GraphicsDevice graphicsDevice) : ICarRenderer
+    public sealed class CarRenderer : ICarRenderer
     {
-        private readonly BasicEffect colourEffect = new(graphicsDevice)
-        {
-            VertexColorEnabled = true
-        };
+        private readonly GraphicsDevice graphicsDevice;
+        private readonly BasicEffect colourEffect;
         private readonly RasterizerState rasterizerState = new()
         {
             CullMode = CullMode.None
         };
-        private readonly AlphaTestEffect textureEffect = new(graphicsDevice)
-        {
-            AlphaFunction = CompareFunction.Greater,
-            ReferenceAlpha = 0x10,
-            VertexColorEnabled = true
-        };
+        private readonly AlphaTestEffect textureEffect;
 
         private int colourPrimitiveCount;
         private VertexBuffer? colourVertexBuffer;
@@ -38,6 +31,22 @@ namespace OpenSpeed.Classic.Rendering.Cars
             => colourVertexBuffer is not null || textureBatches.Length > 0;
 
         private static Color FallbackColour => new(160, 160, 160);
+
+        public CarRenderer(GraphicsDevice graphicsDevice)
+        {
+            this.graphicsDevice = graphicsDevice;
+
+            colourEffect = new BasicEffect(graphicsDevice)
+            {
+                VertexColorEnabled = true
+            };
+            textureEffect = new AlphaTestEffect(graphicsDevice)
+            {
+                AlphaFunction = CompareFunction.Greater,
+                ReferenceAlpha = 0x10,
+                VertexColorEnabled = true
+            };
+        }
 
         public void Dispose()
         {
@@ -57,7 +66,10 @@ namespace OpenSpeed.Classic.Rendering.Cars
             TrackCamera camera,
             Matrix world,
             int viewportWidth,
-            int viewportHeight)
+            int viewportHeight,
+            Vector3 sunDirection,
+            Texture2D? shadowMap,
+            Matrix shadowViewProjection)
         {
             ArgumentNullException.ThrowIfNull(camera);
             ThrowIfDisposed();
@@ -73,10 +85,12 @@ namespace OpenSpeed.Classic.Rendering.Cars
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.RasterizerState = rasterizerState;
             graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
+
+            // Use vertex lighting fallback
             ConfigureEffect(colourEffect, world, view, projection);
             ConfigureEffect(textureEffect, world, view, projection);
-            DrawColouredGeometry();
-            DrawTexturedGeometry();
+            DrawColouredGeometry(sunDirection);
+            DrawTexturedGeometry(sunDirection);
         }
 
         public void Load(LoadedCar car)
@@ -202,7 +216,7 @@ namespace OpenSpeed.Classic.Rendering.Cars
                 StringComparer.Ordinal);
         }
 
-        private void DrawColouredGeometry()
+        private void DrawColouredGeometry(Vector3 sunDirection)
         {
             if (colourVertexBuffer is null)
             {
@@ -220,7 +234,7 @@ namespace OpenSpeed.Classic.Rendering.Cars
             }
         }
 
-        private void DrawTexturedGeometry()
+        private void DrawTexturedGeometry(Vector3 sunDirection)
         {
             foreach (CarTextureBatch textureBatch in textureBatches)
             {

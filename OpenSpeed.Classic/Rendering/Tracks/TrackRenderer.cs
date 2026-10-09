@@ -9,27 +9,16 @@ using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic.Rendering.Tracks
 {
-    public sealed class TrackRenderer(
-        GraphicsDevice graphicsDevice,
-        bool areShadowsEnabled) : ITrackRenderer
+    public sealed class TrackRenderer : ITrackRenderer
     {
-        private readonly BasicEffect colourEffect = new(graphicsDevice)
-        {
-            VertexColorEnabled = true
-        };
-        private readonly BasicEffect horizonColourEffect = new(graphicsDevice)
-        {
-            VertexColorEnabled = true
-        };
+        private readonly GraphicsDevice graphicsDevice;
+        private readonly BasicEffect colourEffect;
+        private readonly BasicEffect horizonColourEffect;
         private readonly RasterizerState horizonRasterizerState = new()
         {
             CullMode = CullMode.None
         };
-        private readonly BasicEffect horizonTextureEffect = new(graphicsDevice)
-        {
-            TextureEnabled = true,
-            VertexColorEnabled = true
-        };
+        private readonly BasicEffect horizonTextureEffect;
         private readonly RasterizerState rasterizerState = new()
         {
             CullMode = CullMode.None
@@ -38,12 +27,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         {
             CullMode = CullMode.None
         };
-        private readonly AlphaTestEffect textureEffect = new(graphicsDevice)
-        {
-            AlphaFunction = CompareFunction.Greater,
-            ReferenceAlpha = 0x10,
-            VertexColorEnabled = true
-        };
+        private readonly AlphaTestEffect textureEffect;
 
         private Dictionary<int, Vector3> blockCentres = [];
         private TrackColourBatch[] colourBatches = [];
@@ -56,6 +40,12 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         private Dictionary<int, TrackTextureResource> textureResources = [];
         private Dictionary<int, HashSet<int>> visibleBlockIdentifiersByBlock = [];
         private bool isDisposed;
+        private Vector3 sunDirection = Vector3.Down;
+        private readonly bool areShadowsEnabled;
+
+        public Vector3 SunDirection => sunDirection;
+        public Texture2D? ShadowMap => null;
+        public Matrix ShadowViewProjection => Matrix.Identity;
 
         public bool HasGeometry =>
             colourBatches.Length > 0 ||
@@ -65,6 +55,32 @@ namespace OpenSpeed.Classic.Rendering.Tracks
         public TrackRenderer(GraphicsDevice graphicsDevice)
             : this(graphicsDevice, true)
         {
+        }
+
+        public TrackRenderer(GraphicsDevice graphicsDevice, bool areShadowsEnabled)
+        {
+            this.graphicsDevice = graphicsDevice;
+            this.areShadowsEnabled = areShadowsEnabled;
+
+            colourEffect = new BasicEffect(graphicsDevice)
+            {
+                VertexColorEnabled = true
+            };
+            horizonColourEffect = new BasicEffect(graphicsDevice)
+            {
+                VertexColorEnabled = true
+            };
+            horizonTextureEffect = new BasicEffect(graphicsDevice)
+            {
+                TextureEnabled = true,
+                VertexColorEnabled = true
+            };
+            textureEffect = new AlphaTestEffect(graphicsDevice)
+            {
+                AlphaFunction = CompareFunction.Greater,
+                ReferenceAlpha = 0x10,
+                VertexColorEnabled = true
+            };
         }
 
         public void Dispose()
@@ -156,6 +172,8 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     visibleBlockIdentifiers);
             }
 
+            sunDirection = SunCalculator.CalculateSunDirection(trackBlocks);
+
             textureResources = track.Textures
                 .Select(trackTexture => new TrackTextureResource(
                     graphicsDevice,
@@ -206,6 +224,22 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             colourBatches = CreateColourBatches(colouredVertices);
             roadMarkingBatches = CreateColourBatches(roadMarkingVertices);
             textureBatches = CreateTextureBatches(texturedVertices);
+        }
+
+        private Vector3 CalculateTrackCentreFromBlockCentres()
+        {
+            if (blockCentres.Count == 0)
+            {
+                return Vector3.Zero;
+            }
+
+            Vector3 sum = Vector3.Zero;
+            foreach (Vector3 centre in blockCentres.Values)
+            {
+                sum += centre;
+            }
+
+            return sum / blockCentres.Count;
         }
 
         private static void AddRoadMarkings(
@@ -269,7 +303,8 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     colouredVertices[colourBatchKey].AddRange(
                         TrackSurfaceVertexBuilder.BuildColoured(
                             surface,
-                            areShadowsEnabled));
+                            areShadowsEnabled,
+                            sunDirection));
 
                     continue;
                 }
@@ -288,7 +323,8 @@ namespace OpenSpeed.Classic.Rendering.Tracks
                     TrackSurfaceVertexBuilder.BuildTextured(
                         surface,
                         material,
-                        areShadowsEnabled));
+                        areShadowsEnabled,
+                        sunDirection));
             }
         }
 

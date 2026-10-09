@@ -322,7 +322,7 @@ namespace OpenSpeed.Classic
 
         private void DrawCar(int viewportWidth, int viewportHeight)
         {
-            if (carRenderer is null || carWorld is null || trackCamera is null)
+            if (carRenderer is null || carWorld is null || trackCamera is null || trackRenderer is null)
             {
                 return;
             }
@@ -331,7 +331,10 @@ namespace OpenSpeed.Classic
                 trackCamera,
                 carWorld.Value,
                 viewportWidth,
-                viewportHeight);
+                viewportHeight,
+                trackRenderer.SunDirection,
+                trackRenderer.ShadowMap,
+                trackRenderer.ShadowViewProjection);
         }
 
         private void UpdateCarAndCamera(
