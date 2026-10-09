@@ -120,7 +120,7 @@ namespace OpenSpeed.Classic.Rendering.Tracks
             graphicsDevice.DepthStencilState = DepthStencilState.Default;
             graphicsDevice.BlendState = BlendState.Opaque;
             graphicsDevice.RasterizerState = rasterizerState;
-            graphicsDevice.SamplerStates[0] = SamplerState.AnisotropicClamp;
+            graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
             ConfigureEffect(colourEffect, view, projection);
             ConfigureEffect(textureEffect, view, projection);
             BoundingFrustum viewFrustum = new(view * projection);

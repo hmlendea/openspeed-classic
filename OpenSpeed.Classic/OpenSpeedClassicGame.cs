@@ -31,6 +31,9 @@ namespace OpenSpeed.Classic
         private Matrix? carWorld;
         private bool hasCapturedDiagnosticFrame;
         private bool isVignetteEnabled;
+        private bool isHorizonEnabled;
+        private bool isMinimapEnabled;
+        private bool isSpeedometerEnabled;
         private float motionBlurMinimumSpeedKilometresPerHour;
         private IMotionBlurRenderer? motionBlurRenderer;
         private IMinimapRenderer? minimapRenderer;
@@ -120,6 +123,9 @@ namespace OpenSpeed.Classic
             graphicsDeviceManager.PreferredBackBufferHeight = renderingSettings.ScreenHeight;
             graphicsDeviceManager.PreferredBackBufferWidth = renderingSettings.ScreenWidth;
             isVignetteEnabled = renderingSettings.IsVignetteEnabled;
+            isHorizonEnabled = renderingSettings.IsHorizonEnabled;
+            isMinimapEnabled = renderingSettings.IsMinimapEnabled;
+            isSpeedometerEnabled = renderingSettings.IsSpeedometerEnabled;
             motionBlurMinimumSpeedKilometresPerHour =
                 renderingSettings.MotionBlurMinimumSpeedKilometresPerHour;
             this.drivingControls = drivingControls;
@@ -179,13 +185,16 @@ namespace OpenSpeed.Classic
                 carRenderer = new CarRenderer(GraphicsDevice);
                 carRenderer.Load(currentCar);
                 NuciContentManager.Instance.LoadContent(Content, GraphicsDevice);
-                minimapRenderer = new MinimapRenderer(
-                    GraphicsDevice,
-                    new Color(
-                        currentCar.PaintColour.Red,
-                        currentCar.PaintColour.Green,
-                        currentCar.PaintColour.Blue));
-                minimapRenderer.Load(CurrentTrack.RoutePoints);
+                if (isMinimapEnabled)
+                {
+                    minimapRenderer = new MinimapRenderer(
+                        GraphicsDevice,
+                        new Color(
+                            currentCar.PaintColour.Red,
+                            currentCar.PaintColour.Green,
+                            currentCar.PaintColour.Blue));
+                    minimapRenderer.Load(CurrentTrack.RoutePoints);
+                }
             }
         }
 
@@ -268,9 +277,12 @@ namespace OpenSpeed.Classic
         private void DrawHud()
         {
             vignetteRenderer?.Draw();
-            speedometerRenderer?.Draw(carPhysicsState.LongitudinalVelocity);
+            if (isSpeedometerEnabled)
+            {
+                speedometerRenderer?.Draw(carPhysicsState.LongitudinalVelocity);
+            }
 
-            if (carWorld is not null)
+            if (isMinimapEnabled && carWorld is not null)
             {
                 minimapRenderer?.Draw();
             }

@@ -11,12 +11,12 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
     public sealed class TrackLevelOfDetailSelectorTests
     {
         [TestCase(0.0f, TrackGeometryDetailLevel.High)]
-        [TestCase(1048575.0f, TrackGeometryDetailLevel.High)]
-        [TestCase(1048576.0f, TrackGeometryDetailLevel.High)]
-        [TestCase(1048577.0f, TrackGeometryDetailLevel.Medium)]
-        [TestCase(4194303.0f, TrackGeometryDetailLevel.Medium)]
-        [TestCase(4194304.0f, TrackGeometryDetailLevel.Medium)]
-        [TestCase(4194305.0f, TrackGeometryDetailLevel.Low)]
+        [TestCase(262143.0f, TrackGeometryDetailLevel.High)]
+        [TestCase(262144.0f, TrackGeometryDetailLevel.High)]
+        [TestCase(262145.0f, TrackGeometryDetailLevel.Medium)]
+        [TestCase(1048575.0f, TrackGeometryDetailLevel.Medium)]
+        [TestCase(1048576.0f, TrackGeometryDetailLevel.Medium)]
+        [TestCase(1048577.0f, TrackGeometryDetailLevel.Low)]
         [TestCase(float.MaxValue, TrackGeometryDetailLevel.Low)]
         public void GivenHorizontalDistance_WhenSelecting_ThenTheVisibilityThresholdsApply(
             float horizontalDistanceSquared,

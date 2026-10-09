@@ -76,7 +76,7 @@ namespace OpenSpeed.Classic.Rendering
 
         private static int TriangleVertexCount => 3;
 
-        private static int SupersamplingScale => 2;
+        private static int SupersamplingScale => 1;
 
         public MinimapRenderer(GraphicsDevice graphicsDevice)
             : this(graphicsDevice, Color.White)

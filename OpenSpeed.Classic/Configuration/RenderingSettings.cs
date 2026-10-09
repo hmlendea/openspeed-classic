@@ -10,6 +10,12 @@ namespace OpenSpeed.Classic.Configuration
 
         public float MotionBlurMinimumSpeedKilometresPerHour { get; set; } = 80.0f;
 
+        public bool IsHorizonEnabled { get; set; } = true;
+
+        public bool IsMinimapEnabled { get; set; } = true;
+
+        public bool IsSpeedometerEnabled { get; set; } = true;
+
         public int ScreenHeight { get; set; } = 968;
 
         public int ScreenWidth { get; set; } = 1720;

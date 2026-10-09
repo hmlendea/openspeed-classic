@@ -6,9 +6,9 @@ namespace OpenSpeed.Classic.Rendering.Tracks
 {
     public static class TrackLevelOfDetailSelector
     {
-        private static float HighDetailDistance => 1024.0f;
+        private static float HighDetailDistance => 512.0f;
 
-        private static float MediumDetailDistance => 2048.0f;
+        private static float MediumDetailDistance => 1024.0f;
 
         public static TrackGeometryDetailLevel Select(float horizontalDistanceSquared)
         {
