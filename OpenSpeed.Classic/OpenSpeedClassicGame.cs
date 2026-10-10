@@ -1,27 +1,137 @@
+using System;
+using System.IO;
+using System.Linq;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+
+using NuciXNA.DataAccess.Content;
+
+using OpenSpeed.Classic.Cars;
+using OpenSpeed.Classic.Configuration;
+using OpenSpeed.Classic.Input;
+using OpenSpeed.Classic.Physics;
+using OpenSpeed.Classic.Rendering;
+using OpenSpeed.Classic.Rendering.Cars;
+using OpenSpeed.Classic.Rendering.Tracks;
+using OpenSpeed.Classic.Tracks;
 
 namespace OpenSpeed.Classic
 {
     public sealed class OpenSpeedClassicGame : Game
     {
-        private static string WindowTitle => "OpenSpeed Classic";
-        private static int InitialBackBufferWidth => 1280;
-        private static int InitialBackBufferHeight => 720;
-
         private readonly GraphicsDeviceManager graphicsDeviceManager;
+        private readonly bool areShadowsEnabled = true;
+        private readonly string? captureFramePath;
+        private readonly CarPhysicsState carPhysicsState = new();
+        private IPlayerVehicleSimulation? playerSimulation;
+        private readonly DrivingControlsSettings drivingControls = new();
+        private ICarRenderer? carRenderer;
+        private Matrix? carWorld;
+        private bool hasCapturedDiagnosticFrame;
+        private bool isVignetteEnabled;
+        private bool isHorizonEnabled;
+        private bool isMinimapEnabled;
+        private bool isSpeedometerEnabled;
+        private float motionBlurMinimumSpeedKilometresPerHour;
+        private IMotionBlurRenderer? motionBlurRenderer;
+        private IMinimapRenderer? minimapRenderer;
+        private SpeedometerRenderer? speedometerRenderer;
+        private bool wasCameraModeTogglePressed;
+        private TrackCameraMode cameraMode;
+        private TrackCamera? trackCamera;
+        private ITrackRenderer? trackRenderer;
+        private IVignetteRenderer? vignetteRenderer;
+
+        public LoadedCar? CurrentCar { get; }
+
+        public LoadedTrack? CurrentTrack { get; }
+
+        private static Color BackgroundColour => new(92, 142, 170);
+
+        private static string WindowTitle => "OpenSpeed Classic";
 
         public OpenSpeedClassicGame()
         {
+            RenderingSettings renderingSettings = new();
             graphicsDeviceManager = new(this)
             {
-                PreferredBackBufferWidth = InitialBackBufferWidth,
-                PreferredBackBufferHeight = InitialBackBufferHeight
+                PreferredDepthStencilFormat = DepthFormat.Depth24Stencil8,
+                PreferredBackBufferWidth = renderingSettings.ScreenWidth,
+                PreferredBackBufferHeight = renderingSettings.ScreenHeight
             };
 
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
             Window.Title = WindowTitle;
+        }
+
+        public OpenSpeedClassicGame(LoadedTrack loadedTrack)
+            : this(loadedTrack, null)
+        {
+        }
+
+        public OpenSpeedClassicGame(
+            LoadedTrack loadedTrack,
+            string? captureFramePath)
+            : this(loadedTrack, new RenderingSettings(), captureFramePath)
+        {
+        }
+
+        public OpenSpeedClassicGame(
+            LoadedTrack loadedTrack,
+            RenderingSettings renderingSettings,
+            string? captureFramePath)
+            : this(loadedTrack, null, renderingSettings, captureFramePath)
+        {
+        }
+
+        public OpenSpeedClassicGame(
+            LoadedTrack loadedTrack,
+            LoadedCar? loadedCar,
+            RenderingSettings renderingSettings,
+            string? captureFramePath)
+            : this(
+                loadedTrack,
+                loadedCar,
+                renderingSettings,
+                new DrivingControlsSettings(),
+                captureFramePath)
+        {
+        }
+
+        public OpenSpeedClassicGame(
+            LoadedTrack loadedTrack,
+            LoadedCar? loadedCar,
+            RenderingSettings renderingSettings,
+            DrivingControlsSettings drivingControls,
+            string? captureFramePath)
+            : this()
+        {
+            ArgumentNullException.ThrowIfNull(loadedTrack);
+            ArgumentNullException.ThrowIfNull(renderingSettings);
+            ArgumentNullException.ThrowIfNull(drivingControls);
+            ValidateScreenDimensions(renderingSettings);
+
+            if (!string.IsNullOrWhiteSpace(captureFramePath))
+            {
+                this.captureFramePath = captureFramePath;
+            }
+
+            areShadowsEnabled = renderingSettings.AreShadowsEnabled;
+            graphicsDeviceManager.PreferredBackBufferHeight = renderingSettings.ScreenHeight;
+            graphicsDeviceManager.PreferredBackBufferWidth = renderingSettings.ScreenWidth;
+            isVignetteEnabled = renderingSettings.IsVignetteEnabled;
+            isHorizonEnabled = renderingSettings.IsHorizonEnabled;
+            isMinimapEnabled = renderingSettings.IsMinimapEnabled;
+            isSpeedometerEnabled = renderingSettings.IsSpeedometerEnabled;
+            motionBlurMinimumSpeedKilometresPerHour =
+                renderingSettings.MotionBlurMinimumSpeedKilometresPerHour;
+            this.drivingControls = drivingControls;
+            CurrentCar = loadedCar;
+            CurrentTrack = loadedTrack;
+            Window.Title = $"{WindowTitle} - {loadedTrack.DisplayName}";
         }
 
         protected override void Initialize()
@@ -31,11 +141,291 @@ namespace OpenSpeed.Classic
             base.Initialize();
         }
 
+        protected override void LoadContent()
+        {
+            if (CurrentTrack is null)
+            {
+                return;
+            }
+
+            trackCamera = new TrackCamera(
+                CurrentTrack.Blocks,
+                CurrentTrack.RoutePoints);
+            motionBlurRenderer = new MotionBlurRenderer(
+                GraphicsDevice,
+                motionBlurMinimumSpeedKilometresPerHour);
+            SpriteFont speedometerFont = Content.Load<SpriteFont>("Fonts/SpeedometerFont");
+            Texture2D speedometerTexture = Content.Load<Texture2D>("Speedometer");
+            speedometerRenderer = new SpeedometerRenderer(
+                GraphicsDevice,
+                speedometerFont,
+                speedometerTexture);
+
+            if (isVignetteEnabled)
+            {
+                vignetteRenderer = new VignetteRenderer(GraphicsDevice);
+            }
+
+            trackRenderer = new TrackRenderer(GraphicsDevice, areShadowsEnabled);
+            trackRenderer.Load(CurrentTrack);
+            LoadedCar? currentCar = CurrentCar;
+
+            if (currentCar is not null && CurrentTrack.RoutePoints.Any())
+            {
+                if (currentCar.PhysicsSpecifications is null || CurrentTrack.PhysicsRoute is null)
+                {
+                    throw new InvalidDataException("Native car specifications and track route data are required for driving.");
+                }
+
+                playerSimulation = new PlayerVehicleSimulation(
+                    currentCar.PhysicsSpecifications,
+                    CurrentTrack.PhysicsRoute,
+                    Enum.Parse<CarIdentifier>(currentCar.Identifier, true));
+                carWorld = PhysicsRenderAdapter.CreateWorld(playerSimulation.State);
+                carRenderer = new CarRenderer(GraphicsDevice);
+                carRenderer.Load(currentCar);
+                NuciContentManager.Instance.LoadContent(Content, GraphicsDevice);
+                if (isMinimapEnabled)
+                {
+                    minimapRenderer = new MinimapRenderer(
+                        GraphicsDevice,
+                        new Color(
+                            currentCar.PaintColour.Red,
+                            currentCar.PaintColour.Green,
+                            currentCar.PaintColour.Blue));
+                    minimapRenderer.Load(CurrentTrack.RoutePoints);
+                }
+            }
+        }
+
+        protected override void Update(GameTime gameTime)
+        {
+            KeyboardState keyboardState = Keyboard.GetState();
+
+            if (keyboardState.IsKeyDown(Keys.Escape))
+            {
+                Exit();
+            }
+
+            if (trackCamera is not null)
+            {
+                TrackCameraInput drivingInput = TrackCameraInputReader.Read(
+                    keyboardState,
+                    drivingControls);
+                if (drivingInput.IsCameraModeTogglePressed &&
+                    !wasCameraModeTogglePressed)
+                {
+                    if (cameraMode == TrackCameraMode.Close)
+                    {
+                        cameraMode = TrackCameraMode.Far;
+                    }
+                    else
+                    {
+                        cameraMode = TrackCameraMode.Close;
+                    }
+                }
+
+                wasCameraModeTogglePressed = drivingInput.IsCameraModeTogglePressed;
+                UpdateCarAndCamera(
+                    gameTime.ElapsedGameTime,
+                    drivingInput);
+            }
+
+            base.Update(gameTime);
+        }
+
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.Black);
+            if (trackCamera is not null &&
+                trackRenderer is not null &&
+                motionBlurRenderer is not null)
+            {
+                if (carWorld is not null)
+                {
+                    minimapRenderer?.Prepare(carWorld.Value, gameTime);
+                }
+
+                motionBlurRenderer.Draw(
+                    carPhysicsState.LongitudinalVelocity,
+                    DrawScene);
+                DrawHud();
+                CaptureDiagnosticFrame();
+            }
+            else
+            {
+                GraphicsDevice.Clear(BackgroundColour);
+            }
 
             base.Draw(gameTime);
+        }
+
+        private void DrawScene()
+        {
+            GraphicsDevice.Clear(BackgroundColour);
+
+            if (trackCamera is null || trackRenderer is null)
+            {
+                return;
+            }
+
+            int width = GraphicsDevice.Viewport.Width;
+            int height = GraphicsDevice.Viewport.Height;
+            trackRenderer.Draw(trackCamera, width, height);
+            DrawCar(width, height);
+        }
+
+        private void DrawHud()
+        {
+            vignetteRenderer?.Draw();
+            if (isSpeedometerEnabled)
+            {
+                speedometerRenderer?.Draw(carPhysicsState.LongitudinalVelocity);
+            }
+
+            if (isMinimapEnabled && carWorld is not null)
+            {
+                minimapRenderer?.Draw();
+            }
+        }
+
+        private void CaptureDiagnosticFrame()
+        {
+            if (captureFramePath is null ||
+                hasCapturedDiagnosticFrame ||
+                trackCamera is null ||
+                trackRenderer is null)
+            {
+                return;
+            }
+
+            int width = GraphicsDevice.Viewport.Width;
+            int height = GraphicsDevice.Viewport.Height;
+            using RenderTarget2D renderTarget = new(
+                GraphicsDevice,
+                width,
+                height,
+                false,
+                SurfaceFormat.Color,
+                DepthFormat.Depth24Stencil8);
+            GraphicsDevice.SetRenderTarget(renderTarget);
+
+            try
+            {
+                DrawScene();
+                DrawHud();
+            }
+            finally
+            {
+                GraphicsDevice.SetRenderTarget(null);
+            }
+
+            string? outputDirectory = Path.GetDirectoryName(captureFramePath);
+
+            if (!string.IsNullOrWhiteSpace(outputDirectory))
+            {
+                Directory.CreateDirectory(outputDirectory);
+            }
+
+            using FileStream stream = File.Create(captureFramePath);
+            renderTarget.SaveAsPng(stream, width, height);
+            hasCapturedDiagnosticFrame = true;
+            Exit();
+        }
+
+        private void DrawCar(int viewportWidth, int viewportHeight)
+        {
+            if (carRenderer is null || carWorld is null || trackCamera is null || trackRenderer is null)
+            {
+                return;
+            }
+
+            carRenderer.Draw(
+                trackCamera,
+                carWorld.Value,
+                viewportWidth,
+                viewportHeight,
+                trackRenderer.SunDirection,
+                trackRenderer.ShadowMap,
+                trackRenderer.ShadowViewProjection);
+        }
+
+        private void UpdateCarAndCamera(
+            TimeSpan elapsed,
+            TrackCameraInput drivingInput)
+        {
+            float elapsedSeconds = (float)elapsed.TotalSeconds;
+            if (trackCamera is null)
+            {
+                return;
+            }
+
+            if (carWorld is null)
+            {
+                trackCamera.Update(
+                    elapsedSeconds,
+                    drivingInput.MovementInput,
+                    drivingInput.TurningInput);
+
+                return;
+            }
+
+            if (playerSimulation is null)
+            {
+                return;
+            }
+
+            playerSimulation.Advance(
+                elapsed,
+                drivingInput.MovementInput,
+                drivingInput.TurningInput,
+                drivingInput.IsHandbrakeApplied);
+            carWorld = PhysicsRenderAdapter.CreateWorld(playerSimulation.State);
+            carPhysicsState.LongitudinalVelocity = PhysicsRenderAdapter.GetLongitudinalVelocity(playerSimulation.State);
+            carPhysicsState.IsGrounded = playerSimulation.IsGrounded;
+            trackCamera.Follow(
+                carWorld.Value,
+                elapsedSeconds,
+                carPhysicsState.LongitudinalVelocity,
+                drivingInput.CameraView,
+                cameraMode);
+        }
+
+        protected override void UnloadContent()
+        {
+            playerSimulation = null;
+            vignetteRenderer?.Dispose();
+            vignetteRenderer = null;
+            motionBlurRenderer?.Dispose();
+            motionBlurRenderer = null;
+            speedometerRenderer?.Dispose();
+            speedometerRenderer = null;
+            minimapRenderer?.Dispose();
+            minimapRenderer = null;
+            carRenderer?.Dispose();
+            carRenderer = null;
+            trackRenderer?.Dispose();
+            trackRenderer = null;
+
+            base.UnloadContent();
+        }
+
+        private static void ValidateScreenDimensions(RenderingSettings renderingSettings)
+        {
+            if (renderingSettings.ScreenWidth <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(renderingSettings),
+                    renderingSettings.ScreenWidth,
+                    "The configured screen width must be positive.");
+            }
+
+            if (renderingSettings.ScreenHeight <= 0)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(renderingSettings),
+                    renderingSettings.ScreenHeight,
+                    "The configured screen height must be positive.");
+            }
         }
     }
 }

@@ -9,13 +9,34 @@
     <Nullable>enable</Nullable>
     <AssemblyName>OpenSpeed.Classic</AssemblyName>
     <RootNamespace>OpenSpeed.Classic</RootNamespace>
+    <MonoGamePlatform>DesktopGL</MonoGamePlatform>
   </PropertyGroup>
 
   <ItemGroup>
+    <MonoGameContentReference Include="Content\Content.mgcb" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Content.Builder.Task" Version="3.8.4" />
+    <PackageReference Include="NuciCLI.Arguments" Version="1.0.1" />
+    <PackageReference Include="NuciLog" Version="1.2.1" />
+    <PackageReference Include="NuciLog.Core" Version="3.1.0" />
     <PackageReference Include="NuciXNA.Graphics" Version="2.2.5" />
     <PackageReference Include="NuciXNA.Gui" Version="3.4.2" />
     <PackageReference Include="NuciXNA.Input" Version="2.1.1" />
     <PackageReference Include="NuciXNA.Primitives" Version="2.1.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Effects\ShadowMap.glsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Content\Effects\CarShadowMap.glsl">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
