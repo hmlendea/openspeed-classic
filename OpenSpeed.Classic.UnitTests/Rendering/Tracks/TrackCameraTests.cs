@@ -353,8 +353,12 @@ namespace OpenSpeed.Classic.UnitTests.Rendering.Tracks
                 centreOffset,
                 Matrix.CreateRotationY(MathHelper.ToRadians(expectedYawDegrees)));
 
-            Assert.That(offset.X, Is.EqualTo(expectedOffset.X).Within(PositionTolerance));
-            Assert.That(offset.Z, Is.EqualTo(expectedOffset.Z).Within(PositionTolerance));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(offset.X, Is.EqualTo(expectedOffset.X).Within(PositionTolerance));
+                Assert.That(offset.Z, Is.EqualTo(expectedOffset.Z).Within(PositionTolerance));
+            }
+
         }
 
         [Test]

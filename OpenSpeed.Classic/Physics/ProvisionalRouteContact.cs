@@ -9,6 +9,9 @@ namespace OpenSpeed.Classic.Physics
         private static int GroundTolerance => 0x100;
 
         public static bool Resolve(CarMemory car, PhysicsRoute route)
+            => Resolve(car, route, null);
+
+        public static bool Resolve(CarMemory car, PhysicsRoute route, TrackRoadGeometry? geometry)
         {
             ArgumentNullException.ThrowIfNull(car);
             ArgumentNullException.ThrowIfNull(route);
@@ -32,12 +35,30 @@ namespace OpenSpeed.Classic.Physics
             car[0x148] = route.Heading(nearest);
             car[0x184] = 0;
             car[0x15C] = 0;
-            if (normal.Second <= 0x1999)
+            if (geometry is null && normal.Second <= 0x1999)
             {
                 return false;
             }
 
+            if (geometry is not null)
+            {
+                int expectedHeight = reference.Second;
+
+                if (normal.Second > 0x1999)
+                {
+                    expectedHeight = ContactGeometry.CalculatePlaneHeight(car);
+                }
+
+                if (!geometry.TryApplyPlane(car, expectedHeight))
+                {
+                    return false;
+                }
+
+                normal = FixedVectors.Read(car, 0x124);
+            }
+
             ResolveWalls(car, route, nearest, next, fraction, right, reference);
+
             int height = ContactGeometry.CalculatePlaneHeight(car);
             int separation = unchecked(car[0xA0] - height);
             int normalVelocity = FixedVectors.Dot(normal, FixedVectors.Read(car, 0xA8));

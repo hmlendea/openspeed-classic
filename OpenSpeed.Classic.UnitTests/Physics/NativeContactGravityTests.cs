@@ -38,8 +38,12 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
             int scaledAngle = NativeContactGravity.Apply(car, trackIdentifier, X86Math.One);
 
-            Assert.That(scaledAngle, Is.EqualTo(expectedScale));
-            Assert.That(car.Snapshot(), Is.EqualTo(expected.Snapshot()));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(scaledAngle, Is.EqualTo(expectedScale));
+                Assert.That(car.Snapshot(), Is.EqualTo(expected.Snapshot()));
+            }
+
         }
 
         [TestCase(0, 0x10000, 42, 42)]
@@ -64,8 +68,12 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
             int scaledAngle = NativeContactGravity.Apply(car, 7, scheduleScalar);
 
-            Assert.That(scaledAngle, Is.EqualTo(motionScale));
-            Assert.That(car.Snapshot(), Is.EqualTo(expected.Snapshot()));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(scaledAngle, Is.EqualTo(motionScale));
+                Assert.That(car.Snapshot(), Is.EqualTo(expected.Snapshot()));
+            }
+
         }
 
         [Test]
@@ -81,8 +89,12 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
             int scaledAngle = NativeContactGravity.Apply(car, 7, 1);
 
-            Assert.That(scaledAngle, Is.EqualTo(2147483645));
-            Assert.That(car.Snapshot(), Is.EqualTo(expected.Snapshot()));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(scaledAngle, Is.EqualTo(2147483645));
+                Assert.That(car.Snapshot(), Is.EqualTo(expected.Snapshot()));
+            }
+
         }
 
         [Test]

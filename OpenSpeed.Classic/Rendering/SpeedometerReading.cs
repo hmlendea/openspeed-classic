@@ -1,17 +1,11 @@
 namespace OpenSpeed.Classic.Rendering
 {
-    public sealed class SpeedometerReading
+    public sealed class SpeedometerReading(
+        float dialRatio,
+        int speedKilometresPerHour)
     {
-        public float DialRatio { get; }
+        public float DialRatio { get; } = dialRatio;
 
-        public int SpeedKilometresPerHour { get; }
-
-        public SpeedometerReading(
-            float dialRatio,
-            int speedKilometresPerHour)
-        {
-            DialRatio = dialRatio;
-            SpeedKilometresPerHour = speedKilometresPerHour;
-        }
+        public int SpeedKilometresPerHour { get; } = speedKilometresPerHour;
     }
 }

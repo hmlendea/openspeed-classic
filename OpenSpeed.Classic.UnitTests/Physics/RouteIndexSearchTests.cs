@@ -10,6 +10,28 @@ namespace OpenSpeed.Classic.UnitTests.Physics
     [TestFixture]
     public sealed class RouteIndexSearchTests
     {
+        [TestCase(0, 0, 1, 0)]
+        [TestCase(0, 15, 16, 1)]
+        [TestCase(15, 0, 16, 1)]
+        [TestCase(4, 8, 16, 4)]
+        [TestCase(8, 4, 16, 4)]
+        [TestCase(0, 7, 16, 7)]
+        [TestCase(0, 8, 16, 8)]
+        [TestCase(0, 9, 16, 7)]
+        [TestCase(-1, 2, 16, 3)]
+        [TestCase(0, 32, 16, -16)]
+        [TestCase(0, 0, 0, 0)]
+        [TestCase(int.MinValue, int.MaxValue, 16, -1)]
+        [TestCase(int.MinValue, 0, 16, int.MinValue)]
+        public void GivenRawRouteIndices_WhenCalculatingCircularDistance_ThenSignedSourceArithmeticIsPreserved(
+            int firstIndex,
+            int secondIndex,
+            int recordCount,
+            int expectedDistance)
+            => Assert.That(
+                RouteIndexSearch.CalculateCircularDistance(firstIndex, secondIndex, recordCount),
+                Is.EqualTo(expectedDistance));
+
         [TestCase(0, 0, 0)]
         [TestCase(1, 0, 0)]
         [TestCase(-1, 1, 0)]

@@ -142,21 +142,25 @@ namespace OpenSpeed.Classic.UnitTests.Configuration
 
             ApplicationSettings settings = settingsLoader.Load(filePath);
 
-            Assert.That(
-                settings.Assets.Sources.Single().TextureVariant,
-                Is.EqualTo(TrackTextureVariant.SE));
-            Assert.That(settings.Rendering.AreShadowsEnabled);
-            Assert.That(settings.Rendering.Is3DfxEnabled, Is.Null);
-            Assert.That(settings.Rendering.IsVignetteEnabled);
-            Assert.That(settings.Rendering.ScreenHeight, Is.EqualTo(968));
-            Assert.That(settings.Rendering.ScreenWidth, Is.EqualTo(1720));
-            Assert.That(settings.StartupCar.Identifier, Is.EqualTo("McLarenF1"));
-            Assert.That(settings.StartupCar.Colour, Is.Null);
-            Assert.That(
-              settings.Assets.Sources.Single().OverridesDirectory,
-              Is.EqualTo("/test-assets"));
-            Assert.That(settings.Controls.Accelerate.Primary, Is.EqualTo(Keys.Up));
-            Assert.That(settings.Controls.Accelerate.Secondary, Is.EqualTo(Keys.W));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                            settings.Assets.Sources.Single().TextureVariant,
+                            Is.EqualTo(TrackTextureVariant.SE));
+                Assert.That(settings.Rendering.AreShadowsEnabled);
+                Assert.That(settings.Rendering.Is3DfxEnabled, Is.Null);
+                Assert.That(settings.Rendering.IsVignetteEnabled);
+                Assert.That(settings.Rendering.ScreenHeight, Is.EqualTo(968));
+                Assert.That(settings.Rendering.ScreenWidth, Is.EqualTo(1720));
+                Assert.That(settings.StartupCar.Identifier, Is.EqualTo("McLarenF1"));
+                Assert.That(settings.StartupCar.Colour, Is.Null);
+                Assert.That(
+                  settings.Assets.Sources.Single().OverridesDirectory,
+                  Is.EqualTo("/test-assets"));
+                Assert.That(settings.Controls.Accelerate.Primary, Is.EqualTo(Keys.Up));
+                Assert.That(settings.Controls.Accelerate.Secondary, Is.EqualTo(Keys.W));
+            }
+
         }
 
         [TestCase("#12abEF", 18, 171, 239)]

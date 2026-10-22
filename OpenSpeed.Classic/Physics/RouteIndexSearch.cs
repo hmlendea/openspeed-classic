@@ -8,6 +8,27 @@ namespace OpenSpeed.Classic.Physics
 
         private static int FallbackThreshold => 0x10000;
 
+        /// <summary>
+        /// Calculates sub_462F70's signed circular index distance with native dword wrapping.
+        /// Inputs are raw source values; no index normalisation or range clamping is applied.
+        /// </summary>
+        public static int CalculateCircularDistance(int firstIndex, int secondIndex, int recordCount)
+        {
+            int lowerIndex = firstIndex;
+            int upperIndex = secondIndex;
+
+            if (firstIndex > secondIndex)
+            {
+                lowerIndex = secondIndex;
+                upperIndex = firstIndex;
+            }
+
+            int directDistance = unchecked(upperIndex - lowerIndex);
+            int wrappedDistance = unchecked(lowerIndex + unchecked(recordCount - upperIndex));
+
+            return Math.Min(directDistance, wrappedDistance);
+        }
+
         public static int CalculateCandidateMetric(FixedVector point, FixedVector candidate)
         {
             int third = unchecked(point.Third - candidate.Third) >> 12;

@@ -180,7 +180,8 @@ namespace OpenSpeed.Classic
                 playerSimulation = new PlayerVehicleSimulation(
                     currentCar.PhysicsSpecifications,
                     CurrentTrack.PhysicsRoute,
-                    Enum.Parse<CarIdentifier>(currentCar.Identifier, true));
+                    Enum.Parse<CarIdentifier>(currentCar.Identifier, true),
+                    new TrackRoadGeometry(CurrentTrack.Blocks));
                 carWorld = PhysicsRenderAdapter.CreateWorld(playerSimulation.State);
                 carRenderer = new CarRenderer(GraphicsDevice);
                 carRenderer.Load(currentCar);

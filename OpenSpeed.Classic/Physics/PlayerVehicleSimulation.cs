@@ -7,6 +7,7 @@ namespace OpenSpeed.Classic.Physics
     public sealed class PlayerVehicleSimulation : IPlayerVehicleSimulation
     {
         private readonly PhysicsRoute route;
+        private readonly TrackRoadGeometry? roadGeometry;
         private readonly CarSpecifications descriptor;
         private readonly CarRuntimeType runtimeType = new();
         private readonly PhysicsContext context = new()
@@ -22,6 +23,18 @@ namespace OpenSpeed.Classic.Physics
         public CarMemory State { get; } = new();
 
         public bool IsGrounded { get; private set; }
+
+        public PlayerVehicleSimulation(
+            CarSpecifications source,
+            PhysicsRoute route,
+            CarIdentifier carIdentifier,
+            TrackRoadGeometry roadGeometry)
+            : this(source, route, carIdentifier)
+        {
+            ArgumentNullException.ThrowIfNull(roadGeometry);
+            this.roadGeometry = roadGeometry;
+            IsGrounded = ProvisionalRouteContact.Resolve(State, route, roadGeometry);
+        }
 
         public PlayerVehicleSimulation(CarSpecifications source, PhysicsRoute route)
             : this(source, route, CarIdentifier.McLarenF1)
@@ -193,7 +206,7 @@ namespace OpenSpeed.Classic.Physics
 
             BodyMotion.IntegrateScaledPlayerPosition(State);
             BodyMotion.IntegratePlayerBasis(State);
-            IsGrounded = ProvisionalRouteContact.Resolve(State, route);
+            IsGrounded = ProvisionalRouteContact.Resolve(State, route, roadGeometry);
         }
     }
 }

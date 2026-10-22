@@ -18,6 +18,18 @@ namespace OpenSpeed.Classic.Physics
 
         private static int SurfaceOffset => 0x184;
 
+        /// <summary>
+        /// Dispatches the current position and native query mode to the supplied route query.
+        /// The caller owns the query context corresponding to the car's byte offset 0x08.
+        /// </summary>
+        public static void DispatchRouteQuery(CarMemory car, Action<FixedVector, int> queryRoute)
+        {
+            ArgumentNullException.ThrowIfNull(car);
+            ArgumentNullException.ThrowIfNull(queryRoute);
+            int queryMode = 1 - car.ReadByte(ContactModeOffset);
+            queryRoute(FixedVectors.Read(car, 0x9C), queryMode);
+        }
+
         public static void Update(
             CarMemory car,
             Action<CarMemory> transitionContactMode,

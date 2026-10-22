@@ -45,7 +45,9 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             string root = Environment.GetEnvironmentVariable("OPENSPEED_TEST_ASSET_ROOT")!;
             NeedForSpeed2TrackLoader loader = new(new FilePathResolver(Mock.Of<ILogger>()));
             LoadedTrack track = loader.Load(root, trackIdentifier);
-            PlayerVehicleSimulation simulation = new(LoadDescriptor("pFF50.dat"), track.PhysicsRoute!, CarIdentifier.FerrariF50);
+            PlayerVehicleSimulation simulation = new(
+                LoadDescriptor("pFF50.dat"), track.PhysicsRoute!, CarIdentifier.FerrariF50,
+                new TrackRoadGeometry(track.Blocks));
             int initialFirst = simulation.State[0x9C];
             int initialThird = simulation.State[0xA4];
             Advance(simulation, 8, 1, 0, false);

@@ -25,13 +25,21 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
             if (expectedGrounded)
             {
-                Assert.That(car[0xA0], Is.Zero);
-                Assert.That(car[0xAC], Is.Zero);
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(car[0xA0], Is.Zero);
+                    Assert.That(car[0xAC], Is.Zero);
+                }
+
             }
             else
             {
-                Assert.That(car[0xA0], Is.EqualTo(height * X86Math.One));
-                Assert.That(car[0xAC], Is.EqualTo(velocity * X86Math.One));
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(car[0xA0], Is.EqualTo(height * X86Math.One));
+                    Assert.That(car[0xAC], Is.EqualTo(velocity * X86Math.One));
+                }
+
             }
         }
 

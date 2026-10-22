@@ -20,10 +20,14 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             car[0xAC] = -32;
             car[0x14C] = 0x12345678;
 
-            Assert.That(NativeContactGeometry.TryResolveContactMode(car), Is.False);
-            Assert.That(car[0xA0], Is.EqualTo(42));
-            Assert.That(car[0xAC], Is.EqualTo(-32));
-            Assert.That(car[0x14C], Is.EqualTo(0x12345678));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(NativeContactGeometry.TryResolveContactMode(car), Is.False);
+                Assert.That(car[0xA0], Is.EqualTo(42));
+                Assert.That(car[0xAC], Is.EqualTo(-32));
+                Assert.That(car[0x14C], Is.EqualTo(0x12345678));
+            }
+
         }
 
         [TestCase(0, 0x78000)]
@@ -46,16 +50,20 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             car[0xA8] = 42;
             car[0x15C] = 613;
 
-            Assert.That(NativeContactGeometry.TryResolveContactMode(car));
-            Assert.That(car[0xA0], Is.EqualTo(expectedHeight));
-            Assert.That(car[0xAC], Is.Zero);
-            Assert.That(car[0x14C], Is.EqualTo(0x12340000));
-            Assert.That(car.ReadByte(0x8E), Is.Zero);
-            Assert.That(car.ReadByte(0x8F), Is.EqualTo(16));
-            Assert.That(car.ReadByte(0x8D), Is.EqualTo(1));
-            Assert.That(car.ReadByte(0x8C), Is.EqualTo(1));
-            Assert.That(car[0xA8], Is.EqualTo(42));
-            Assert.That(car[0x15C], Is.EqualTo(613));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(NativeContactGeometry.TryResolveContactMode(car));
+                Assert.That(car[0xA0], Is.EqualTo(expectedHeight));
+                Assert.That(car[0xAC], Is.Zero);
+                Assert.That(car[0x14C], Is.EqualTo(0x12340000));
+                Assert.That(car.ReadByte(0x8E), Is.Zero);
+                Assert.That(car.ReadByte(0x8F), Is.EqualTo(16));
+                Assert.That(car.ReadByte(0x8D), Is.EqualTo(1));
+                Assert.That(car.ReadByte(0x8C), Is.EqualTo(1));
+                Assert.That(car[0xA8], Is.EqualTo(42));
+                Assert.That(car[0x15C], Is.EqualTo(613));
+            }
+
         }
 
         [TestCase(0x1998)]
@@ -68,8 +76,12 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             car[0x128] = normalSecond;
             car[0x10C] = 0x8000;
 
-            Assert.That(NativeContactGeometry.TryResolveContactMode(car));
-            Assert.That(car[0xA0], Is.EqualTo(unchecked((int)0x83008000)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(NativeContactGeometry.TryResolveContactMode(car));
+                Assert.That(car[0xA0], Is.EqualTo(unchecked((int)0x83008000)));
+            }
+
         }
     }
 }

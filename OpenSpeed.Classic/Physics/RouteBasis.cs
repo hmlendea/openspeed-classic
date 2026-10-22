@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 
 namespace OpenSpeed.Classic.Physics
 {
@@ -19,6 +20,112 @@ namespace OpenSpeed.Classic.Physics
         private static int NormalRecordOffset => 0x0C;
 
         private static int ForwardRecordOffset => 0x0F;
+
+        private static int ActiveBodyOffset => 0x8D;
+
+        private static int ContactModeOffset => 0x8C;
+
+        private static int RouteIndexOffset => 0x14;
+
+        private static int ExtensionOffset => 0x18;
+
+        private static int ExtensionReferenceOffset => 0x28;
+
+        private static int ExtensionDirectionSize => 12;
+
+        /// <summary>
+        /// Refreshes sub_462FA0's route basis with an explicit native assertion/query dependency
+        /// and the twelve bytes addressed by the extension direction pointer when present.
+        /// </summary>
+        public static void Refresh(
+            CarMemory car,
+            PhysicsRoute route,
+            Func<CarMemory, bool> queryExtensionReference,
+            ReadOnlySpan<byte> extensionDirections)
+        {
+            ArgumentNullException.ThrowIfNull(car);
+            ArgumentNullException.ThrowIfNull(route);
+            ArgumentNullException.ThrowIfNull(queryExtensionReference);
+
+            if (car.ReadByte(ActiveBodyOffset) == 0)
+            {
+                return;
+            }
+
+            if (car.ReadByte(ContactModeOffset) != 0)
+            {
+                LoadRecord(car, route, car[RouteIndexOffset]);
+
+                return;
+            }
+
+            bool usesExtensionReference = queryExtensionReference(car);
+            RefreshOrdinary(car, route, usesExtensionReference, extensionDirections);
+        }
+
+        private static void RefreshOrdinary(
+            CarMemory car,
+            PhysicsRoute route,
+            bool usesExtensionReference,
+            ReadOnlySpan<byte> extensionDirections)
+        {
+            int index = car[RouteIndexOffset];
+            FixedVector reference = route.Position(index);
+
+            if (usesExtensionReference && car[ExtensionOffset] != 0)
+            {
+                reference = FixedVectors.Read(car, ExtensionReferenceOffset);
+            }
+
+            FixedVectors.Write(car, ReferencePointOffset, reference);
+            FixedVector normal = route.Direction(index, NormalRecordOffset);
+            FixedVector forward = route.Direction(index, ForwardRecordOffset);
+
+            if (car[ExtensionOffset] != 0)
+            {
+                if (extensionDirections.Length < ExtensionDirectionSize)
+                {
+                    throw new ArgumentException(
+                        $"The extension direction buffer contains {extensionDirections.Length} bytes; at least {ExtensionDirectionSize} are required.",
+                        nameof(extensionDirections));
+                }
+
+                normal = ReadExtensionDirection(extensionDirections);
+                forward = ReadExtensionDirection(extensionDirections.Slice(ExtensionDirectionSize / 2));
+            }
+
+            FixedVectors.Write(car, RouteBasisOffset + FixedMatrix.Dimension * sizeof(int), normal);
+            FixedVectors.Write(car, RouteBasisOffset + FixedMatrix.Dimension * sizeof(int) * 2, forward);
+            FixedVectors.Write(car, RouteBasisOffset, FixedVectors.Cross(normal, forward));
+            car[HeadingOffset] = route.Heading(index);
+        }
+
+        private static FixedVector ReadExtensionDirection(ReadOnlySpan<byte> directions) => new()
+        {
+            First = BinaryPrimitives.ReadInt16LittleEndian(directions) << 1,
+            Second = BinaryPrimitives.ReadInt16LittleEndian(directions.Slice(sizeof(short))) << 1,
+            Third = BinaryPrimitives.ReadInt16LittleEndian(directions.Slice(sizeof(short) * 2)) << 1
+        };
+
+        /// <summary>
+        /// Refreshes the direct-record branch of sub_462FA0 for an active contact-mode body.
+        /// Returns false without writes when the body is inactive or ordinary queries are required.
+        /// </summary>
+        public static bool TryRefreshContactMode(CarMemory car, PhysicsRoute route)
+        {
+            ArgumentNullException.ThrowIfNull(car);
+            ArgumentNullException.ThrowIfNull(route);
+
+            if (car.ReadByte(ActiveBodyOffset) == 0 ||
+                car.ReadByte(ContactModeOffset) == 0)
+            {
+                return false;
+            }
+
+            LoadRecord(car, route, car[RouteIndexOffset]);
+
+            return true;
+        }
 
         public static void LoadRecord(CarMemory car, PhysicsRoute route, int index)
         {
