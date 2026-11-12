@@ -3,9 +3,10 @@ using System;
 namespace OpenSpeed.Classic.Physics
 {
     /// <summary>
-    /// Shared arithmetic for the oriented-box candidate helpers <c>sub_457CD0</c> and
-    /// <c>sub_457A10</c>. It provides the probe projection, the inclusive extent test,
-    /// the extreme-corner construction, and the signed world normal.
+    /// Shared arithmetic for the four oriented-box candidate helpers
+    /// <c>sub_457CD0</c>, <c>sub_4577D0</c>, <c>sub_457A10</c>, and <c>sub_457590</c>.
+    /// It provides the probe projection, the inclusive extent test, the extreme-corner
+    /// construction, and the signed world normal.
     /// </summary>
     internal static class OrientedBoxCandidateArithmetic
     {
@@ -40,8 +41,8 @@ namespace OpenSpeed.Classic.Physics
             => SetComponent(ref vector, component, unchecked(GetComponent(vector, component) + value));
 
         public static int[] CalculateProbe(
-            int[] deltaInFrame,
-            int[] extentProjections,
+            ReadOnlySpan<int> deltaInFrame,
+            ReadOnlySpan<int> extentProjections,
             ReadOnlySpan<int> coefficients)
         {
             int[] probe = new int[FixedMatrix.Dimension];
@@ -60,6 +61,28 @@ namespace OpenSpeed.Classic.Physics
             }
 
             return probe;
+        }
+
+        public static int[] Negate(ReadOnlySpan<int> values)
+        {
+            int[] negated = new int[values.Length];
+
+            for (int index = 0; index < values.Length; index += 1)
+            {
+                negated[index] = unchecked(-values[index]);
+            }
+
+            return negated;
+        }
+
+        public static void ValidateCoefficients(ReadOnlySpan<int> coefficients)
+        {
+            if (coefficients.Length != FixedMatrix.Dimension)
+            {
+                throw new ArgumentException(
+                    $"The candidate requires {FixedMatrix.Dimension} coefficients, but {coefficients.Length} were supplied.",
+                    nameof(coefficients));
+            }
         }
 
         public static bool IsInsideExtents(
