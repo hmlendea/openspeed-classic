@@ -109,6 +109,101 @@ namespace OpenSpeed.Classic.Physics
             return vector.Third;
         }
 
+        /// <summary>
+        /// Translates <c>sub_45EB60</c>: the overflow-safe magnitude used by the
+        /// relative-velocity correction constructor. Components are arithmetic-halved until
+        /// inside the component limit and until the quarter-summed squares fit, the
+        /// magnitude-table approximation is evaluated, and the halving count is restored by
+        /// repeated wrapping doubling.
+        /// </summary>
+        public static int Length(FixedVector vector)
+        {
+            int first = vector.First;
+            int second = vector.Second;
+            int third = vector.Third;
+            int reductions = 0;
+
+            while (X86Math.Abs(first) > NormalisationComponentLimit ||
+                X86Math.Abs(second) > NormalisationComponentLimit ||
+                X86Math.Abs(third) > NormalisationComponentLimit)
+            {
+                first >>= 1;
+                second >>= 1;
+                third >>= 1;
+                reductions += 1;
+            }
+
+            int firstSquared;
+            int secondSquared;
+            int thirdSquared;
+
+            while (true)
+            {
+                firstSquared = X86Math.MultiplyQ16(first, first);
+                secondSquared = X86Math.MultiplyQ16(second, second);
+                thirdSquared = X86Math.MultiplyQ16(third, third);
+                uint quarterSum = unchecked(((uint)firstSquared >> 2) +
+                    ((uint)secondSquared >> 2) + ((uint)thirdSquared >> 2));
+
+                if (quarterSum <= NormalisationSumLimit)
+                {
+                    break;
+                }
+
+                first >>= 1;
+                second >>= 1;
+                third >>= 1;
+                reductions += 1;
+            }
+
+            uint sum = unchecked((uint)(firstSquared + secondSquared + thirdSquared));
+            int magnitude = 0;
+
+            if (sum != 0)
+            {
+                int index = BitOperations.Log2(sum);
+                magnitude = unchecked((int)((ulong)sum * (uint)PhysicsTables.MagnitudeMultipliers[index] >> 16) +
+                    PhysicsTables.MagnitudeAddends[index]);
+            }
+
+            while (reductions > 0)
+            {
+                magnitude = unchecked(magnitude + magnitude);
+                reductions -= 1;
+            }
+
+            return magnitude;
+        }
+
+        /// <summary>
+        /// Translates <c>sub_45EEB0</c>: the chained maximum-plus-quarter distance used by the
+        /// opponent pre-pass. The three absolute axis differences are combined in source order,
+        /// first comparing the X/Y pair and then that result against Z.
+        /// </summary>
+        public static int ChebyshevLikeDistance(FixedVector first, FixedVector second)
+        {
+            int firstAxis = X86Math.Abs(unchecked(first.First - second.First));
+            int secondAxis = X86Math.Abs(unchecked(first.Second - second.Second));
+            int thirdAxis = X86Math.Abs(unchecked(first.Third - second.Third));
+            int pair;
+
+            if (firstAxis <= secondAxis)
+            {
+                pair = unchecked((firstAxis >> 2) + secondAxis);
+            }
+            else
+            {
+                pair = unchecked((secondAxis >> 2) + firstAxis);
+            }
+
+            if (pair <= thirdAxis)
+            {
+                return unchecked((pair >> 2) + thirdAxis);
+            }
+
+            return unchecked(pair + (thirdAxis >> 2));
+        }
+
         public static void NormaliseBasisVector(FixedVector vector)
         {
             uint sum = unchecked((uint)Dot(vector, vector));

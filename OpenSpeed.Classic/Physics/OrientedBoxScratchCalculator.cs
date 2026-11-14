@@ -51,6 +51,26 @@ namespace OpenSpeed.Classic.Physics
             }
         }
 
+        /// <summary>
+        /// Recomputes only the centre deltas, which is what <c>sub_4543F0</c> repeats on
+        /// every iteration of its correction loop. Rotation cells and extent projections
+        /// stay at their single pre-loop values with the original routine.
+        /// </summary>
+        public static void UpdateDeltas(CarMemory first, CarMemory second, OrientedBoxScratch scratch)
+        {
+            ArgumentNullException.ThrowIfNull(first);
+            ArgumentNullException.ThrowIfNull(second);
+            ArgumentNullException.ThrowIfNull(scratch);
+            FixedVector delta = FixedVectors.Subtract(
+                FixedVectors.Read(second, PositionOffset), FixedVectors.Read(first, PositionOffset));
+
+            for (int row = 0; row < FixedMatrix.Dimension; row += 1)
+            {
+                scratch.DeltaInFirst[row] = FixedVectors.Dot(ReadRow(first, row), delta);
+                scratch.DeltaInSecond[row] = FixedVectors.Dot(ReadRow(second, row), delta);
+            }
+        }
+
         private static FixedVector ReadRow(CarMemory car, int row)
             => FixedVectors.Read(car, PrimaryBasisOffset + row * FixedMatrix.Dimension * sizeof(int));
     }

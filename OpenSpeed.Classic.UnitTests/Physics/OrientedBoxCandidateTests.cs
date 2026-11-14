@@ -20,11 +20,15 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             CarMemory second = BuildCar();
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(OrientedBoxCandidate.TryApplyFirstProbe(
-                first, second, scratch, coefficients, out FixedVector? point));
-            Assert.That(point!.First, Is.EqualTo(unchecked(coefficients[0] * X86Math.One)));
-            Assert.That(point.Second, Is.EqualTo(unchecked(coefficients[1] * (2 * X86Math.One))));
-            Assert.That(point.Third, Is.EqualTo(unchecked(coefficients[2] * (3 * X86Math.One))));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(OrientedBoxCandidate.TryApplyFirstProbe(
+                            first, second, scratch, coefficients, out FixedVector? point));
+                Assert.That(point!.First, Is.EqualTo(unchecked(coefficients[0] * X86Math.One)));
+                Assert.That(point.Second, Is.EqualTo(unchecked(coefficients[1] * (2 * X86Math.One))));
+                Assert.That(point.Third, Is.EqualTo(unchecked(coefficients[2] * (3 * X86Math.One))));
+            }
+
         }
 
         [TestCase(new[] { 1, 0, 0 })]
@@ -36,12 +40,16 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             CarMemory second = BuildCar();
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(OrientedBoxCandidate.TryApplyFirstProbeWithNormal(
-                first, second, scratch, coefficients, out FixedVector? point, out FixedVector? normal));
-            Assert.That(point!.First, Is.EqualTo(unchecked(coefficients[0] * X86Math.One)));
-            Assert.That(normal!.First, Is.EqualTo(coefficients[0] * X86Math.One));
-            Assert.That(normal.Second, Is.EqualTo(coefficients[1] * X86Math.One));
-            Assert.That(normal.Third, Is.EqualTo(coefficients[2] * X86Math.One));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(OrientedBoxCandidate.TryApplyFirstProbeWithNormal(
+                            first, second, scratch, coefficients, out FixedVector? point, out FixedVector? normal));
+                Assert.That(point!.First, Is.EqualTo(unchecked(coefficients[0] * X86Math.One)));
+                Assert.That(normal!.First, Is.EqualTo(coefficients[0] * X86Math.One));
+                Assert.That(normal.Second, Is.EqualTo(coefficients[1] * X86Math.One));
+                Assert.That(normal.Third, Is.EqualTo(coefficients[2] * X86Math.One));
+            }
+
         }
 
         [TestCase(new[] { 1, 0, 0 })]
@@ -57,11 +65,15 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             CarMemory second = BuildCar();
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(OrientedBoxCandidate.TryApplySecondProbe(
-                first, second, scratch, coefficients, out FixedVector? point));
-            Assert.That(point!.First, Is.EqualTo(unchecked(coefficients[0] * X86Math.One)));
-            Assert.That(point.Second, Is.EqualTo(unchecked(coefficients[1] * (2 * X86Math.One))));
-            Assert.That(point.Third, Is.EqualTo(unchecked(coefficients[2] * (3 * X86Math.One))));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(OrientedBoxCandidate.TryApplySecondProbe(
+                            first, second, scratch, coefficients, out FixedVector? point));
+                Assert.That(point!.First, Is.EqualTo(unchecked(coefficients[0] * X86Math.One)));
+                Assert.That(point.Second, Is.EqualTo(unchecked(coefficients[1] * (2 * X86Math.One))));
+                Assert.That(point.Third, Is.EqualTo(unchecked(coefficients[2] * (3 * X86Math.One))));
+            }
+
         }
 
         [TestCase(new[] { 1, 0, 0 })]
@@ -73,12 +85,16 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             CarMemory second = BuildCar();
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(OrientedBoxCandidate.TryApplySecondProbeWithNormal(
-                first, second, scratch, coefficients, out FixedVector? point, out FixedVector? normal));
-            Assert.That(point!.First, Is.EqualTo(unchecked(coefficients[0] * X86Math.One)));
-            Assert.That(normal!.First, Is.EqualTo(unchecked(-coefficients[0] * X86Math.One)));
-            Assert.That(normal.Second, Is.EqualTo(unchecked(-coefficients[1] * X86Math.One)));
-            Assert.That(normal.Third, Is.EqualTo(unchecked(-coefficients[2] * X86Math.One)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(OrientedBoxCandidate.TryApplySecondProbeWithNormal(
+                            first, second, scratch, coefficients, out FixedVector? point, out FixedVector? normal));
+                Assert.That(point!.First, Is.EqualTo(unchecked(coefficients[0] * X86Math.One)));
+                Assert.That(normal!.First, Is.EqualTo(unchecked(-coefficients[0] * X86Math.One)));
+                Assert.That(normal.Second, Is.EqualTo(unchecked(-coefficients[1] * X86Math.One)));
+                Assert.That(normal.Third, Is.EqualTo(unchecked(-coefficients[2] * X86Math.One)));
+            }
+
         }
 
         [TestCase(0x10001)]
@@ -90,9 +106,13 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             second[0x9C] = separation;
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(OrientedBoxCandidate.TryApplyFirstProbe(
-                first, second, scratch, [1, 0, 0], out FixedVector? point), Is.False);
-            Assert.That(point, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(OrientedBoxCandidate.TryApplyFirstProbe(
+                            first, second, scratch, [1, 0, 0], out FixedVector? point), Is.False);
+                Assert.That(point, Is.Null);
+            }
+
         }
 
         [TestCase(-0x10001)]
@@ -104,9 +124,13 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             second[0x9C] = separation;
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(OrientedBoxCandidate.TryApplySecondProbe(
-                first, second, scratch, [1, 0, 0], out FixedVector? point), Is.False);
-            Assert.That(point, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(OrientedBoxCandidate.TryApplySecondProbe(
+                            first, second, scratch, [1, 0, 0], out FixedVector? point), Is.False);
+                Assert.That(point, Is.Null);
+            }
+
         }
 
         [Test]
@@ -117,9 +141,13 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             second[0x108] = 0xFFFF;
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(OrientedBoxCandidate.TryApplyFirstProbeWithNormal(
-                first, second, scratch, [1, 0, 0], out FixedVector? point, out _));
-            Assert.That(point!.First, Is.EqualTo(0xFFFF));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(OrientedBoxCandidate.TryApplyFirstProbeWithNormal(
+                            first, second, scratch, [1, 0, 0], out FixedVector? point, out _));
+                Assert.That(point!.First, Is.EqualTo(0xFFFF));
+            }
+
         }
 
         [TestCase(1)]

@@ -14,13 +14,17 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             CarMemory second = BuildCar();
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(
-                OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result));
-            Assert.That(result.Routine, Is.EqualTo(OrientedBoxContactCandidateRoutine.AxisCornerFromSecond));
-            Assert.That(result.Point.First, Is.EqualTo(X86Math.One));
-            Assert.That(result.Point.Second, Is.Zero);
-            Assert.That(result.Point.Third, Is.Zero);
-            Assert.That(result.Normal, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                            OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result));
+                Assert.That(result.Routine, Is.EqualTo(OrientedBoxContactCandidateRoutine.AxisCornerFromSecond));
+                Assert.That(result.Point.First, Is.EqualTo(X86Math.One));
+                Assert.That(result.Point.Second, Is.Zero);
+                Assert.That(result.Point.Third, Is.Zero);
+                Assert.That(result.Normal, Is.Null);
+            }
+
         }
 
         [Test]
@@ -32,11 +36,15 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             second[0xA0] = -4 * X86Math.One;
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(
-                OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result));
-            Assert.That(result.Routine, Is.EqualTo(OrientedBoxContactCandidateRoutine.AxisCornerFromSecond));
-            Assert.That(result.Point, Is.Not.Null);
-            Assert.That(result.Normal, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                            OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result));
+                Assert.That(result.Routine, Is.EqualTo(OrientedBoxContactCandidateRoutine.AxisCornerFromSecond));
+                Assert.That(result.Point, Is.Not.Null);
+                Assert.That(result.Normal, Is.Null);
+            }
+
         }
 
         [Test]
@@ -48,10 +56,14 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             second[0xA0] = 3 * X86Math.One;
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(
-                OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result));
-            Assert.That(result.Routine, Is.EqualTo(OrientedBoxContactCandidateRoutine.SignCornerFromSecond));
-            Assert.That(result.Normal, Is.Not.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                            OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result));
+                Assert.That(result.Routine, Is.EqualTo(OrientedBoxContactCandidateRoutine.SignCornerFromSecond));
+                Assert.That(result.Normal, Is.Not.Null);
+            }
+
         }
 
         [Test]
@@ -63,10 +75,14 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             second[0xA4] = 32 * X86Math.One;
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(
-                OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result),
-                Is.False);
-            Assert.That(result, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                            OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result),
+                            Is.False);
+                Assert.That(result, Is.Null);
+            }
+
         }
 
         [Test]
@@ -79,11 +95,15 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             second[0xA4] = -2 * X86Math.One;
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(
-                OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result));
-            Assert.That(result.Routine, Is.EqualTo(OrientedBoxContactCandidateRoutine.AxisCornerFromFirst));
-            Assert.That(result.Point, Is.Not.Null);
-            Assert.That(result.Normal, Is.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                            OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result));
+                Assert.That(result.Routine, Is.EqualTo(OrientedBoxContactCandidateRoutine.AxisCornerFromFirst));
+                Assert.That(result.Point, Is.Not.Null);
+                Assert.That(result.Normal, Is.Null);
+            }
+
         }
 
         [Test]
@@ -96,10 +116,14 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             second[0xA4] = -2 * X86Math.One;
             OrientedBoxScratch scratch = BuildScratch(first, second);
 
-            Assert.That(
-                OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result));
-            Assert.That(result.Routine, Is.EqualTo(OrientedBoxContactCandidateRoutine.SignCornerFromFirst));
-            Assert.That(result.Normal, Is.Not.Null);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                            OrientedBoxContactSearch.TrySearch(first, second, scratch, out OrientedBoxContactCandidate result));
+                Assert.That(result.Routine, Is.EqualTo(OrientedBoxContactCandidateRoutine.SignCornerFromFirst));
+                Assert.That(result.Normal, Is.Not.Null);
+            }
+
         }
 
         [Test]

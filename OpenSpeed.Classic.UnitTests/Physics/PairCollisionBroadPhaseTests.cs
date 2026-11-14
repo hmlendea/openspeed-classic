@@ -45,9 +45,13 @@ namespace OpenSpeed.Classic.UnitTests.Physics
                 },
                 current => calls.Add("refresh"));
 
-            Assert.That(resolved, Is.EqualTo(expectedPairs));
-            Assert.That(calls.Contains("resolve"), Is.EqualTo(expectedPairs == 1));
-            Assert.That(calls.Contains("refresh"), Is.EqualTo(expectsRefresh));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolved, Is.EqualTo(expectedPairs));
+                Assert.That(calls.Contains("resolve"), Is.EqualTo(expectedPairs == 1));
+                Assert.That(calls.Contains("refresh"), Is.EqualTo(expectsRefresh));
+            }
+
 
             if (expectsEarlyReturn)
             {
@@ -108,9 +112,13 @@ namespace OpenSpeed.Classic.UnitTests.Physics
                 },
                 current => refreshed = true);
 
-            Assert.That(car[0x16C], Is.EqualTo(1));
-            Assert.That(resolved, Is.Zero);
-            Assert.That(refreshed);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(car[0x16C], Is.EqualTo(1));
+                Assert.That(resolved, Is.Zero);
+                Assert.That(refreshed);
+            }
+
         }
 
         [Test]
@@ -137,8 +145,12 @@ namespace OpenSpeed.Classic.UnitTests.Physics
                 {
                     if (pairCount == 0)
                     {
-                        Assert.That(current[0xE8], Is.EqualTo(preScaled));
-                        Assert.That(earlier[0xE8], Is.EqualTo(preScaled));
+                        using (Assert.EnterMultipleScope())
+                        {
+                            Assert.That(current[0xE8], Is.EqualTo(preScaled));
+                            Assert.That(earlier[0xE8], Is.EqualTo(preScaled));
+                        }
+
                     }
 
                     pairCount += 1;
@@ -147,14 +159,22 @@ namespace OpenSpeed.Classic.UnitTests.Physics
                 },
                 current => Assert.That(current[0xE8], Is.InRange(-0x1CCCC, 0x1CCCC)));
 
-            Assert.That(resolved, Is.EqualTo(2));
-            Assert.That(pairCount, Is.EqualTo(2));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolved, Is.EqualTo(2));
+                Assert.That(pairCount, Is.EqualTo(2));
+            }
+
 
             for (int offset = 0xE8; offset <= 0xF0; offset += sizeof(int))
             {
-                Assert.That(car[offset], Is.InRange(-0x1CCCC, 0x1CCCC));
-                Assert.That(first[offset], Is.InRange(-0x1CCCC, 0x1CCCC));
-                Assert.That(second[offset], Is.InRange(-0x1CCCC, 0x1CCCC));
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(car[offset], Is.InRange(-0x1CCCC, 0x1CCCC));
+                    Assert.That(first[offset], Is.InRange(-0x1CCCC, 0x1CCCC));
+                    Assert.That(second[offset], Is.InRange(-0x1CCCC, 0x1CCCC));
+                }
+
             }
         }
 
@@ -174,8 +194,12 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
             for (int offset = 0xE8; offset <= 0xF0; offset += sizeof(int))
             {
-                Assert.That(car[offset], Is.InRange(-0x1CCCC, 0x1CCCC));
-                Assert.That(earlierCar[offset], Is.InRange(-0x1CCCC, 0x1CCCC));
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(car[offset], Is.InRange(-0x1CCCC, 0x1CCCC));
+                    Assert.That(earlierCar[offset], Is.InRange(-0x1CCCC, 0x1CCCC));
+                }
+
             }
         }
 

@@ -26,12 +26,16 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             car[0x160] = 613;
             car[0xB8] = X86Math.One;
 
-            Assert.That(
-                ProvisionalRouteContact.Resolve(car, new PhysicsRoute(records), BuildGeometry(0)),
-                Is.False);
-            Assert.That(car[0x9C], Is.EqualTo(horizontal * X86Math.One));
-            Assert.That(car[0xA8], Is.EqualTo(horizontal * X86Math.One));
-            Assert.That(car[0x160], Is.EqualTo(613));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                            ProvisionalRouteContact.Resolve(car, new PhysicsRoute(records), BuildGeometry(0)),
+                            Is.False);
+                Assert.That(car[0x9C], Is.EqualTo(horizontal * X86Math.One));
+                Assert.That(car[0xA8], Is.EqualTo(horizontal * X86Math.One));
+                Assert.That(car[0x160], Is.EqualTo(613));
+            }
+
         }
 
         [TestCase(0, 3000)]
@@ -63,8 +67,12 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             CarMemory car = new();
             car[0x9C] = horizontal * X86Math.One;
 
-            Assert.That(geometry.TryApplyPlane(car, expectedHeight * X86Math.One));
-            Assert.That(car[0x140], Is.EqualTo(expectedHeight * X86Math.One));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(geometry.TryApplyPlane(car, expectedHeight * X86Math.One));
+                Assert.That(car[0x140], Is.EqualTo(expectedHeight * X86Math.One));
+            }
+
         }
 
         [TestCase(0)]
@@ -77,9 +85,13 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             FixedMatrices.Write(car, 0xC4, FixedMatrices.Identity());
             car[0xA0] = height * X86Math.One;
 
-            Assert.That(ProvisionalRouteContact.Resolve(car, route, BuildGeometry(height)));
-            Assert.That(car[0xA0], Is.EqualTo(height * X86Math.One));
-            Assert.That(car[0x128], Is.GreaterThan(0x1999));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ProvisionalRouteContact.Resolve(car, route, BuildGeometry(height)));
+                Assert.That(car[0xA0], Is.EqualTo(height * X86Math.One));
+                Assert.That(car[0x128], Is.GreaterThan(0x1999));
+            }
+
         }
 
         [Test]

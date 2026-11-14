@@ -36,11 +36,15 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
             OrientedBoxScratchCalculator.Calculate(first, second, scratch);
 
-            Assert.That(scratch.Rotation[0], Is.EqualTo(X86Math.One));
-            Assert.That(scratch.Rotation[4], Is.EqualTo(X86Math.One));
-            Assert.That(scratch.Rotation[8], Is.EqualTo(X86Math.One));
-            Assert.That(scratch.Rotation[1], Is.Zero);
-            Assert.That(scratch.Rotation[3], Is.Zero);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(scratch.Rotation[0], Is.EqualTo(X86Math.One));
+                Assert.That(scratch.Rotation[4], Is.EqualTo(X86Math.One));
+                Assert.That(scratch.Rotation[8], Is.EqualTo(X86Math.One));
+                Assert.That(scratch.Rotation[1], Is.Zero);
+                Assert.That(scratch.Rotation[3], Is.Zero);
+            }
+
         }
 
         [Test]
@@ -56,10 +60,14 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
             OrientedBoxScratchCalculator.Calculate(first, second, scratch);
 
-            Assert.That(scratch.Rotation[0], Is.EqualTo(0x8000));
-            Assert.That(scratch.Rotation[3], Is.EqualTo(0x8000));
-            Assert.That(scratch.Rotation[1], Is.Zero);
-            Assert.That(scratch.Rotation[4], Is.EqualTo(X86Math.One));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(scratch.Rotation[0], Is.EqualTo(0x8000));
+                Assert.That(scratch.Rotation[3], Is.EqualTo(0x8000));
+                Assert.That(scratch.Rotation[1], Is.Zero);
+                Assert.That(scratch.Rotation[4], Is.EqualTo(X86Math.One));
+            }
+
         }
 
         [Test]
@@ -71,12 +79,16 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
             OrientedBoxScratchCalculator.Calculate(first, second, scratch);
 
-            Assert.That(scratch.DeltaInFirst[0], Is.EqualTo(0x10000));
-            Assert.That(scratch.DeltaInFirst[1], Is.EqualTo(0x20000));
-            Assert.That(scratch.DeltaInFirst[2], Is.EqualTo(-0x10000));
-            Assert.That(scratch.DeltaInSecond[0], Is.EqualTo(0x10000));
-            Assert.That(scratch.DeltaInSecond[1], Is.EqualTo(0x20000));
-            Assert.That(scratch.DeltaInSecond[2], Is.EqualTo(-0x10000));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(scratch.DeltaInFirst[0], Is.EqualTo(0x10000));
+                Assert.That(scratch.DeltaInFirst[1], Is.EqualTo(0x20000));
+                Assert.That(scratch.DeltaInFirst[2], Is.EqualTo(-0x10000));
+                Assert.That(scratch.DeltaInSecond[0], Is.EqualTo(0x10000));
+                Assert.That(scratch.DeltaInSecond[1], Is.EqualTo(0x20000));
+                Assert.That(scratch.DeltaInSecond[2], Is.EqualTo(-0x10000));
+            }
+
         }
 
         [Test]
@@ -94,12 +106,16 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
             OrientedBoxScratchCalculator.Calculate(first, second, scratch);
 
-            Assert.That(scratch.SecondExtentInFirst[0], Is.EqualTo(0x4000));
-            Assert.That(scratch.SecondExtentInFirst[4], Is.EqualTo(0x8000));
-            Assert.That(scratch.SecondExtentInFirst[8], Is.EqualTo(0xC000));
-            Assert.That(scratch.FirstExtentInSecond[0], Is.EqualTo(X86Math.One));
-            Assert.That(scratch.FirstExtentInSecond[4], Is.EqualTo(0x20000));
-            Assert.That(scratch.FirstExtentInSecond[8], Is.EqualTo(0x30000));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(scratch.SecondExtentInFirst[0], Is.EqualTo(0x4000));
+                Assert.That(scratch.SecondExtentInFirst[4], Is.EqualTo(0x8000));
+                Assert.That(scratch.SecondExtentInFirst[8], Is.EqualTo(0xC000));
+                Assert.That(scratch.FirstExtentInSecond[0], Is.EqualTo(X86Math.One));
+                Assert.That(scratch.FirstExtentInSecond[4], Is.EqualTo(0x20000));
+                Assert.That(scratch.FirstExtentInSecond[8], Is.EqualTo(0x30000));
+            }
+
         }
 
         [Test]
@@ -114,11 +130,15 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
             scratch.Clear();
 
-            Assert.That(scratch.Rotation, Is.All.Zero);
-            Assert.That(scratch.FirstExtentInSecond, Is.All.Zero);
-            Assert.That(scratch.SecondExtentInFirst, Is.All.Zero);
-            Assert.That(scratch.DeltaInFirst, Is.All.Zero);
-            Assert.That(scratch.DeltaInSecond, Is.All.Zero);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(scratch.Rotation, Is.All.Zero);
+                Assert.That(scratch.FirstExtentInSecond, Is.All.Zero);
+                Assert.That(scratch.SecondExtentInFirst, Is.All.Zero);
+                Assert.That(scratch.DeltaInFirst, Is.All.Zero);
+                Assert.That(scratch.DeltaInSecond, Is.All.Zero);
+            }
+
         }
 
         [Test]
