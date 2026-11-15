@@ -37,7 +37,8 @@ namespace OpenSpeed.Classic.Physics
             CarSpecifications descriptor,
             CarRuntimeType runtimeType,
             PhysicsContext context,
-            PhysicsRoute route)
+            PhysicsRoute route,
+            AlternateContactDependencies? dependencies = null)
         {
             ArgumentNullException.ThrowIfNull(car);
             ArgumentNullException.ThrowIfNull(descriptor);
@@ -70,8 +71,13 @@ namespace OpenSpeed.Classic.Physics
             TyreStateMachine.Update(car, descriptor, runtimeType, context);
 
             int force = Drivetrain.CalculateForce(car, descriptor, runtimeType, context);
-            int combinedForce = unchecked(car[GripOffset] + car[NormalisedForceOffset] + car[AdditionalForceOffset]);
 
+            if (dependencies is not null)
+            {
+                ApplyContactGuardPasses(car, descriptor, context, route, dependencies);
+            }
+
+            int combinedForce = unchecked(car[GripOffset] + car[NormalisedForceOffset] + car[AdditionalForceOffset]);
             FixedMatrix inverse = FixedMatrices.Transpose(basis);
             FixedVector localForce = FixedMatrices.Transform(inverse, new FixedVector
             {
@@ -105,6 +111,36 @@ namespace OpenSpeed.Classic.Physics
         {
             FixedVectors.Write(car, LinearVelocityOffset, FixedVectors.Scale(FixedVectors.Read(car, LinearVelocityOffset), coefficient));
             FixedVectors.Write(car, AngularVelocityOffset, FixedVectors.Scale(FixedVectors.Read(car, AngularVelocityOffset), coefficient));
+        }
+
+        /// <summary>
+        /// Runs <c>sub_465F60</c> and <c>sub_465840</c> in source order. The route-bound lateral
+        /// target pass requires the unresolved <c>sub_466280</c> route-geometry path; it is
+        /// skipped when that dependency is absent rather than entering an incomplete branch.
+        /// </summary>
+        private static void ApplyContactGuardPasses(
+            CarMemory car,
+            CarSpecifications descriptor,
+            PhysicsContext context,
+            PhysicsRoute route,
+            AlternateContactDependencies dependencies)
+        {
+            if (dependencies.WideDeviationQuery is not null)
+            {
+                RouteLateralTarget.Update(
+                    car,
+                    descriptor,
+                    route,
+                    dependencies.TrackMode,
+                    dependencies.RaceDirection,
+                    dependencies.WideDeviationQuery);
+            }
+
+            ContactDemandGuard.Update(
+                car,
+                descriptor,
+                context,
+                dependencies.RuntimeState == 0x0E);
         }
     }
 }

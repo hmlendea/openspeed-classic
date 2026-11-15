@@ -31,6 +31,12 @@ namespace OpenSpeed.Classic.Physics
         public int ReadVectorComponent(int record, int offset)
             => unchecked((sbyte)records[record * RecordSize + offset]) << 9;
 
+        public byte ReadByte(int record, int offset)
+            => records[record * RecordSize + offset];
+
+        public int ReadSignedByteExtended(int record, int offset)
+            => unchecked((sbyte)records[record * RecordSize + offset]);
+
         public FixedVector Position(int record) => new()
         {
             First = ReadDword(record, 0),
