@@ -183,19 +183,23 @@ namespace OpenSpeed.Classic.Physics
                 }
             }
 
-            // The negative-state branch builds the signed absorption term by walking the second
-            // six-dword half of the table with the negated state.
-            int negativeMagnitude = unchecked(-car[ResponseStateOffset]);
+            // The absorption block at loc_465AFC indexes the second six-dword half of the table
+            // with the positive absolute state. Its intermediate product is kept in ebp and
+            // replaces the demand value saved by the earlier state-0/5 block; the two blocks are
+            // mutually exclusive because one requires state 0 or 5 and the other requires
+            // |state| >= 2 excluding 5.
+            int magnitude = X86Math.Abs(car[ResponseStateOffset]);
 
-            if (negativeMagnitude >= 2 && negativeMagnitude != 5 && negativeMagnitude < TableHighBase + TyreResponseTables.CapacityStates.Length)
+            if (magnitude >= 2 && magnitude != 5 &&
+                magnitude < TableHighBase + TyreResponseTables.CapacityStates.Length)
             {
-                int high = ReadLow(TableHighBase + negativeMagnitude);
+                int high = ReadLow(TableHighBase + magnitude);
                 int term = X86Math.MultiplyQ16(high, descriptor[EdgeClampCoefficientOffset]);
                 term = X86Math.MultiplyQ16(term, car[ContactForceOffset]);
-                term = X86Math.MultiplyQ16(term, car[GripOffset]);
-                computed = X86Math.Negate(term);
+                track = term;
+                computed = X86Math.Negate(X86Math.MultiplyQ16(term, car[GripOffset]));
 
-                if (X86Math.Abs(car[GripOffset]) < GripLocalisationThreshold)
+                if (car[GripOffset] > 0 && car[GripOffset] < GripLocalisationThreshold)
                 {
                     computed = X86Math.TruncatePowerOfTwo(computed, 1);
                 }

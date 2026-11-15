@@ -21,6 +21,10 @@ namespace OpenSpeed.Classic.UnitTests.Physics
 
         private const int PersistentSecondOffset = 0x328;
 
+        private const int ProjectedNormalOffset = 0x2B8;
+
+        private const int EngineSpeedOffset = 0x2F0;
+
         private static CarSpecifications BuildDescriptor(int demandCoefficient)
         {
             CarSpecifications descriptor = new();
@@ -153,6 +157,35 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             {
                 Assert.That(car[ResponseStateOffset], Is.Zero);
                 Assert.That(car[NormalisedForceOffset], Is.Zero);
+            });
+        }
+
+        [Test]
+        public void GivenAPositiveResponseStateOfThree_WhenUpdating_ThenTheAbsorptionBlockRunsAndTheForcesSurvive()
+        {
+            CarMemory car = new();
+            car[ProjectedNormalOffset] = 0x60000;
+            car[EngineSpeedOffset] = 0x1000;
+            car[ResponseStateOffset] = 3;
+            car[GripOffset] = -0x100000;
+            car[ContactForceOffset] = 0x2000;
+            PhysicsContext context = new() { Accelerator = 0x10000, Brake = 0x10000, GravityFirst = 0x10000 };
+            CarSpecifications descriptor = BuildDescriptor(0x10000);
+            descriptor[0x148] = 0x10000;
+
+            ContactDemandGuard.Update(car, descriptor, context, true);
+
+            // The absorption block at loc_465AFC keys off the absolute response state, so a
+            // positive state of three enters it. Indexing with the negated state would skip the
+            // block for every positive state, leaving the derived force at zero and preventing
+            // both persistent accumulators from advancing. The grip magnitude is held at
+            // 0x100000 so the earlier high-grip release cannot zero the state before the block.
+            Assert.Multiple(() =>
+            {
+                Assert.That(car[ResponseStateOffset], Is.EqualTo(3));
+                Assert.That(car[NormalisedForceOffset], Is.EqualTo(0x9998));
+                Assert.That(car[PersistentFirstOffset], Is.EqualTo(0x20000));
+                Assert.That(car[PersistentSecondOffset], Is.EqualTo(0x20000));
             });
         }
 
