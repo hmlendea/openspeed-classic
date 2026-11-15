@@ -92,7 +92,7 @@ namespace OpenSpeed.Classic.Physics
             else
             {
                 int index = X86Math.TruncatePowerOfTwo(car[EngineOffset], 8);
-                source = AiEngineController.SelectTargetScalar(car, false);
+                source = PhysicsHelpers.SampleTorqueCurve(descriptor, index);
             }
 
             secondaryResponse = X86Math.MultiplyQ16(source, coefficient);

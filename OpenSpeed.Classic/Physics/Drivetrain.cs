@@ -179,13 +179,10 @@ namespace OpenSpeed.Classic.Physics
             {
                 index = X86Math.TruncatePowerOfTwo(descriptor[0xF0], 8);
             }
-            else
-            {
-                index = Math.Clamp(index, 0, 40);
-            }
 
             int gear = car.ReadByte(GearOffset);
-            int torque = X86Math.MultiplyQ16(descriptor[0x4C + index * sizeof(int)], descriptor[0x1A8 + gear * sizeof(int)]);
+            int torque = X86Math.MultiplyQ16(
+                PhysicsHelpers.SampleTorqueCurve(descriptor, index), descriptor[0x1A8 + gear * sizeof(int)]);
 
             if ((context.FeatureFlags & 4) == 0 || runtimeType[0] >= 0x0F)
             {
