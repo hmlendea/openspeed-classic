@@ -158,6 +158,13 @@ namespace OpenSpeed.Classic.Physics
 
         public static int RaceMode { get; set; } = 0;
 
+        /// <summary>
+        /// The <c>dword_4D5EF4</c> lateral-response bound. It starts at <c>0x1999</c> and the
+        /// configuration loader narrows it to <c>0x41</c> when the two relevant configuration
+        /// bytes share a nonzero bit.
+        /// </summary>
+        public static int LateralResponseBound { get; set; } = 0x1999;
+
         public static int BaseTick { get; set; } = 0;
 
         public static int GlobalCarIndex { get; set; } = 0;
