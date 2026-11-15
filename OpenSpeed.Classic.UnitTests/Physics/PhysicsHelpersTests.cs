@@ -66,5 +66,78 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             }
 
         }
+
+        [Test]
+        public void GivenBothAnglesNonnegative_WhenTakingTheDifference_ThenTheRawDeltaIsReturned()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(PhysicsHelpers.AngleDifference(0x50, 0x20), Is.EqualTo(0x30));
+                Assert.That(PhysicsHelpers.AngleDifference(0x20, 0x50), Is.EqualTo(-0x30));
+            }
+
+        }
+
+        [Test]
+        public void GivenANegativeSecondAngle_WhenTakingTheDifference_ThenItNormalisesAboveHalfTurn()
+        {
+            Assert.That(PhysicsHelpers.AngleDifference(0, -0x300), Is.EqualTo(-0x100));
+        }
+
+        [Test]
+        public void GivenANegativeFirstAngle_WhenTakingTheDifference_ThenItNormalisesBelowHalfTurn()
+        {
+            Assert.That(PhysicsHelpers.AngleDifference(-0x300, 0), Is.EqualTo(0x100));
+        }
+
+        [Test]
+        public void GivenANonPositiveTally_WhenUpdating_ThenTheCounterIsUntouched()
+        {
+            CarMemory car = new();
+
+            bool reset = PhysicsHelpers.UpdateTally(car);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reset, Is.False);
+                Assert.That(car[0x31C], Is.Zero);
+                Assert.That(car.ReadByte(0x318), Is.Zero);
+            }
+
+        }
+
+        [Test]
+        public void GivenAPositiveTallyBelowTheLimit_WhenUpdating_ThenItIncrements()
+        {
+            CarMemory car = new();
+            car[0x31C] = 5;
+
+            bool reset = PhysicsHelpers.UpdateTally(car);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reset, Is.False);
+                Assert.That(car[0x31C], Is.EqualTo(6));
+                Assert.That(car.ReadByte(0x318), Is.Zero);
+            }
+
+        }
+
+        [Test]
+        public void GivenAPositiveTallyAtTheLimit_WhenUpdating_ThenTheByteIsSetAndTheCounterClears()
+        {
+            CarMemory car = new();
+            car[0x31C] = 0x80;
+
+            bool reset = PhysicsHelpers.UpdateTally(car);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reset, Is.True);
+                Assert.That(car[0x31C], Is.Zero);
+                Assert.That(car.ReadByte(0x318), Is.EqualTo(1));
+            }
+
+        }
     }
 }

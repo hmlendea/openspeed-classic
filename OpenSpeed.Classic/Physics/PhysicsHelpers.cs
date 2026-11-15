@@ -48,5 +48,76 @@ namespace OpenSpeed.Classic.Physics
 
             return scale;
         }
+
+        /// <summary>
+        /// Translates <c>sub_45E710</c>: the wrapped signed angle difference. Both inputs are
+        /// signed cyclic angles; the result is normalised into <c>[-0x200, 0x200]</c>. The branch
+        /// structure uses the raw signed operands, so a negative second input is handled by a
+        /// distinct path rather than by an absolute value.
+        /// </summary>
+        public static int AngleDifference(int first, int second)
+        {
+            int difference = unchecked(first - second);
+
+            if (first >= 0)
+            {
+                if (second >= 0)
+                {
+                    return difference;
+                }
+
+                if (difference > 0x200)
+                {
+                    return unchecked(difference - 0x400);
+                }
+
+                return difference;
+            }
+
+            if (second < 0)
+            {
+                return difference;
+            }
+
+            int magnitude = unchecked(second - first);
+
+            if (magnitude > 0x200)
+            {
+                return unchecked(0x400 - magnitude);
+            }
+
+            return unchecked(-magnitude);
+        }
+
+        /// <summary>
+        /// Translates <c>sub_464700</c>: the <c>+0x31C</c> tally helper. A positive counter is
+        /// incremented; once it exceeds <c>0x80</c> the byte at <c>+0x318</c> is set and the
+        /// counter resets. A non-positive counter is left untouched.
+        /// </summary>
+        /// <returns>True when the byte at <c>+0x318</c> was set on this call.</returns>
+        public static bool UpdateTally(CarMemory car)
+        {
+            ArgumentNullException.ThrowIfNull(car);
+            int counter = car[0x31C];
+
+            if (counter <= 0)
+            {
+                return false;
+            }
+
+            counter = unchecked(counter + 1);
+
+            if (counter > 0x80)
+            {
+                car.WriteByte(0x318, 1);
+                car[0x31C] = 0;
+
+                return true;
+            }
+
+            car[0x31C] = counter;
+
+            return false;
+        }
     }
 }
