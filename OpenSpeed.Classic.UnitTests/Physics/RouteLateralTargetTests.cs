@@ -76,6 +76,55 @@ namespace OpenSpeed.Classic.UnitTests.Physics
             Assert.That(invoked, Is.True);
         }
 
+        [TestCase(0x00, 0)]
+        [TestCase(0x3F, 0)]
+        public void GivenASteepnessCoefficientBelowOneUnit_WhenUpdating_ThenTheForceIsZero(
+            int steepnessCoefficient,
+            int expectedForce)
+        {
+            CarMemory car = new();
+            car[0x288] = 1;
+            car[0x3AC] = 0;
+            car[0x2E4] = 0x20;
+            car[0x2B8] = 0x20000;
+            CarSpecifications descriptor = new();
+            descriptor[0x12C] = steepnessCoefficient;
+
+            RouteLateralTarget.Update(car, descriptor, BuildStraightRoute(6), 1, 1, _ => { });
+
+            // The steepness coefficient is truncated toward zero by six before use, so any value
+            // below 0x40 contributes nothing to the force scale.
+            Assert.That(car[0x30C], Is.EqualTo(expectedForce));
+        }
+
+        [Test]
+        public void GivenSteepnessCoefficientsSharingASixBitValue_WhenUpdating_ThenTheForcesAreEqual()
+        {
+            CarMemory first = new();
+            first[0x288] = 1;
+            first[0x3AC] = 0;
+            first[0x2E4] = 0x20;
+            first[0x2B8] = 0x20000;
+            CarSpecifications firstDescriptor = new();
+            firstDescriptor[0x12C] = 0x40;
+
+            CarMemory second = new();
+            second[0x288] = 1;
+            second[0x3AC] = 0;
+            second[0x2E4] = 0x20;
+            second[0x2B8] = 0x20000;
+            CarSpecifications secondDescriptor = new();
+            secondDescriptor[0x12C] = 0x7F;
+
+            RouteLateralTarget.Update(first, firstDescriptor, BuildStraightRoute(6), 1, 1, _ => { });
+            RouteLateralTarget.Update(second, secondDescriptor, BuildStraightRoute(6), 1, 1, _ => { });
+
+            // Truncating the steepness coefficient toward zero by six maps both 0x40 and 0x7F to
+            // one unit, so the two forces must match. Reading the raw descriptor cell would make
+            // them differ, which is the regression this fixture guards against.
+            Assert.That(first[0x30C], Is.EqualTo(second[0x30C]));
+        }
+
         [Test]
         public void GivenAnInRangeDeviation_WhenUpdating_ThenTheLateralTargetAndForceAreWritten()
         {

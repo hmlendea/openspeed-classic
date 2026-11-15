@@ -169,7 +169,7 @@ namespace OpenSpeed.Classic.Physics
                 headingDelta = X86Math.TruncatePowerOfTwo(headingDelta, 1);
             }
 
-            int steepness = descriptor[0x12C];
+            int steepness = X86Math.TruncatePowerOfTwo(descriptor[0x12C], 6);
             int projected = car[ProjectedNormalOffset];
 
             if (projected < 0)
@@ -201,12 +201,10 @@ namespace OpenSpeed.Classic.Physics
         }
 
         /// <summary>
-        /// Translates <c>sub_466200</c>: the adjacent-record lateral offset. The record is the
-        /// car's current route index; the byte at record offset <c>0x1F</c> supplies a nibble
-        /// combined with the byte at <c>0x20</c> or <c>0x21</c> according to
-        /// <param name="trackMode"/>. The routine returns the truncated scaled nibble product
-        /// from either branch; its sole caller only uses the resulting <c>eax</c> as the
-        /// <c>sub_466280</c> argument, so the value is returned directly.
+        /// Translates <c>sub_466200</c>: the adjacent-record lateral offset. The routine builds
+        /// the mode-selected nibble product in <c>eax</c> before returning, so its caller's
+        /// <c>eax</c> result is that product, which the caller then adds to the saved steering
+        /// quotient held in <c>edx</c>. Both branches therefore return the scaled nibble.
         /// </summary>
         public static int Sub466200(CarMemory car, PhysicsRoute route, int trackMode)
         {
