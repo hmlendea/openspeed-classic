@@ -159,6 +159,23 @@ namespace OpenSpeed.Classic.Physics
         public static int RaceMode { get; set; } = 0;
 
         /// <summary>
+        /// The <c>dword_4D6070</c> surface-launch table. It is a dword per surface index, and the
+        /// launch gate treats a zero entry as "no launch for this surface". The original table
+        /// holds sixteen entries; the surface query can yield indices above fifteen, and those
+        /// read adjacent process storage in the original. The managed implementation rejects
+        /// out-of-range indices rather than reading adjacent memory.
+        /// </summary>
+        public static ReadOnlySpan<int> SurfaceLaunchFlags =>
+        [
+            1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0
+        ];
+
+        /// <summary>
+        /// The number of recovered <see cref="SurfaceLaunchFlags"/> entries.
+        /// </summary>
+        public static int SurfaceLaunchFlagCount => 16;
+
+        /// <summary>
         /// The <c>dword_4D5EF4</c> lateral-response bound. It starts at <c>0x1999</c> and the
         /// configuration loader narrows it to <c>0x41</c> when the two relevant configuration
         /// bytes share a nonzero bit.

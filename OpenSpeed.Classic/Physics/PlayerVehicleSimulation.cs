@@ -17,7 +17,7 @@ namespace OpenSpeed.Classic.Physics
         };
         private readonly VehicleScheduler scheduler = new();
         private readonly RawVehicleInput input = new();
-        private readonly byte[] surfaceLaunchFlags;
+        private readonly int[] surfaceLaunchFlags;
         private float movement;
 
         public CarMemory State { get; } = new();
@@ -42,7 +42,7 @@ namespace OpenSpeed.Classic.Physics
         }
 
         public PlayerVehicleSimulation(CarSpecifications source, PhysicsRoute route, CarIdentifier carIdentifier)
-            : this(source, route, carIdentifier, ReadOnlySpan<byte>.Empty)
+            : this(source, route, carIdentifier, ReadOnlySpan<int>.Empty)
         {
         }
 
@@ -52,7 +52,7 @@ namespace OpenSpeed.Classic.Physics
             CarIdentifier carIdentifier,
             FixedVector extents,
             int radius,
-            ReadOnlySpan<byte> surfaceLaunchFlags)
+            ReadOnlySpan<int> surfaceLaunchFlags)
             : this(source, route, carIdentifier, surfaceLaunchFlags)
         {
             PlayerStateInitialiser.Initialise(State, extents, radius);
@@ -67,7 +67,33 @@ namespace OpenSpeed.Classic.Physics
             CarSpecifications source,
             PhysicsRoute route,
             CarIdentifier carIdentifier,
+            FixedVector extents,
+            int radius,
             ReadOnlySpan<byte> surfaceLaunchFlags)
+            : this(source, route, carIdentifier, ToFlags(surfaceLaunchFlags))
+        {
+            PlayerStateInitialiser.Initialise(State, extents, radius);
+            RouteBasis.LoadRecord(State, route, 0);
+            FixedVectors.Write(State, 0x9C, route.Position(0));
+            RouteBasis.CopyPrimary(State, false);
+            RouteBasis.CopySecondary(State, false);
+            IsGrounded = ProvisionalRouteContact.Resolve(State, route);
+        }
+
+        public PlayerVehicleSimulation(
+            CarSpecifications source,
+            PhysicsRoute route,
+            CarIdentifier carIdentifier,
+            ReadOnlySpan<byte> surfaceLaunchFlags)
+            : this(source, route, carIdentifier, ToFlags(surfaceLaunchFlags))
+        {
+        }
+
+        public PlayerVehicleSimulation(
+            CarSpecifications source,
+            PhysicsRoute route,
+            CarIdentifier carIdentifier,
+            ReadOnlySpan<int> surfaceLaunchFlags)
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(route);
@@ -77,7 +103,9 @@ namespace OpenSpeed.Classic.Physics
             }
 
             this.route = route;
-            this.surfaceLaunchFlags = surfaceLaunchFlags.ToArray();
+            this.surfaceLaunchFlags = surfaceLaunchFlags.IsEmpty
+                ? [.. PhysicsTables.SurfaceLaunchFlags]
+                : surfaceLaunchFlags.ToArray();
             descriptor = new CarSpecifications();
 
             for (int offset = 0; offset < CarSpecifications.RuntimeSize; offset += sizeof(int))
@@ -191,10 +219,19 @@ namespace OpenSpeed.Classic.Physics
 
         private void ApplySurfaceLaunch()
         {
-            if (surfaceLaunchFlags.Length != 0)
+            SurfaceLaunch.TryApply(State, surfaceLaunchFlags);
+        }
+
+        private static int[] ToFlags(ReadOnlySpan<byte> flags)
+        {
+            int[] converted = new int[flags.Length];
+
+            for (int index = 0; index < flags.Length; index += 1)
             {
-                SurfaceLaunch.TryApply(State, surfaceLaunchFlags);
+                converted[index] = flags[index];
             }
+
+            return converted;
         }
 
         private void IntegrateMotion()
