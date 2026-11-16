@@ -57,6 +57,12 @@ namespace OpenSpeed.Classic.Physics
             bool isSignificant = X86Math.Abs(second) > 0x13;
             FixedMatrix delta = FixedMatrices.RotateSecond(second);
 
+            // The source composes Rx * Ry * Rz. It starts from Ry, applies Rx on the left, then
+            // applies Rz on the right of the accumulated product:
+            //   lea eax,[esp+48h] (Rx) / mov edx,[esp+6Ch] (Ry) / call sub_49E840  -> Rx * Ry
+            //   mov edx,esp (Rz) / eax,[esp+24h] (Rx*Ry)       / call sub_49E840  -> (Rx*Ry) * Rz
+            // sub_49E840 computes `eax * edx`, so the second call multiplies the accumulator by
+            // Rz rather than pre-multiplying it.
             if (X86Math.Abs(first) > 0x0D)
             {
                 delta = FixedMatrices.Multiply(FixedMatrices.RotateFirst(first), delta);
@@ -65,7 +71,7 @@ namespace OpenSpeed.Classic.Physics
 
             if (X86Math.Abs(third) > 0x0D)
             {
-                delta = FixedMatrices.Multiply(FixedMatrices.RotateThird(third), delta);
+                delta = FixedMatrices.Multiply(delta, FixedMatrices.RotateThird(third));
                 isSignificant = true;
             }
 
@@ -75,10 +81,17 @@ namespace OpenSpeed.Classic.Physics
             }
 
             FixedMatrix basis = FixedMatrices.Multiply(FixedMatrices.Read(car, PrimaryBasisOffset), delta);
-            byte countdown = unchecked((byte)(car.ReadByte(NormalisationCountdownOffset) - 1));
+            byte previousCountdown = car.ReadByte(NormalisationCountdownOffset);
+            byte countdown = unchecked((byte)(previousCountdown - 1));
             car.WriteByte(NormalisationCountdownOffset, countdown);
 
-            if (unchecked((sbyte)countdown) <= 0 || car[AccumulatedAngleOffset] > 0x1000)
+            // The source decrements the byte and follows it with a `jbe` (opcode 0x76, confirmed
+            // from the original executable). `dec` sets CF only when the operand was zero and ZF
+            // when the result is zero, so the branch fires for the previous value 0x00 (wrap) and
+            // for 0x01 (result 0) - that is, for any previous value at most one. A signed
+            // `<= 0` test would instead fire for every value from 0x80 upward and normalise the
+            // basis while the countdown is still high.
+            if (previousCountdown <= 1 || car[AccumulatedAngleOffset] > 0x1000)
             {
                 basis = FixedMatrices.Orthonormalise(basis);
                 car.WriteByte(NormalisationCountdownOffset, countdownReset);

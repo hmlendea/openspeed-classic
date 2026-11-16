@@ -81,5 +81,71 @@ namespace OpenSpeed.Classic.UnitTests.Physics
                 Assert.That(car[0x94], Is.EqualTo(0x20000));
             });
         }
+        [Test]
+        public void GivenANormalisationCountdownAboveOne_WhenIntegrating_ThenItIsNotReset()
+        {
+            CarMemory car = new();
+            car.WriteByte(0x8D, 1);
+            car.WriteByte(0x8F, 0x10);
+            car[0xEC] = 0x500;
+            FixedMatrices.Write(car, 0xC4, FixedMatrices.Identity());
+
+            BodyMotion.IntegratePlayerBasis(car);
+
+            // `dec` followed by an unsigned `jbe` fires only for the previous countdown values
+            // 0x00 and 0x01, so a countdown of 0x10 decrements to 0x0F without normalising.
+            Assert.That(car.ReadByte(0x8F), Is.EqualTo(0x0F));
+        }
+
+        [Test]
+        public void GivenAHighNormalisationCountdown_WhenIntegrating_ThenTheSignedInterpretationWouldHaveReset()
+        {
+            CarMemory car = new();
+            car.WriteByte(0x8D, 1);
+            car.WriteByte(0x8F, 0x80);
+            car[0xEC] = 0x500;
+            FixedMatrices.Write(car, 0xC4, FixedMatrices.Identity());
+
+            BodyMotion.IntegratePlayerBasis(car);
+
+            // A signed `<= 0` test would read 0x80 as -128 and normalise, overwriting the
+            // countdown with 0x10. The unsigned source test must leave it at 0x7F.
+            Assert.That(car.ReadByte(0x8F), Is.EqualTo(0x7F));
+        }
+
+        [Test]
+        public void GivenBothFirstAndThirdRateComponents_WhenIntegrating_ThenTheSourceCompositionOrderIsUsed()
+        {
+            CarMemory car = new();
+            car.WriteByte(0x8D, 1);
+            car.WriteByte(0x8F, 0x10);
+            car[0xE8] = 0x2000;
+            car[0xEC] = 0x2000;
+            car[0xF0] = 0x2000;
+            FixedMatrices.Write(car, 0xC4, FixedMatrices.Identity());
+
+            BodyMotion.IntegratePlayerBasis(car);
+
+            // The source composes Rx * Ry * Rz for the applied delta: Rx then Ry, then the
+            // accumulator multiplied on the right by Rz. The previous implementation applied
+            // Rz first and Rx second, producing Rz * Rx * Ry. The two differ because the
+            // rotation matrices do not commute; this fixture records which product is applied so
+            // a future reordering fails here.
+            FixedMatrix expectedDelta = FixedMatrices.Multiply(
+                FixedMatrices.Multiply(
+                    FixedMatrices.RotateFirst(X86Math.TruncatePowerOfTwo(0x2000, 6)),
+                    FixedMatrices.RotateSecond(X86Math.TruncatePowerOfTwo(0x2000, 6))),
+                FixedMatrices.RotateThird(X86Math.TruncatePowerOfTwo(0x2000, 6)));
+            FixedMatrix expectedBasis = FixedMatrices.Multiply(FixedMatrices.Identity(), expectedDelta);
+
+            for (int row = 0; row < FixedMatrix.Dimension; row += 1)
+            {
+                for (int column = 0; column < FixedMatrix.Dimension; column += 1)
+                {
+                    int actual = car[0xC4 + (row * FixedMatrix.Dimension + column) * sizeof(int)];
+                    Assert.That(actual, Is.EqualTo(expectedBasis[row, column]), $"cell {row},{column}");
+                }
+            }
+        }
     }
 }
