@@ -177,11 +177,18 @@ namespace OpenSpeed.Classic
                     throw new InvalidDataException("Native car specifications and track route data are required for driving.");
                 }
 
-                playerSimulation = new PlayerVehicleSimulation(
-                    currentCar.PhysicsSpecifications,
-                    CurrentTrack.PhysicsRoute,
-                    Enum.Parse<CarIdentifier>(currentCar.Identifier, true),
-                    new TrackRoadGeometry(CurrentTrack.Blocks));
+                playerSimulation = currentCar.SimulationTuning is null
+                    ? new PlayerVehicleSimulation(
+                        currentCar.PhysicsSpecifications,
+                        CurrentTrack.PhysicsRoute,
+                        Enum.Parse<CarIdentifier>(currentCar.Identifier, true),
+                        new TrackRoadGeometry(CurrentTrack.Blocks))
+                    : new PlayerVehicleSimulation(
+                        currentCar.PhysicsSpecifications,
+                        CurrentTrack.PhysicsRoute,
+                        Enum.Parse<CarIdentifier>(currentCar.Identifier, true),
+                        new TrackRoadGeometry(CurrentTrack.Blocks),
+                        currentCar.SimulationTuning);
                 carWorld = PhysicsRenderAdapter.CreateWorld(playerSimulation.State);
                 carRenderer = new CarRenderer(GraphicsDevice);
                 carRenderer.Load(currentCar);

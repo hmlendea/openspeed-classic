@@ -95,5 +95,27 @@ namespace OpenSpeed.Classic.UnitTests.Physics
                 Assert.That(tuning[1, 28], Is.EqualTo(57));
             });
         }
+
+        [Test]
+        public void GivenSimTuneRows_WhenResolvingTheCollisionProfile_ThenTheNativeFieldsAreSelected()
+        {
+            byte[] source = new byte[0xE8];
+
+            for (int index = 0; index < source.Length / sizeof(int); index += 1)
+            {
+                BinaryPrimitives.WriteInt32LittleEndian(source.AsSpan(index * sizeof(int)), index);
+            }
+
+            SimulationTuning tuning = SimulationTuning.Decode(source);
+            PendingCollisionEventProcessor.RaceProfile profile = tuning.GetRaceProfile(1);
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(profile.EventMagnitudeThreshold, Is.EqualTo(29));
+                Assert.That(profile.CategoryTimer, Is.EqualTo(35));
+                Assert.That(profile.EarlyRecoveryThreshold, Is.EqualTo(36));
+                Assert.That(profile.AngularSuppressionThreshold, Is.EqualTo(39));
+            });
+        }
     }
 }

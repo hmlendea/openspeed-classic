@@ -18,6 +18,7 @@ namespace OpenSpeed.Classic.Physics
         private readonly VehicleScheduler scheduler = new();
         private readonly RawVehicleInput input = new();
         private readonly int[] surfaceLaunchFlags;
+        private readonly PendingCollisionEventProcessor.RaceProfile raceProfile;
         private float movement;
 
         public CarMemory State { get; } = new();
@@ -30,6 +31,19 @@ namespace OpenSpeed.Classic.Physics
             CarIdentifier carIdentifier,
             TrackRoadGeometry roadGeometry)
             : this(source, route, carIdentifier)
+        {
+            ArgumentNullException.ThrowIfNull(roadGeometry);
+            this.roadGeometry = roadGeometry;
+            IsGrounded = ProvisionalRouteContact.Resolve(State, route, roadGeometry);
+        }
+
+        public PlayerVehicleSimulation(
+            CarSpecifications source,
+            PhysicsRoute route,
+            CarIdentifier carIdentifier,
+            TrackRoadGeometry roadGeometry,
+            SimulationTuning simulationTuning)
+            : this(source, route, carIdentifier, ReadOnlySpan<int>.Empty, simulationTuning.GetRaceProfile(0))
         {
             ArgumentNullException.ThrowIfNull(roadGeometry);
             this.roadGeometry = roadGeometry;
@@ -94,6 +108,21 @@ namespace OpenSpeed.Classic.Physics
             PhysicsRoute route,
             CarIdentifier carIdentifier,
             ReadOnlySpan<int> surfaceLaunchFlags)
+            : this(source, route, carIdentifier, surfaceLaunchFlags, default)
+        {
+        }
+
+        /// <summary>
+        /// Creates the player simulation with an explicit race profile. The profile carries the
+        /// four SimTune-derived values the pending-collision processor consumes; the default
+        /// profile leaves every threshold at zero, which disables the severe-response branch.
+        /// </summary>
+        public PlayerVehicleSimulation(
+            CarSpecifications source,
+            PhysicsRoute route,
+            CarIdentifier carIdentifier,
+            ReadOnlySpan<int> surfaceLaunchFlags,
+            PendingCollisionEventProcessor.RaceProfile raceProfile)
         {
             ArgumentNullException.ThrowIfNull(source);
             ArgumentNullException.ThrowIfNull(route);
@@ -106,6 +135,7 @@ namespace OpenSpeed.Classic.Physics
             this.surfaceLaunchFlags = surfaceLaunchFlags.IsEmpty
                 ? [.. PhysicsTables.SurfaceLaunchFlags]
                 : surfaceLaunchFlags.ToArray();
+            this.raceProfile = raceProfile;
             descriptor = new CarSpecifications();
 
             for (int offset = 0; offset < CarSpecifications.RuntimeSize; offset += sizeof(int))
@@ -144,6 +174,11 @@ namespace OpenSpeed.Classic.Physics
 
             scheduler.Advance(elapsed);
         }
+
+        /// <summary>
+        /// The SimTune-derived values the collision-event processor consumes.
+        /// </summary>
+        public PendingCollisionEventProcessor.RaceProfile RaceProfile => raceProfile;
 
         private void InitialiseState()
         {
